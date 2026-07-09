@@ -1,3 +1,3 @@
 # Miru
 
-Zoomer App for Wayland
+Zoomer App for streamers (`wayland` users). 
