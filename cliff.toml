@@ -1,0 +1,82 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[remote.github]
+owner = "Vaishnav-Sabari-Girish"
+repo = "miru"
+
+[changelog]
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+{% if version %}
+## {{ version }} - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}
+## Unreleased
+{% endif %}
+
+{% macro render_group(group_name, emoji) %}
+  {% set group_commits = commits | filter(attribute="group", value=emoji ~ " " ~ group_name) %}
+  {% if group_commits | length > 0 %}
+### {{ emoji }} {{ group_name }}
+    {% for commit in group_commits %}
+- {% if commit.scope %}**({{ commit.scope }})** {% endif %}{{ commit.message | upper_first | trim }}
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
+{{ self::render_group(group_name="New features", emoji=":rocket:") }}
+{{ self::render_group(group_name="Bug fixes", emoji=":bug:") }}
+{{ self::render_group(group_name="Performance", emoji=":zap:") }}
+{{ self::render_group(group_name="Refactoring", emoji=":recycle:") }}
+{{ self::render_group(group_name="Styling", emoji=":art:") }}
+{{ self::render_group(group_name="Build", emoji=":hammer:") }}
+
+{%- if github -%}
+{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+### :tada: New Contributors
+{%- endif %}\
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+- @{{ contributor.username }} made their first contribution
+  {%- if contributor.pr_number %} in [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}){%- endif %}
+{%- endfor -%}
+{%- endif -%}
+
+{%- macro remote_url() -%}
+  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+"""
+# Remove leading and trailing whitespaces from the changelog's body.
+trim = true
+# A Tera template to be rendered as the changelog's footer.
+footer = """
+"""
+# An array of regex based postprocessors to modify the changelog.
+postprocessors = []
+
+[git]
+# Parse commits according to the conventional commits specification.
+# See https://www.conventionalcommits.org
+conventional_commits = true
+# Exclude commits that do not match the conventional commits specification.
+filter_unconventional = true
+# Split commits on newlines, treating each line as an individual commit.
+split_commits = false
+commit_parsers = [
+    { message = "^feat", group = ":rocket: New features" },
+    { message = "^fix", group = ":bug: Bug fixes" },
+    { message = "^perf", group = ":zap: Performance" },
+    { message = "^refactor", group = ":recycle: Refactoring" },
+    { message = "^style", group = ":art: Styling" },
+    { message = "^build", group = ":hammer: Build" },
+    { message = ".*", skip = true },
+]
+# An array of regex based parsers to modify commit messages prior to further processing.
+commit_preprocessors = [{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" }]
+# Exclude commits that are not matched by any commit parser.
+filter_commits = true
+# Order releases topologically instead of chronologically.
+topo_order = false
+# Order of commits in each group/release within the changelog.
+# Allowed values: newest, oldest
+sort_commits = "newest"

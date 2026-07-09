@@ -1,0 +1,11 @@
+[default.extend-words]
+miru = "miru"
+x11 = "x11"
+X11 = "X11"
+wayland = "wayland"
+Wayland = "Wayland"
+grimoire = "grimoire"
+Grimoire = "Grimoire"
+
+[files]
+extend-exclude = ["CHANGELOG.md"]
