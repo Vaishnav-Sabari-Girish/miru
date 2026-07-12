@@ -26,14 +26,14 @@ int main(void) {
 
     if (layer_surface_create(&state, &ls) != 0) {
         fprintf(stderr, "failed to create layer surface\n");
-        wayland_state_cleaner(&state);
+        wayland_state_cleanup(&state);
         return 1;
     }
 
     fprintf(stderr, "layer surface created, entering event loop\n");
     state.running = 1;
 
-    while (state.running && !should_exit && ls.closed) {
+    while (state.running && !should_exit && !ls.closed) {
         if (wayland_state_dispatch(&state) != 0) {
             break;
         }
@@ -41,6 +41,6 @@ int main(void) {
 
     fprintf(stderr, "shutting down\n");
     layer_surface_destroy(&ls);
-    wayland_state_cleaner(&state);
+    wayland_state_cleanup(&state);
     return 0;
 }
