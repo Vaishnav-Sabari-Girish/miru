@@ -1,0 +1,23 @@
+version = "1"
+
+[sigil.clean]
+silent = true
+description = "Remove build artifacts"
+language = "shell"
+run = "rm -rf build/"
+
+[sigil.build]
+silent = true
+description = "Build miru"
+language = "shell"
+run = '''
+cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+'''
+
+[sigil.run-daemon]
+silent = true
+description = "Run miru-daemon"
+language = "shell"
+run = "./build/miru-daemon"
+    
