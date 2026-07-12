@@ -6,6 +6,7 @@ wayland = "wayland"
 Wayland = "Wayland"
 grimoire = "grimoire"
 Grimoire = "Grimoire"
+Ser = "Ser"
 
 [files]
 extend-exclude = ["CHANGELOG.md"]
