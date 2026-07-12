@@ -33,7 +33,7 @@ int main(void) {
     fprintf(stderr, "layer surface created, entering event loop\n");
     state.running = 1;
 
-    while (state.running && !should_exit) {
+    while (state.running && !should_exit && ls.closed) {
         if (wayland_state_dispatch(&state) != 0) {
             break;
         }
