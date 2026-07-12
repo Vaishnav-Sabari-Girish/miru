@@ -6,9 +6,10 @@ for [Niri](https://github.com/YaLTeR/niri).
 Inspired by [boomer](https://github.com/tsoding/boomer), but for Wayland —
 written in C, keybind-driven, no GUI, no mouse-required config.
 
-> **Status: early development.** Core Wayland plumbing (connection, registry,
-> event loop) works. Rendering, magnifier mode, and spotlight mode are not built
-> yet. See [Roadmap](#roadmap).
+> **Status: early development.** Wayland connection, registry discovery, and a
+> fullscreen `wlr-layer-shell` overlay surface all work. Screen capture,
+> magnifier mode, and spotlight mode are not built yet. See
+> [Roadmap](#roadmap).
 
 ## What it does (planned)
 
@@ -51,16 +52,22 @@ Or with [Grimoire](https://github.com/Vaishnav-Sabari-Girish/grimoire):
 grim cast build
 ```
 
-Run the daemon in the foreground (nothing renders yet, it just logs the
-compositor's advertised protocols and idles):
+Run the daemon in the foreground:
 
 ```bash
 ./build/miru-daemon
-
-# Or 
-
+# or
 grim cast run-daemon
 ```
+
+Right now this connects to the compositor, logs every advertised protocol, and
+covers the entire screen (including panels/bars) with a translucent grey
+overlay on the `wlr-layer-shell` overlay layer — proof the surface pipeline
+works end-to-end. There's no capture or zoom yet, and the overlay currently
+also blocks clicks to whatever's underneath (keyboard input still passes
+through); that click-through gap is expected at this stage and gets addressed
+once Spotlight mode sets an explicit empty input region. Ctrl+C to exit and
+restore your screen.
 
 ## Project structure
 
@@ -73,15 +80,17 @@ grim cast run-daemon
 │   ├── wlr-layer-shell-unstable-v1.xml
 │   └── wlr-screencopy-unstable-v1.xml
 ├── src/
-│   ├── main.c                 # daemon entrypoint, Wayland connection + event loop
-│   └── wayland_state.h        # shared connection/registry state
+│   ├── main.c                 # thin entrypoint, wires the modules together
+│   ├── wayland_state.h/.c     # connection, registry, poll-based event loop
+│   ├── layer_surface.h/.c     # fullscreen wlr-layer-shell overlay surface
+│   └── shm_buffer.h/.c        # shared-memory pixel buffer allocation helper
 └── Grimoire.toml              # dev task runner (build/run/install/clean)
 ```
 
 ## Roadmap
 
 - [x] Wayland connection, registry discovery, manual poll-based event loop
-- [ ] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
+- [x] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
 - [ ] Screen capture via `wlr-screencopy` → render as a texture
 - [ ] Magnifier mode: zoom + pan around cursor, keybind toggle
 - [ ] `miructl` control client + Unix socket IPC, daemon/client split

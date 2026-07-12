@@ -55,6 +55,9 @@ wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-
 
 add_executable(miru-daemon
   src/main.c
+  src/wayland_state.c
+  src/layer_surface.c
+  src/shm_buffer.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}
