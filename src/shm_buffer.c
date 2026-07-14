@@ -12,10 +12,21 @@ struct wl_buffer *shm_buffer_create_stride(struct wl_shm *shm, int width, int he
     fprintf(stderr, "shm_buffer_create_stride: invalid dimensions %dx%d stride=%d\n", width, height, stride);
     return NULL;
   }
+
+  // must bound width before computing width * 4 below, otherwise the
+  // multiplication itself can silently overflow (signed int UB) before
+  // any check every runs, letting an undersized stride slip through 
+  if (width > (INT32_MAX / 4)) {
+    fprintf(stderr, "shm_buffer_create_stride: width %d too large\n", width);
+    return NULL;
+  }
+
+  int min_stride = width * 4;
+
   // every format we currently handle is 4 bytes/pixel, so stride can never
   // legitimately be smaller than that, even before padding is considered
-  if (stride < width * 4) {
-    fprintf(stderr, "shm_buffer_create_stride: stride %d smaller than width*4 (%d)\n", stride, width * 4);
+  if (stride < min_stride) {
+    fprintf(stderr, "shm_buffer_create_stride: stride %d smaller than width*4 (%d)\n", stride, min_stride);
     return NULL;
   }
   if ((int64_t)stride * (int64_t)height > INT32_MAX) {
