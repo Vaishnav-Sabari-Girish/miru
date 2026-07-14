@@ -58,6 +58,7 @@ add_executable(miru-daemon
   src/wayland_state.c
   src/layer_surface.c
   src/shm_buffer.c
+  src/capture.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}
