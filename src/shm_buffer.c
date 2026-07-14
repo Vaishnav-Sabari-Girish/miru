@@ -15,7 +15,7 @@ struct wl_buffer *shm_buffer_create_stride(struct wl_shm *shm, int width, int he
 
   // must bound width before computing width * 4 below, otherwise the
   // multiplication itself can silently overflow (signed int UB) before
-  // any check every runs, letting an undersized stride slip through 
+  // any check ever runs, letting an undersized stride slip through 
   if (width > (INT32_MAX / 4)) {
     fprintf(stderr, "shm_buffer_create_stride: width %d too large\n", width);
     return NULL;
