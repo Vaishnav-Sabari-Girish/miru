@@ -1,0 +1,27 @@
+name: C Formatting Check
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  format-check:
+    name: Check clang-format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+
+      - name: Run clang-format check
+        run: |
+          echo "Checking C and Header files in src/..."
+          find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format --dry-run -Werror {} +
+          echo "All files are formatted correctly!"
