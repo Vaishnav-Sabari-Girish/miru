@@ -62,8 +62,6 @@ int wayland_state_dispatch(struct miru_state *state) {
     wl_display_dispatch_pending(state -> display);
   }
 
-  // if the kernel socket buffer is full, flush fails with EAGAIN and some
-  // requests are still queued unsent, so we need to also watch POLLOUT
   int pending_write = 0;
   if (wl_display_flush(state -> display) == -1) {
     if (errno == EAGAIN) {
@@ -95,7 +93,6 @@ int wayland_state_dispatch(struct miru_state *state) {
     wl_display_cancel_read(state -> display);
   }
 
-  // socket became writable, push out whatever was still pending from the EAGAIN above
   if (pfd.revents & POLLOUT) {
     if (wl_display_flush(state -> display) == -1 && errno != EAGAIN) {
       fprintf(stderr, "wl_display_flush failed after POLLOUT\n");

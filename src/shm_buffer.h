@@ -4,19 +4,28 @@
 #include <wayland-client.h>
 #include <stddef.h>
 
-// allocates an anonymous shared memory region and wraps it as a wl_buffer the compositor can read
-// out_data receives the mmap'd pointer, so the caller can write pixels straight into it
-// out_size receives the byte size, needed later to munmap it (pass NULL if you don't care)
-struct wl_buffer *shm_buffer_create(
-    struct wl_shm *shm,
-    int width,
+// allocates using an explicit stride (bytes per row), needed when a protocol
+// (like screencopy) tells us exactly what layout to use, including any padding
+struct wl_buffer *shm_buffer_create_stride(
+    struct wl_shm *shm, 
+    int width, 
     int height,
+    int stride, 
     uint32_t format,
-    void **out_data,
+    void **out_data, 
     size_t *out_size
 );
 
-// unmaps memory returned above, does not touch the wl_buffer object itself
+// convenience wrapper: assumes a tightly-packed 4-bytes-per-pixel stride (width * 4)
+struct wl_buffer *shm_buffer_create(
+    struct wl_shm *shm, 
+    int width, 
+    int height,
+    uint32_t format, 
+    void **out_data, 
+    size_t *out_size
+);
+
 void shm_buffer_free(void *data, size_t size);
 
-#endif // !SHM_BUFFER_H
+#endif

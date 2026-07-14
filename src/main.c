@@ -26,11 +26,11 @@ int main(void) {
   }
 
   struct miru_capture capture = {0};
-  if (capture_output_frame(&state, state.output, &capture) != 0) {
+  if (capture_output_frame(&state, state.output, &should_exit, &capture) != 0) {
     fprintf(stderr, "screencopy capture failed\n");
   } else {
-    fprintf(stderr, "captured frame: %ux%u stride = %u format = %u\n",
-            capture.width, capture.height, capture.stride, capture.format
+    fprintf(stderr, "captured frame: %ux%u stride = %u format = %u y_invert = %d\n",
+            capture.width, capture.height, capture.stride, capture.format, capture.y_invert
     );
   }
   capture_frame_destroy(&capture);
