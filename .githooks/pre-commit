@@ -7,8 +7,11 @@ cd "$(git rev-parse --show-toplevel)"
 echo "Checking for typos..."
 typos
 
-echo "Fixing all markdown files..."
+echo "Formatting C code..."
+find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
+find src -type f \( -name "*.c" -o -name "*.h" \) -exec git add {} +
 
+echo "Fixing all markdown files..."
 find . -type d \( -name target -o -name .git \) -prune -o \
   -type f -name "*.md" \
   ! -name "CHANGELOG.md" \
