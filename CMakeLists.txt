@@ -1,9 +1,32 @@
 cmake_minimum_required(VERSION 3.20)
-project(miru C)
+project(miru VERSION 0.1.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # so clangd/your LSP can find flags and generated headers
+
+find_package(Git QUIET)
+set(MIRU_VERSION "${PROJECT_VERSION}")
+if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_DESCRIBE_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+    RESULT_VARIABLE GIT_DESCRIBE_RESULT
+  )
+  if(GIT_DESCRIBE_RESULT EQUAL 0 AND GIT_DESCRIBE_VERSION)
+    set(MIRU_VERSION "${GIT_DESCRIBE_VERSION}")
+  endif()
+endif()
+message(STATUS "miru version: ${MIRU_VERSION}")
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/src/version.h.in
+  ${CMAKE_BINARY_DIR}/generated/version.h
+  @ONLY
+)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
@@ -71,6 +94,7 @@ target_include_directories(miru-daemon PRIVATE
   ${WAYLAND_CLIENT_INCLUDE_DIRS}
   ${CMAKE_BINARY_DIR}/protocol       # so #include "*-client-protocol.h" in main.c resolves
   ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_BINARY_DIR}/generated
 )
 
 target_link_libraries(miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES})

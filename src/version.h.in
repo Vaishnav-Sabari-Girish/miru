@@ -1,0 +1,6 @@
+#ifndef MIRU_VERSION_H
+#define MIRU_VERSION_H
+
+#define MIRU_VERSION "@MIRU_VERSION@"
+
+#endif

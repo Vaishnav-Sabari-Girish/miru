@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <signal.h>
+#include <string.h>
 #include "wayland_state.h"
 #include "layer_surface.h"
 #include "capture.h"
+#include "version.h"
 
 static volatile sig_atomic_t should_exit = 0;
 
@@ -12,8 +14,15 @@ static void handle_sigint(int sig)
     should_exit = 1;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    if (argc > 1 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
+        printf("miru-daemon %s\n", MIRU_VERSION);
+        printf("\nCombined Distribution subjected to MIT license\n");
+        printf("\nWritten by Vaishnav Sabari Girish\n");
+        return 0;
+    }
+
     struct miru_state state = { 0 };
     struct miru_layer_surface ls = { 0 };
 
