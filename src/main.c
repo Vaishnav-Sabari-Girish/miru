@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 {
     if (argc > 1 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
         printf("miru-daemon %s\n", MIRU_VERSION);
-        printf("\nCombined Distribution subjected to MIT license\n");
+        printf("\nCombined Distribution subject to MIT license\n");
         printf("\nWritten by Vaishnav Sabari Girish\n");
         return 0;
     }
