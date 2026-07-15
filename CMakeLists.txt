@@ -5,21 +5,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # so clangd/your LSP can find flags and generated headers
 
-find_package(Git QUIET)
 set(MIRU_VERSION "${PROJECT_VERSION}")
-if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
-  execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_DESCRIBE_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-    RESULT_VARIABLE GIT_DESCRIBE_RESULT
-  )
-  if(GIT_DESCRIBE_RESULT EQUAL 0 AND GIT_DESCRIBE_VERSION)
-    set(MIRU_VERSION "${GIT_DESCRIBE_VERSION}")
-  endif()
-endif()
 message(STATUS "miru version: ${MIRU_VERSION}")
 
 configure_file(
