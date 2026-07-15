@@ -43,7 +43,7 @@ int main(void)
     }
     // capture_frame_destroy(&capture);
 
-    // Capture syats alive, handle_configure needs it to blit the frame in
+    // Capture stays alive; handle_configure needs it to blit the frame in
     if (layer_surface_create(&state, &ls, &capture) != 0) {
         fprintf(stderr, "failed to create layer surface\n");
         capture_frame_destroy(&capture);

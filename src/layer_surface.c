@@ -124,7 +124,7 @@ int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls
     }
 
     ls->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
-        state->layer_shell, ls->surface, NULL, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "miru"
+        state->layer_shell, ls->surface, state->output, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "miru"
     );
     if (!ls->layer_surface) {
         wl_surface_destroy(ls->surface);
