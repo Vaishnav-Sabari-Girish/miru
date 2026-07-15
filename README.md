@@ -9,8 +9,10 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 
 > **Status: early development.** Wayland connection, registry discovery, a
 > fullscreen `wlr-layer-shell` overlay surface, and one-shot screen capture via
-> `wlr-screencopy` all work. The capture isn't rendered into the overlay yet,
-> and magnifier/spotlight mode aren't built. See [Roadmap](#roadmap).
+> `wlr-screencopy` all work, and the captured frame is now rendered into the
+> overlay (including correct handling on HiDPI/scaled outputs). Capture is
+> still one-shot at startup, not continuous, and magnifier/spotlight mode
+> aren't built yet. See [Roadmap](#roadmap).
 
 ## What it does (planned)
 
@@ -62,15 +64,17 @@ grim cast run-daemon
 ```
 
 Right now this connects to the compositor, logs every advertised protocol,
-captures one still frame of your screen via `wlr-screencopy` (logged with its
-dimensions/stride/format), and covers the entire screen (including panels/bars)
-with a translucent grey overlay on the `wlr-layer-shell` overlay layer — proof
-the connection, capture, and surface pipelines all work independently. The
-captured frame isn't drawn anywhere yet; the overlay is still a flat color.
-The overlay also currently blocks clicks to whatever's underneath (keyboard
-input still passes through); that click-through gap is expected at this stage
-and gets addressed once Spotlight mode sets an explicit empty input region.
-Ctrl+C to exit and restore your screen.
+captures one still frame of your screen via `wlr-screencopy`, and renders that
+frame fullscreen on the `wlr-layer-shell` overlay layer (including panels/bars
+underneath it) — a real frozen screenshot of your desktop at the moment the
+daemon started, correctly scaled on HiDPI outputs. It doesn't update after
+that; there's no continuous re-capture or toggle yet, this is still a one-shot
+proof that the whole pipeline (registry → capture → scale-aware blit →
+surface) works end-to-end. The overlay also currently blocks clicks to
+whatever's underneath (keyboard input still passes through); that
+click-through gap is expected at this stage and gets addressed once Spotlight
+mode sets an explicit empty input region. Ctrl+C to exit and restore your
+screen.
 
 ## Project structure
 
@@ -84,8 +88,8 @@ Ctrl+C to exit and restore your screen.
 │   └── wlr-screencopy-unstable-v1.xml
 ├── src/
 │   ├── main.c                 # thin entrypoint, wires the modules together
-│   ├── wayland_state.h/.c     # connection, registry, poll-based event loop
-│   ├── layer_surface.h/.c     # fullscreen wlr-layer-shell overlay surface
+│   ├── wayland_state.h/.c     # connection, registry, output scale, poll-based event loop
+│   ├── layer_surface.h/.c     # fullscreen wlr-layer-shell overlay surface, blits capture in
 │   ├── capture.h/.c           # one-shot screen capture via wlr-screencopy
 │   └── shm_buffer.h/.c        # shared-memory pixel buffer allocation helper
 └── Grimoire.toml              # dev task runner (build/run/install/clean)
@@ -96,7 +100,9 @@ Ctrl+C to exit and restore your screen.
 - [x] Wayland connection, registry discovery, manual poll-based event loop
 - [x] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
 - [x] Screen capture via `wlr-screencopy` (verified working, not yet rendered)
-- [ ] Render the captured frame into the overlay surface
+- [x] Render the captured frame into the overlay surface (scale-aware, single
+      output)
+- [ ] Continuous re-capture, not just a one-shot frame at startup
 - [ ] Magnifier mode: zoom + pan around cursor, keybind toggle
 - [ ] `miructl` control client + Unix socket IPC, daemon/client split
 - [ ] Spotlight mode: darken + feathered cursor cutout, click-through
