@@ -7,6 +7,85 @@
 
 #define WAYLAND_MIN(a, b) ((a) < (b) ? (a) : (b)) // clamp our desired version to whatever the compositor advertised
 
+static void handle_output_geometry(
+    void *data,
+    struct wl_output *wl_output,
+    int32_t x,
+    int32_t y,
+    int32_t physical_width,
+    int32_t physical_height,
+    int32_t subpixel,
+    const char *make,
+    const char *model,
+    int32_t transform
+)
+{
+    (void)data;
+    (void)wl_output;
+    (void)x;
+    (void)y;
+    (void)physical_width;
+    (void)physical_height;
+    (void)subpixel;
+    (void)make;
+    (void)model;
+    (void)transform;
+}
+
+static void handle_output_mode(
+    void *data,
+    struct wl_output *wl_output,
+    uint32_t flags,
+    int32_t width,
+    int32_t height,
+    int32_t refresh
+)
+{
+    (void)data;
+    (void)wl_output;
+    (void)flags;
+    (void)width;
+    (void)height;
+    (void)refresh;
+}
+
+static void handle_output_scale(void *data, struct wl_output *wl_output, int32_t factor)
+{
+    (void)wl_output;
+    struct miru_state *state = data;
+    state->output_scale = factor;
+    fprintf(stderr, "output scale: %d\n", factor);
+}
+
+static void handle_output_done(void *data, struct wl_output *wl_output)
+{
+    (void)data;
+    (void)wl_output;
+}
+
+static void handle_output_name(void *data, struct wl_output *wl_output, const char *name)
+{
+    (void)data;
+    (void)wl_output;
+    (void)name;
+}
+
+static void handle_output_description(void *data, struct wl_output *wl_output, const char *description)
+{
+    (void)data;
+    (void)wl_output;
+    (void)description;
+}
+
+static const struct wl_output_listener output_listener = {
+    .geometry = handle_output_geometry,
+    .mode = handle_output_mode,
+    .done = handle_output_done,
+    .scale = handle_output_scale,
+    .name = handle_output_name,
+    .description = handle_output_description,
+};
+
 static void
 registry_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version)
 {
@@ -21,6 +100,7 @@ registry_global(void *data, struct wl_registry *registry, uint32_t name, const c
         state->shm = wl_registry_bind(registry, name, &wl_shm_interface, WAYLAND_MIN(version, 1));
     } else if (strcmp(interface, wl_output_interface.name) == 0 && !state->output) {
         state->output = wl_registry_bind(registry, name, &wl_output_interface, WAYLAND_MIN(version, 4));
+        wl_output_add_listener(state->output, &output_listener, state);
     } else if (strcmp(interface, zwlr_layer_shell_v1_interface.name) == 0) {
         state->layer_shell = wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, WAYLAND_MIN(version, 1));
     } else if (strcmp(interface, zwlr_screencopy_manager_v1_interface.name) == 0) {
@@ -43,6 +123,7 @@ static const struct wl_registry_listener registry_listener = {
 
 int wayland_state_init(struct miru_state *state)
 {
+    state->output_scale = 1;
     state->display = wl_display_connect(NULL);
     if (!state->display) {
         fprintf(stderr, "Failed to connect to wayland display, is a compositor running ?\n");
@@ -51,6 +132,10 @@ int wayland_state_init(struct miru_state *state)
 
     state->registry = wl_display_get_registry(state->display);
     wl_registry_add_listener(state->registry, &registry_listener, state);
+    wl_display_roundtrip(state->display);
+
+    // wl_output's scale event isn't guaranteed to have arrived after the first
+    // roundtrip (it's sent async right after bind), one more guarantee it has
     wl_display_roundtrip(state->display);
 
     if (!state->compositor || !state->seat || !state->shm || !state->layer_shell || !state->screencopy_manager) {

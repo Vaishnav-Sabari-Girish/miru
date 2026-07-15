@@ -41,10 +41,12 @@ int main(void)
             capture.y_invert
         );
     }
-    capture_frame_destroy(&capture);
+    // capture_frame_destroy(&capture);
 
-    if (layer_surface_create(&state, &ls) != 0) {
+    // Capture stays alive; handle_configure needs it to blit the frame in
+    if (layer_surface_create(&state, &ls, &capture) != 0) {
         fprintf(stderr, "failed to create layer surface\n");
+        capture_frame_destroy(&capture);
         wayland_state_cleanup(&state);
         return 1;
     }
@@ -59,6 +61,7 @@ int main(void)
     }
 
     fprintf(stderr, "shutting down\n");
+    capture_frame_destroy(&capture);
     layer_surface_destroy(&ls);
     wayland_state_cleanup(&state);
     return 0;

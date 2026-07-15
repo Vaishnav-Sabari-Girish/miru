@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include "wayland_state.h"
+#include "capture.h"
 
 struct miru_layer_surface {
     struct wl_shm *shm;
@@ -15,9 +16,11 @@ struct miru_layer_surface {
     int height;
     int configured;
     int closed; // set by handle_closed, main's loop checks this to exit cleanly
+    const struct miru_capture *capture;
+    int output_scale;
 };
 
-int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls);
+int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls, const struct miru_capture *capture);
 void layer_surface_destroy(struct miru_layer_surface *ls);
 
 #endif

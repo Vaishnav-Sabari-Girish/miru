@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 #include "layer_surface.h"
 #include "shm_buffer.h"
+#include <sys/types.h>
 
 static void
 handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial, uint32_t width, uint32_t height)
@@ -31,9 +34,24 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
         ls->shm_size = 0;
     }
 
+    int have_capture = ls->capture && ls->capture->buffer;
+
+    // use the captured frame's own pixel format, so an XRGB8888 capture
+    // (no meaningful alpha byte) isn't misread as ARGB8888 and rendered
+    // translucent by the compositor's alpha blending
+    uint32_t format = have_capture ? ls->capture->format : WL_SHM_FORMAT_ARGB8888;
+
+    // the capture is in physical pixels, but ls->width/height (from the
+    // configure event) are logical pixels on scaled outputs — allocate the
+    // buffer at the capture's real size and tell the compositor the scale
+    // via wl_surface_set_buffer_scale, instead of squeezing physical pixels
+    // into a logical-sized buffer (which is what was making it look zoomed)
+    int buffer_width = have_capture ? (int)ls->capture->width : ls->width;
+    int buffer_height = have_capture ? (int)ls->capture->height : ls->height;
+
     void *pixels = NULL;
     size_t size = 0;
-    ls->buffer = shm_buffer_create(ls->shm, ls->width, ls->height, WL_SHM_FORMAT_ARGB8888, &pixels, &size);
+    ls->buffer = shm_buffer_create(ls->shm, buffer_width, buffer_height, format, &pixels, &size);
     if (!ls->buffer) {
         fprintf(stderr, "failed to create shm buffer\n");
         return;
@@ -41,14 +59,40 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     ls->shm_data = pixels;
     ls->shm_size = size;
 
-    uint32_t *pixel_data = (uint32_t *)pixels;
+    /*uint32_t *pixel_data = (uint32_t *)pixels;
     uint32_t color = 0x88202020;
     for (int i = 0; i < ls->width * ls->height; i++) {
         pixel_data[i] = color;
+    }*/
+    if (have_capture) {
+        // blit the captured frame into the buffer row by row
+        // the 2 buffers can have different strides even when dimensions match
+        size_t row_bytes = (size_t)buffer_width * 4;
+        int dst_stride = buffer_width * 4;
+        int src_stride = (int)ls->capture->stride;
+
+        uint8_t *dst = (uint8_t *)pixels;
+        const uint8_t *src = (const uint8_t *)ls->capture->shm_data;
+
+        for (int y = 0; y < buffer_height; y++) {
+            // y_invert means that the compositor handed the frame upside-down
+            // read source rows bottom-to-top while writing top-to-bottom
+            int src_y = ls->capture->y_invert ? ((int)ls->capture->height - 1 - y) : y;
+            memcpy(dst + (size_t)y * dst_stride, src + (size_t)src_y * src_stride, row_bytes);
+        }
+        wl_surface_set_buffer_scale(ls->surface, ls->output_scale);
+    } else {
+        // no capture available (failed earlier). Fall back to flat test color
+        wl_surface_set_buffer_scale(ls->surface, 1);
+        uint32_t *pixel_data = (uint32_t *)pixels;
+        uint32_t color = 0x88202020;
+        for (int i = 0; i < ls->width * ls->height; i++) {
+            pixel_data[i] = color;
+        }
     }
 
     wl_surface_attach(ls->surface, ls->buffer, 0, 0);
-    wl_surface_damage_buffer(ls->surface, 0, 0, ls->width, ls->height);
+    wl_surface_damage_buffer(ls->surface, 0, 0, buffer_width, buffer_height);
     wl_surface_commit(ls->surface);
 
     ls->configured = 1;
@@ -68,9 +112,11 @@ static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
     .closed = handle_closed,
 };
 
-int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls)
+int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls, const struct miru_capture *capture)
 {
     ls->shm = state->shm;
+    ls->capture = capture;
+    ls->output_scale = state->output_scale;
 
     ls->surface = wl_compositor_create_surface(state->compositor);
     if (!ls->surface) {
@@ -78,7 +124,7 @@ int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls
     }
 
     ls->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
-        state->layer_shell, ls->surface, NULL, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "miru"
+        state->layer_shell, ls->surface, state->output, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "miru"
     );
     if (!ls->layer_surface) {
         wl_surface_destroy(ls->surface);
