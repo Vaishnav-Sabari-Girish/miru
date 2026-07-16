@@ -5,6 +5,38 @@
 #include "shm_buffer.h"
 #include <sys/types.h>
 
+static void blit_and_commit(struct miru_layer_surface *ls)
+{
+    int have_capture = ls->capture && ls->capture->buffer;
+
+    if (have_capture) {
+        size_t row_bytes = (size_t)ls->buffer_width * 4;
+
+        int dst_stride = ls->buffer_width * 4;
+        int src_stride = (int)ls->capture->stride;
+
+        uint8_t *dst = (uint8_t *)ls->shm_data;
+        const uint8_t *src = (const uint8_t *)ls->capture->shm_data;
+
+        for (int y = 0; y < ls->buffer_height; y++) {
+            int src_y = ls->capture->y_invert ? ((int)ls->capture->height - 1 - y) : y;
+            memcpy(dst + (size_t)y * dst_stride, src + (size_t)src_y * src_stride, row_bytes);
+        }
+        wl_surface_set_buffer_scale(ls->surface, ls->output_scale);
+    } else {
+        wl_surface_set_buffer_scale(ls->surface, 1);
+        uint32_t *pixel_data = (uint32_t *)ls->shm_data;
+        uint32_t color = 0x88202020;
+        for (int i = 0; i < ls->buffer_width * ls->buffer_height; i++) {
+            pixel_data[i] = color;
+        }
+    }
+
+    wl_surface_attach(ls->surface, ls->buffer, 0, 0);
+    wl_surface_damage_buffer(ls->surface, 0, 0, ls->buffer_width, ls->buffer_height);
+    wl_surface_commit(ls->surface);
+}
+
 static void
 handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial, uint32_t width, uint32_t height)
 {
@@ -48,6 +80,8 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     // into a logical-sized buffer (which is what was making it look zoomed)
     int buffer_width = have_capture ? (int)ls->capture->width : ls->width;
     int buffer_height = have_capture ? (int)ls->capture->height : ls->height;
+    ls->buffer_width = buffer_width;
+    ls->buffer_height = buffer_height;
 
     void *pixels = NULL;
     size_t size = 0;
@@ -59,42 +93,7 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     ls->shm_data = pixels;
     ls->shm_size = size;
 
-    /*uint32_t *pixel_data = (uint32_t *)pixels;
-    uint32_t color = 0x88202020;
-    for (int i = 0; i < ls->width * ls->height; i++) {
-        pixel_data[i] = color;
-    }*/
-    if (have_capture) {
-        // blit the captured frame into the buffer row by row
-        // the 2 buffers can have different strides even when dimensions match
-        size_t row_bytes = (size_t)buffer_width * 4;
-        int dst_stride = buffer_width * 4;
-        int src_stride = (int)ls->capture->stride;
-
-        uint8_t *dst = (uint8_t *)pixels;
-        const uint8_t *src = (const uint8_t *)ls->capture->shm_data;
-
-        for (int y = 0; y < buffer_height; y++) {
-            // y_invert means that the compositor handed the frame upside-down
-            // read source rows bottom-to-top while writing top-to-bottom
-            int src_y = ls->capture->y_invert ? ((int)ls->capture->height - 1 - y) : y;
-            memcpy(dst + (size_t)y * dst_stride, src + (size_t)src_y * src_stride, row_bytes);
-        }
-        wl_surface_set_buffer_scale(ls->surface, ls->output_scale);
-    } else {
-        // no capture available (failed earlier). Fall back to flat test color
-        wl_surface_set_buffer_scale(ls->surface, 1);
-        uint32_t *pixel_data = (uint32_t *)pixels;
-        uint32_t color = 0x88202020;
-        for (int i = 0; i < ls->width * ls->height; i++) {
-            pixel_data[i] = color;
-        }
-    }
-
-    wl_surface_attach(ls->surface, ls->buffer, 0, 0);
-    wl_surface_damage_buffer(ls->surface, 0, 0, buffer_width, buffer_height);
-    wl_surface_commit(ls->surface);
-
+    blit_and_commit(ls);
     ls->configured = 1;
 }
 
@@ -159,4 +158,32 @@ void layer_surface_destroy(struct miru_layer_surface *ls)
     if (ls->surface) {
         wl_surface_destroy(ls->surface);
     }
+}
+
+void layer_surface_render(struct miru_layer_surface *ls)
+{
+    if (!ls->configured || !ls->shm_data) {
+        return; // nothing allocated yet
+    }
+
+    if (!ls->capture || !ls->capture->buffer) {
+        return; // no fresh frame to return
+    }
+
+    // output resolution changing mid-session isn't handled
+    // would need a full buffer re-allocation, sanem as handle_configure does.
+    // for now, just drop the frame rather than write past the buffer's actual size
+    if ((int)ls->capture->width != ls->buffer_width || (int)ls->capture->height != ls->buffer_height) {
+        fprintf(
+            stderr,
+            "layer_surface_render: capture size changed (%dx%d vs %dx%d), dropping frame\n",
+            ls->capture->width,
+            ls->capture->height,
+            ls->buffer_width,
+            ls->buffer_height
+        );
+        return;
+    }
+
+    blit_and_commit(ls);
 }

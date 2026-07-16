@@ -1,10 +1,20 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
+#include <time.h>
 #include "wayland_state.h"
 #include "layer_surface.h"
 #include "capture.h"
 #include "version.h"
+
+#define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
+
+static long long now_ms(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts); // monotonoic: immune to system clock changes
+    return (long long)ts.tv_sec * 1000 + ts.tv_sec / 1000000;
+}
 
 static volatile sig_atomic_t should_exit = 0;
 
@@ -63,10 +73,29 @@ int main(int argc, char *argv[])
     fprintf(stderr, "layer surface created, entering event loop\n");
     state.running = 1;
 
+    long long last_capture_ms = now_ms();
+
     while (state.running && !should_exit && !ls.closed) {
-        if (wayland_state_dispatch(&state) != 0) {
+        // short timeout instead of blocking forever
+        // so the loop wakes up regularly enough
+        // to check whether it's time to recapture even when the compositor
+        // sends nothing
+        if (wayland_state_dispatch(&state, 50) != 0) {
             break;
         }
+    }
+
+    long long t = now_ms();
+    if (ls.configured && (t - last_capture_ms) >= RECAPTURE_INTERVAL_MS) {
+        struct miru_capture fresh_capture = { 0 };
+        if (capture_output_frame(&state, state.output, &should_exit, &fresh_capture) == 0) {
+            capture_frame_destroy(&capture); // free the previous frame's shm/wl_buffer first
+            capture = fresh_capture; // ls.captuer already points at &capture, no update needed
+            layer_surface_render(&ls);
+        } else {
+            capture_frame_destroy(&fresh_capture);
+        }
+        last_capture_ms = t;
     }
 
     fprintf(stderr, "shutting down\n");

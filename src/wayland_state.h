@@ -22,7 +22,7 @@ struct miru_state {
 };
 
 int wayland_state_init(struct miru_state *state);
-int wayland_state_dispatch(struct miru_state *state);
+int wayland_state_dispatch(struct miru_state *state, int timeout_ms); // Added for continuous recapture timeout
 void wayland_state_cleanup(struct miru_state *state);
 
 #endif

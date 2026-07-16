@@ -146,7 +146,7 @@ int wayland_state_init(struct miru_state *state)
     return 0;
 }
 
-int wayland_state_dispatch(struct miru_state *state)
+int wayland_state_dispatch(struct miru_state *state, int timeout_ms)
 {
     while (wl_display_prepare_read(state->display) != 0) {
         wl_display_dispatch_pending(state->display);
@@ -167,7 +167,7 @@ int wayland_state_dispatch(struct miru_state *state)
         .fd = wl_display_get_fd(state->display),
         .events = (short)(POLLIN | (pending_write ? POLLOUT : 0)),
     };
-    int ret = poll(&pfd, 1, -1);
+    int ret = poll(&pfd, 1, timeout_ms);
     if (ret == -1) {
         wl_display_cancel_read(state->display);
         if (errno == EINTR) {
