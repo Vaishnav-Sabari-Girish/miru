@@ -13,7 +13,7 @@ static long long now_ms(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts); // monotonoic: immune to system clock changes
-    return (long long)ts.tv_sec * 1000 + ts.tv_sec / 1000000;
+    return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
 static volatile sig_atomic_t should_exit = 0;
@@ -83,19 +83,24 @@ int main(int argc, char *argv[])
         if (wayland_state_dispatch(&state, 50) != 0) {
             break;
         }
-    }
 
-    long long t = now_ms();
-    if (ls.configured && (t - last_capture_ms) >= RECAPTURE_INTERVAL_MS) {
-        struct miru_capture fresh_capture = { 0 };
-        if (capture_output_frame(&state, state.output, &should_exit, &fresh_capture) == 0) {
-            capture_frame_destroy(&capture); // free the previous frame's shm/wl_buffer first
-            capture = fresh_capture; // ls.captuer already points at &capture, no update needed
-            layer_surface_render(&ls);
-        } else {
-            capture_frame_destroy(&fresh_capture);
+        long long t = now_ms();
+        if (ls.configured && (t - last_capture_ms) >= RECAPTURE_INTERVAL_MS) {
+            fprintf(stderr, "recapture: starting\n");
+            long long capture_start = now_ms();
+
+            struct miru_capture fresh_capture = { 0 };
+            if (capture_output_frame(&state, state.output, &should_exit, &fresh_capture) == 0) {
+                fprintf(stderr, "recapture: succeeded in %lld\n", now_ms() - capture_start);
+                capture_frame_destroy(&capture); // free the previous frame's shm/wl_buffer first
+                capture = fresh_capture; // ls.captuer already points at &capture, no update needed
+                layer_surface_render(&ls);
+            } else {
+                fprintf(stderr, "recapture: FAILED after %lld\n", now_ms() - capture_start);
+                capture_frame_destroy(&fresh_capture);
+            }
+            last_capture_ms = t;
         }
-        last_capture_ms = t;
     }
 
     fprintf(stderr, "shutting down\n");
