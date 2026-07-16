@@ -16,12 +16,14 @@ find . -type d \( -name target -o -name .git \) -prune -o \
   -type f -name "*.md" \
   ! -name "CHANGELOG.md" \
   ! -name "plan.md" \
+  ! -name "next_thing.md" \
   -exec rumdl check --fix {} +
 
 find . -type d \( -name target -o -name .git \) -prune -o \
   -type f -name "*.md" \
   ! -name "CHANGELOG.md" \
   ! -name "plan.md" \
+  ! -name "next_thing.md" \
   -exec git add {} +
 
 exit 0
