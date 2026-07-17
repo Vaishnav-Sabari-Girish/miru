@@ -171,7 +171,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
     }
 
     // output resolution changing mid-session isn't handled
-    // would need a full buffer re-allocation, sanem as handle_configure does.
+    // would need a full buffer re-allocation, same as handle_configure does.
     // for now, just drop the frame rather than write past the buffer's actual size
     if ((int)ls->capture->width != ls->buffer_width || (int)ls->capture->height != ls->buffer_height) {
         fprintf(

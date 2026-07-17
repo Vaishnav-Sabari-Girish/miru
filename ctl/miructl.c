@@ -21,7 +21,13 @@ int main(int argc, char *argv[])
     int n = snprintf(socket_path, sizeof(socket_path), "%s/miru.sock", runtime_dir);
     if (n < 0 || (size_t)n >= sizeof(socket_path)) {
         fprintf(stderr, "socket path is too long\n");
-        return -1;
+        return 1;
+    }
+
+    struct sockaddr_un addr_size_check;
+    if ((size_t)n >= sizeof(addr_size_check.sun_path)) {
+        fprintf(stderr, "ipc_server: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path));
+        return 1;
     }
 
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);

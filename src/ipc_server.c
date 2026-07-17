@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -17,6 +18,14 @@ static int build_socket_path(char *out, size_t out_size)
     int n = snprintf(out, out_size, "%s/miru.sock", runtime_dir);
     if (n < 0 || (size_t)n >= out_size) {
         fprintf(stderr, "ipc_server : socket path too long\n");
+        return -1;
+    }
+
+    struct sockaddr_un addr_size_check;
+    if ((size_t)n >= sizeof(addr_size_check.sun_path)) {
+        fprintf(
+            stderr, "ipc_server: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path)
+        );
         return -1;
     }
 
@@ -73,6 +82,15 @@ enum miru_ipc_command ipc_server_accept_command(struct miru_ipc_server *srv)
             perror("ipc_server: accept");
         }
         return MIRU_IPC_NONE;
+    }
+
+    struct timeval tv = {
+        .tv_sec = 2,
+        .tv_usec = 0,
+    };
+
+    if (setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+        perror("ipc_server: setsockopt SO_RCVTIMEO");
     }
 
     char buf[64] = { 0 };

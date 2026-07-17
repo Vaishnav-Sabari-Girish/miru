@@ -235,13 +235,14 @@ int wayland_state_process(struct miru_state *state, short revents)
             return -1;
         }
     }
+    wl_display_dispatch_pending(state->display);
     return 0;
 }
 
 void wayland_state_cancel_read(struct miru_state *state)
 {
     if (state->display) {
-        wl_display_disconnect(state->display);
+        wl_display_cancel_read(state->display);
     }
 }
 

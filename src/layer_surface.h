@@ -28,6 +28,10 @@ void layer_surface_destroy(struct miru_layer_surface *ls);
 // re-blits ls -> capture into the already allocated buffer and re-commits
 // call for updating ls -> capture with a fresh frame;
 // no-op if not yet configured, or if the new capture's dimensions do not match the existing one
+// NOT currently called anywhere - kept in reserve for a possible future
+// "refresh while active" IPC command. If that never materializes, this
+// and blit_and_commit's spit-out-from-handle_configure structure should
+// just be removed rather than left as unreferenced API.
 void layer_surface_render(struct miru_layer_surface *ls);
 
 #endif
