@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <poll.h>
 #include <stdint.h>
+#include <sys/poll.h>
 #include "wayland_state.h"
 
 #define WAYLAND_MIN(a, b) ((a) < (b) ? (a) : (b)) // clamp our desired version to whatever the compositor advertised
@@ -146,16 +146,70 @@ int wayland_state_init(struct miru_state *state)
     return 0;
 }
 
-int wayland_state_dispatch(struct miru_state *state, int timeout_ms)
+// int wayland_state_dispatch(struct miru_state *state, int timeout_ms)
+// {
+//     while (wl_display_prepare_read(state->display) != 0) {
+//         wl_display_dispatch_pending(state->display);
+//     }
+//
+//     int pending_write = 0;
+//     if (wl_display_flush(state->display) == -1) {
+//         if (errno == EAGAIN) {
+//             pending_write = 1;
+//         } else {
+//             wl_display_cancel_read(state->display);
+//             fprintf(stderr, "wl_display_flush failed\n");
+//             return -1;
+//         }
+//     }
+//
+//     struct pollfd pfd = {
+//         .fd = wl_display_get_fd(state->display),
+//         .events = (short)(POLLIN | (pending_write ? POLLOUT : 0)),
+//     };
+//     int ret = poll(&pfd, 1, timeout_ms);
+//     if (ret == -1) {
+//         wl_display_cancel_read(state->display);
+//         if (errno == EINTR) {
+//             return 0;
+//         }
+//         fprintf(stderr, "poll failed\n");
+//         return -1;
+//     }
+//
+//     if (pfd.revents & POLLIN) {
+//         wl_display_read_events(state->display);
+//     } else {
+//         wl_display_cancel_read(state->display);
+//     }
+//
+//     if (pfd.revents & POLLOUT) {
+//         if (wl_display_flush(state->display) == -1 && errno != EAGAIN) {
+//             fprintf(stderr, "wl_display_flush failed after POLLOUT\n");
+//             return -1;
+//         }
+//     }
+//
+//     wl_display_dispatch_pending(state->display);
+//     return 0;
+// }
+
+int wayland_state_get_fd(struct miru_state *state)
+{
+    return wl_display_get_fd(state->display);
+}
+
+int wayland_state_prepare(struct miru_state *state, short *out_poll_events)
 {
     while (wl_display_prepare_read(state->display) != 0) {
         wl_display_dispatch_pending(state->display);
     }
 
-    int pending_write = 0;
+    short events = POLLIN;
+
     if (wl_display_flush(state->display) == -1) {
         if (errno == EAGAIN) {
-            pending_write = 1;
+            events |= POLLOUT;
         } else {
             wl_display_cancel_read(state->display);
             fprintf(stderr, "wl_display_flush failed\n");
@@ -163,35 +217,32 @@ int wayland_state_dispatch(struct miru_state *state, int timeout_ms)
         }
     }
 
-    struct pollfd pfd = {
-        .fd = wl_display_get_fd(state->display),
-        .events = (short)(POLLIN | (pending_write ? POLLOUT : 0)),
-    };
-    int ret = poll(&pfd, 1, timeout_ms);
-    if (ret == -1) {
-        wl_display_cancel_read(state->display);
-        if (errno == EINTR) {
-            return 0;
-        }
-        fprintf(stderr, "poll failed\n");
-        return -1;
-    }
+    *out_poll_events = events;
+    return 0;
+}
 
-    if (pfd.revents & POLLIN) {
+int wayland_state_process(struct miru_state *state, short revents)
+{
+    if (revents & POLLIN) {
         wl_display_read_events(state->display);
     } else {
         wl_display_cancel_read(state->display);
     }
 
-    if (pfd.revents & POLLOUT) {
+    if (revents & POLLOUT) {
         if (wl_display_flush(state->display) == -1 && errno != EAGAIN) {
             fprintf(stderr, "wl_display_flush failed after POLLOUT\n");
             return -1;
         }
     }
-
-    wl_display_dispatch_pending(state->display);
     return 0;
+}
+
+void wayland_state_cancel_read(struct miru_state *state)
+{
+    if (state->display) {
+        wl_display_disconnect(state->display);
+    }
 }
 
 void wayland_state_cleanup(struct miru_state *state)
