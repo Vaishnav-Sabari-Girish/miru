@@ -6,6 +6,7 @@
 #include "layer_surface.h"
 #include "capture.h"
 #include "version.h"
+#include "logo.h"
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
@@ -27,6 +28,13 @@ static void handle_sigint(int sig)
 int main(int argc, char *argv[])
 {
     if (argc > 1 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
+        printf("\n");
+        for (unsigned int i = 0; i < miru_ans_len; i++) {
+            putchar(miru_ans[i]);
+        }
+        // Color reset and newline
+        printf("\x1b[0m\n");
+
         printf("miru-daemon %s\n", MIRU_VERSION);
         printf("\nCombined Distribution subject to MIT license\n");
         printf("\nWritten by Vaishnav Sabari Girish\n");
