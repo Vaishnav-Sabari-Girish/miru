@@ -68,6 +68,7 @@ add_executable(miru-daemon
   src/layer_surface.c
   src/shm_buffer.c
   src/capture.c
+  src/ipc_server.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}
@@ -75,6 +76,8 @@ add_executable(miru-daemon
   ${wlr-screencopy-unstable-v1_SOURCE}
   ${wlr-screencopy-unstable-v1_HEADER}
 )
+
+add_executable(miructl ctl/miructl.c)
 
 target_include_directories(miru-daemon PRIVATE
   ${WAYLAND_CLIENT_INCLUDE_DIRS}

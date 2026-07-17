@@ -1,0 +1,56 @@
+<svg class="terminal" font-family="JetBrains Mono, Fira Code, Source Code Pro, Cascadia Code, Consolas, Menlo, Monaco, DejaVu Sans Mono, monospace, Symbols Nerd Font Mono, Cascadia Mono" font-size="12" height="201.6" width="170.4" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#282c34" height="100%" width="100%"/>
+<svg fill="#dcdfe4" x="9.6" y="7.2">
+<g>
+<svg height="187.2" viewBox="0 0 12.6 15.6" width="151.2">
+<g stroke-width="0.025">
+<path d="M0,0 H12.6 V15.6 H0 Z" fill="#3e4451" stroke="#3e4451"/>
+</g>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="0">
+<text xml:space="preserve" y="0.96em"><tspan>    </tspan><tspan fill="#eeeeee">▄▄▄▄▄▄▄▄▄▄▄▄▄</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="14.4">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">█████████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="28.8">
+<text xml:space="preserve" y="0.96em"><tspan>  </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">███████████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="43.2">
+<text xml:space="preserve" y="0.96em"><tspan> </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#080808">█████</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="57.6">
+<text xml:space="preserve" y="0.96em"><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">███████</tspan><tspan fill="#080808">█████</tspan><tspan fill="#dcdfe4">███████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="72">
+<text xml:space="preserve" y="0.96em"><tspan> </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#080808">█████</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="86.4">
+<text xml:space="preserve" y="0.96em"><tspan>  </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="100.8">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">█████████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="115.2">
+<text xml:space="preserve" y="0.96em"><tspan>    </tspan><tspan fill="#eeeeee">▀▀▀▀▀▀▀▀▀▀▀▀▀</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="144">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#00d7ff">█▄</tspan><tspan> </tspan><tspan fill="#00d7ff">▄█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">███</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="158.4">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">▀</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">███</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="172.8">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#00d7ff">█</tspan><tspan>   </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█▀▄</tspan><tspan> </tspan><tspan fill="#00d7ff">███</tspan></text>
+</svg>
+</g>
+</svg>
+<style>
+@font-face {
+	font-family: JetBrains Mono;
+	font-weight: 100 800;
+	font-style: normal;
+	src: url(https://raw.githubusercontent.com/pamburus/fonts/refs/heads/main/JetBrainsMono/fonts/variable/JetBrainsMono%5Bwght%5D.woff2) format('woff2');
+}
+</style>
+</svg>
