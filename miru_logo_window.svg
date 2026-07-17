@@ -1,0 +1,76 @@
+<svg height="293.6" width="234.4" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<filter filterUnits="userSpaceOnUse" height="301.6" id="shadow" width="242.4" x="-32" y="-24">
+<feGaussianBlur stdDeviation="12"/>
+</filter>
+<rect fill="#000000c0" filter="url(#shadow)" height="229.6" rx="10" ry="10" width="170.4" x="4" y="12"/>
+<rect fill="#282c34" height="229.6" rx="10" ry="10" width="170.4"/>
+<clipPath id="header">
+<rect height="28" width="170.4"/>
+</clipPath>
+<rect clip-path="url(#header)" fill="#383837" height="56" rx="10" ry="10" width="170.4"/>
+<line stroke="#000000c0" stroke-width="0.5" x1="0" x2="170.4" y1="28" y2="28"/>
+<g>
+<circle cx="14" cy="14" fill="#ff5f56" r="6" stroke="#ff5f56" stroke-width="0.5"/>
+<circle cx="34" cy="14" fill="#ffbd2e" r="6" stroke="#ffbd2e" stroke-width="0.5"/>
+<circle cx="54" cy="14" fill="#28c941" r="6" stroke="#28c941" stroke-width="0.5"/>
+</g>
+<svg class="terminal" font-family="JetBrains Mono, Fira Code, Source Code Pro, Cascadia Code, Consolas, Menlo, Monaco, DejaVu Sans Mono, monospace, Symbols Nerd Font Mono, Cascadia Mono" font-size="12" height="201.6" width="170.4" y="28">
+<svg fill="#dcdfe4" x="9.6" y="7.2">
+<g>
+<svg height="187.2" viewBox="0 0 12.6 15.6" width="151.2">
+<g stroke-width="0.025">
+<path d="M0,0 H12.6 V15.6 H0 Z" fill="#3e4451" stroke="#3e4451"/>
+</g>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="0">
+<text xml:space="preserve" y="0.96em"><tspan>    </tspan><tspan fill="#eeeeee">▄▄▄▄▄▄▄▄▄▄▄▄▄</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="14.4">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">█████████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="28.8">
+<text xml:space="preserve" y="0.96em"><tspan>  </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">███████████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="43.2">
+<text xml:space="preserve" y="0.96em"><tspan> </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#080808">█████</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="57.6">
+<text xml:space="preserve" y="0.96em"><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">███████</tspan><tspan fill="#080808">█████</tspan><tspan fill="#dcdfe4">███████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="72">
+<text xml:space="preserve" y="0.96em"><tspan> </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#080808">█████</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="86.4">
+<text xml:space="preserve" y="0.96em"><tspan>  </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">██████</tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="100.8">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#eeeeee">█</tspan><tspan fill="#dcdfe4">█████████████</tspan><tspan fill="#eeeeee">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="115.2">
+<text xml:space="preserve" y="0.96em"><tspan>    </tspan><tspan fill="#eeeeee">▀▀▀▀▀▀▀▀▀▀▀▀▀</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="144">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#00d7ff">█▄</tspan><tspan> </tspan><tspan fill="#00d7ff">▄█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">███</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="158.4">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">▀</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">███</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan></text>
+</svg>
+<svg height="14.4" overflow="hidden" width="151.2" y="172.8">
+<text xml:space="preserve" y="0.96em"><tspan>   </tspan><tspan fill="#00d7ff">█</tspan><tspan>   </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█</tspan><tspan> </tspan><tspan fill="#00d7ff">█▀▄</tspan><tspan> </tspan><tspan fill="#00d7ff">███</tspan></text>
+</svg>
+</g>
+</svg>
+</svg>
+<rect fill="none" height="229.6" rx="10" ry="10" stroke="#000000" stroke-width="0.5" width="170.4"/>
+<rect fill="none" height="227.6" rx="9" ry="9" stroke="#f0f0f080" stroke-width="0.5" width="168.4" x="1" y="1"/>
+</g>
+<style>
+@font-face {
+	font-family: JetBrains Mono;
+	font-weight: 100 800;
+	font-style: normal;
+	src: url(https://raw.githubusercontent.com/pamburus/fonts/refs/heads/main/JetBrainsMono/fonts/variable/JetBrainsMono%5Bwght%5D.woff2) format('woff2');
+}
+</style>
+</svg>

@@ -1,5 +1,14 @@
 # Miru
 
+<br>
+
+<div align="center">
+  <img src="./miru_logo.svg" alt="logo" width = "300" />
+</div>
+
+<br>
+<br>
+
 A Wayland-native screen magnifier and cursor spotlight tool for streamers, built
 for [Niri](https://github.com/YaLTeR/niri). (Tested on `niri` so unless tested
 in other WM's I cannot guarantee it'll work)
