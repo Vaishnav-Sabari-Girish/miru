@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     struct sockaddr_un addr_size_check;
     if ((size_t)n >= sizeof(addr_size_check.sun_path)) {
-        fprintf(stderr, "ipc_server: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path));
+        fprintf(stderr, "miructl: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path));
         return 1;
     }
 

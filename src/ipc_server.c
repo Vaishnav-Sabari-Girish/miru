@@ -2,7 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/time.h>
+// #include <sys/time.h>
+#include <poll.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -89,8 +90,23 @@ enum miru_ipc_command ipc_server_accept_command(struct miru_ipc_server *srv)
         .tv_usec = 0,
     };
 
-    if (setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-        perror("ipc_server: setsockopt SO_RCVTIMEO");
+    // if (setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+    //     perror("ipc_server: setsockopt SO_RCVTIMEO");
+    // }
+
+    struct pollfd client_pfd = {
+        .fd = client_fd,
+        .events = POLLIN,
+    };
+    int ready = poll(&client_pfd, 1, 200);
+    if (ready <= 0) {
+        if (ready < 0) {
+            perror("ipc_server: poll on accepted client");
+        }
+
+        fprintf(stderr, "ipc_server: client sent no data in time, dropping\n");
+        close(client_fd);
+        return MIRU_IPC_NONE;
     }
 
     char buf[64] = { 0 };
