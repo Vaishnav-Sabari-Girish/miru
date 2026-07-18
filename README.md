@@ -24,6 +24,10 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 > the overlay is currently a static frozen screenshot, not a magnifier. See
 > [Roadmap](#roadmap).
 
+> [!NOTE]
+> `miru` devlogs on YouTube
+> <https://youtube.com/playlist?list=PLZraydlsV2t0&si=jystH8Ik1UjDVu5t>
+
 ## What it does (planned)
 
 Two toggleable modes, each bound to a Niri keybind:
