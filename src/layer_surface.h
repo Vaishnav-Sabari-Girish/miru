@@ -16,7 +16,7 @@ struct miru_layer_surface {
     struct wl_shm *shm;
     struct wl_surface *surface;
     struct zwlr_layer_surface_v1 *layer_surface;
-    struct miru_buffer_slot slots[2]; // real double buffering: alternate which one we write into
+    struct miru_buffer_slot slots[2]; // double buffering: alternate into whichever slot is free
     int width;
     int height;
     int buffer_width; // actual allocated buffer size (capture's physical size)

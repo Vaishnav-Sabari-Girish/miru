@@ -172,6 +172,7 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
         fprintf(stderr, "failed to create shm buffers\n");
         free_slot(&ls->slots[0]);
         free_slot(&ls->slots[1]);
+        ls->configured = 0;
         return;
     }
 
