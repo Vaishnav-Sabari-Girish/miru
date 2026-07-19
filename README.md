@@ -52,7 +52,7 @@ protocols directly (`wlr-layer-shell`, `wlr-screencopy`) instead.
   `wlr-screencopy-unstable-v1` (developed against Niri)
 - `wayland-client`, `wayland-protocols`, `wayland-scanner` (pacman: `wayland`,
   `wayland-protocols`)
-- CMake ≥ 3.20, Ninja
+- CMake ≥ 3.20, Ninja (Optional)
 - A C11 compiler
 
 ## Installing
@@ -76,7 +76,16 @@ See [Building](#building) below.
 ## Building
 
 ```bash
+# Using Ninja
 cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+# Using Make
+cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+Then run :
+
+```bash
 cmake --build build
 ```
 
