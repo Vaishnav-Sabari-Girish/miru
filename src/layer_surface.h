@@ -23,6 +23,7 @@ struct miru_layer_surface {
     double cursor_x;
     double cursor_y;
     float zoom;
+    int dirty;
 };
 
 int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls, const struct miru_capture *capture);

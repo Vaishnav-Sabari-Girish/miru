@@ -126,6 +126,11 @@ int main(int argc, char *argv[])
             break;
         }
 
+        if (active && ls.dirty) {
+            layer_surface_render(&ls);
+            ls.dirty = 0;
+        }
+
         if (pfds[1].revents & POLLIN) {
             enum miru_ipc_command cmd = ipc_server_accept_command(&ipc);
             fprintf(stderr, "ipc: got command %d, active was %d\n", cmd, active);

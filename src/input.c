@@ -84,7 +84,7 @@ static void pointer_enter(
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
     ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
 
-    layer_surface_render(ctx->ls);
+    ctx->ls->dirty = 1;
 }
 
 static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
@@ -97,7 +97,7 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
 
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
     ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
-    layer_surface_render(ctx->ls);
+    ctx->ls->dirty = 1;
 }
 
 static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value)
@@ -119,7 +119,7 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
     }
 
     clamp_zoom(ctx->ls);
-    layer_surface_render(ctx->ls);
+    ctx->ls->dirty = 1;
 }
 
 static const struct wl_pointer_listener pointer_listener = {
@@ -210,11 +210,11 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (key == KEY_EQUAL) {
         ctx->ls->zoom += ZOOM_STEP;
         clamp_zoom(ctx->ls);
-        layer_surface_render(ctx->ls);
+        ctx->ls->dirty = 1;
     } else if (key == KEY_MINUS) {
         ctx->ls->zoom -= ZOOM_STEP;
         clamp_zoom(ctx->ls);
-        layer_surface_render(ctx->ls);
+        ctx->ls->dirty = 1;
     } else if (key == KEY_ESC) {
         if (ctx->request_deactivate) {
             *ctx->request_deactivate = 1;
