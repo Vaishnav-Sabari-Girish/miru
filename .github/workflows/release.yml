@@ -1,0 +1,71 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"   # v0.1.0, v0.1.0-rc.1, etc.
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history, git-cliff and `git describe` both need this, not a shallow clone
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libwayland-dev \
+            wayland-protocols \
+            libegl1-mesa-dev
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Verify binaries
+        run: |
+          ./build/miru-daemon --version
+          file build/miructl
+
+      - name: Package release archive
+        run: |
+          version="${GITHUB_REF_NAME}"
+          pkg_dir="miru-${version}-linux-x86_64"
+          mkdir -p "${pkg_dir}"
+          cp build/miru-daemon build/miructl "${pkg_dir}/"
+          cp README.md LICENSE "${pkg_dir}/"
+          tar czf "${pkg_dir}.tar.gz" "${pkg_dir}"
+          sha256sum "${pkg_dir}.tar.gz" > "${pkg_dir}.tar.gz.sha256"
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        id: changelog
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG_RELEASE.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Miru ${{ github.ref_name }}"
+          body_path: CHANGELOG_RELEASE.md
+          files: |
+            miru-*.tar.gz
+            miru-*.tar.gz.sha256
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
