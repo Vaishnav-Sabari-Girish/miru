@@ -19,6 +19,7 @@ struct miru_state {
     int output_scale;
     struct wl_pointer *pointer;
     struct wl_keyboard *keyboard;
+    void *input_ctx;
 
     int running;
 };

@@ -231,8 +231,23 @@ static const struct wl_keyboard_listener keyboard_listener = {
     .repeat_info = keyboard_repeat_info,
 };
 
+void input_attach_pointer_listener(struct wl_pointer *pointer, void *ctx)
+{
+    if (pointer && ctx) {
+        wl_pointer_add_listener(pointer, &pointer_listener, ctx);
+    }
+}
+
+void input_attach_keyboard_listener(struct wl_keyboard *keyboard, void *ctx)
+{
+    if (keyboard && ctx) {
+        wl_keyboard_add_listener(keyboard, &keyboard_listener, ctx);
+    }
+}
+
 void input_setup(struct miru_state *state, struct miru_input_ctx *ctx)
 {
+    state->input_ctx = ctx;
     if (state->pointer) {
         wl_pointer_add_listener(state->pointer, &pointer_listener, ctx);
     }

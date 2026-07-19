@@ -12,4 +12,7 @@ struct miru_input_ctx {
 
 void input_setup(struct miru_state *state, struct miru_input_ctx *ctx);
 
+void input_attach_pointer_listener(struct wl_pointer *pointer, void *ctx);
+void input_attach_keyboard_listener(struct wl_keyboard *keyboard, void *ctx);
+
 #endif // !INPUT_H
