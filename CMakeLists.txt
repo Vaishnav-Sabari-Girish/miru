@@ -69,6 +69,7 @@ add_executable(miru-daemon
   src/shm_buffer.c
   src/capture.c
   src/ipc_server.c
+  src/input.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}
