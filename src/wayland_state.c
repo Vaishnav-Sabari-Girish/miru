@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <sys/poll.h>
+#include <wayland-client-protocol.h>
 #include "wayland_state.h"
 
 #define WAYLAND_MIN(a, b) ((a) < (b) ? (a) : (b)) // clamp our desired version to whatever the compositor advertised
@@ -31,6 +32,29 @@ static void handle_output_geometry(
     (void)model;
     (void)transform;
 }
+
+static void handle_seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities)
+{
+    struct miru_state *state = data;
+    if ((capabilities & WL_SEAT_CAPABILITY_POINTER) && !state->pointer) {
+        state->pointer = wl_seat_get_pointer(seat);
+    }
+    if ((capabilities & WL_SEAT_CAPABILITY_KEYBOARD) && !state->keyboard) {
+        state->keyboard = wl_seat_get_keyboard(seat);
+    }
+}
+
+static void handle_seat_name(void *data, struct wl_seat *seat, const char *name)
+{
+    (void)data;
+    (void)seat;
+    (void)name;
+}
+
+static const struct wl_seat_listener seat_listener = {
+    .capabilities = handle_seat_capabilities,
+    .name = handle_seat_name,
+};
 
 static void handle_output_mode(
     void *data,
@@ -96,6 +120,7 @@ registry_global(void *data, struct wl_registry *registry, uint32_t name, const c
         state->compositor = wl_registry_bind(registry, name, &wl_compositor_interface, WAYLAND_MIN(version, 4));
     } else if (strcmp(interface, wl_seat_interface.name) == 0) {
         state->seat = wl_registry_bind(registry, name, &wl_seat_interface, WAYLAND_MIN(version, 7));
+        wl_seat_add_listener(state->seat, &seat_listener, state);
     } else if (strcmp(interface, wl_shm_interface.name) == 0) {
         state->shm = wl_registry_bind(registry, name, &wl_shm_interface, WAYLAND_MIN(version, 1));
     } else if (strcmp(interface, wl_output_interface.name) == 0 && !state->output) {

@@ -17,6 +17,8 @@ struct miru_state {
     struct zwlr_screencopy_manager_v1 *screencopy_manager;
 
     int output_scale;
+    struct wl_pointer *pointer;
+    struct wl_keyboard *keyboard;
 
     int running;
 };

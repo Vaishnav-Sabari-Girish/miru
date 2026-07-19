@@ -8,6 +8,7 @@
 #include "layer_surface.h"
 #include "capture.h"
 #include "ipc_server.h"
+#include "input.h"
 #include "version.h"
 #include "logo.h"
 
@@ -71,6 +72,7 @@ int main(int argc, char *argv[])
     struct miru_layer_surface ls = { 0 };
     struct miru_capture capture = { 0 };
     struct miru_ipc_server ipc = { 0 };
+    volatile sig_atomic_t request_deactivate = 0;
     int active = 0;
 
     struct sigaction sa = { 0 };
@@ -82,6 +84,13 @@ int main(int argc, char *argv[])
     if (wayland_state_init(&state) != 0) {
         return 1;
     }
+
+    struct miru_input_ctx input_ctx = {
+        .ls = &ls,
+        .request_deactivate = &request_deactivate,
+    };
+
+    input_setup(&state, &input_ctx);
 
     if (ipc_server_init(&ipc) != 0) {
         fprintf(stderr, "failed to start up IPC server\n");
@@ -140,6 +149,12 @@ int main(int argc, char *argv[])
             fprintf(stderr, "layer surface closed unexpectedly, deactivating\n");
             deactivate(&ls, &capture);
             active = 0;
+        }
+
+        if (active && request_deactivate) {
+            deactivate(&ls, &capture);
+            active = 0;
+            request_deactivate = 0;
         }
     }
 

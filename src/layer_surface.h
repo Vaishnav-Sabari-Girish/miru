@@ -20,6 +20,9 @@ struct miru_layer_surface {
     int closed; // set by handle_closed, main's loop checks this to exit cleanly
     const struct miru_capture *capture;
     int output_scale;
+    double cursor_x;
+    double cursor_y;
+    float zoom;
 };
 
 int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls, const struct miru_capture *capture);

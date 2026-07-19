@@ -1,3 +1,4 @@
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -10,18 +11,51 @@ static void blit_and_commit(struct miru_layer_surface *ls)
     int have_capture = ls->capture && ls->capture->buffer;
 
     if (have_capture) {
-        size_t row_bytes = (size_t)ls->buffer_width * 4;
+        int bw = ls->buffer_width;
+        int bh = ls->buffer_height;
+        float z = ls->zoom < 1.0f ? 1.0f : ls->zoom; // never zoom below 1:1
 
-        int dst_stride = ls->buffer_width * 4;
+        float src_w = (float)bw / z;
+        float src_h = (float)bh / z;
+
+        float src_left = (float)ls->cursor_x - src_w / 2.0f;
+        float src_top = (float)ls->cursor_y - src_h / 2.0f;
+
+        if (src_left < 0)
+            src_left = 0;
+        if (src_top < 0)
+            src_top = 0;
+        if (src_left + src_w > bw)
+            src_left = (float)bw - src_w;
+        if (src_top + src_h > bh)
+            src_top = (float)bh - src_h;
+
+        int dst_stride = bw * 4;
         int src_stride = (int)ls->capture->stride;
 
         uint8_t *dst = (uint8_t *)ls->shm_data;
         const uint8_t *src = (const uint8_t *)ls->capture->shm_data;
 
-        for (int y = 0; y < ls->buffer_height; y++) {
-            int src_y = ls->capture->y_invert ? ((int)ls->capture->height - 1 - y) : y;
-            memcpy(dst + (size_t)y * dst_stride, src + (size_t)src_y * src_stride, row_bytes);
+        for (int dy = 0; dy < bh; dy++) {
+            int sy = (int)(src_top + (float)dy / z);
+            if (sy < 0)
+                sy = 0;
+            if (sy >= bh)
+                sy = bh - 1;
+            int real_sy = ls->capture->y_invert ? (bh - 1 - sy) : sy;
+            const uint8_t *src_row = src + (size_t)real_sy * src_stride;
+            uint8_t *dst_row = dst + (size_t)dy * dst_stride;
+
+            for (int dx = 0; dx < bw; dx++) {
+                int sx = (int)(src_left + (float)dx / z);
+                if (sx < 0)
+                    sx = 0;
+                if (sx >= bw)
+                    sx = bw - 1;
+                memcpy(dst_row + (size_t)dx * 4, src_row + (size_t)sx * 4, 4);
+            }
         }
+
         wl_surface_set_buffer_scale(ls->surface, ls->output_scale);
     } else {
         wl_surface_set_buffer_scale(ls->surface, 1);
@@ -83,6 +117,10 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     ls->buffer_width = buffer_width;
     ls->buffer_height = buffer_height;
 
+    ls->zoom = 2.0f;
+    ls->cursor_x = buffer_width / 2.0;
+    ls->cursor_y = buffer_height / 2.0;
+
     void *pixels = NULL;
     size_t size = 0;
     ls->buffer = shm_buffer_create(ls->shm, buffer_width, buffer_height, format, &pixels, &size);
@@ -137,7 +175,7 @@ int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls
     );
     zwlr_layer_surface_v1_set_exclusive_zone(ls->layer_surface, -1);
     zwlr_layer_surface_v1_set_keyboard_interactivity(
-        ls->layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE
+        ls->layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE
     );
 
     zwlr_layer_surface_v1_add_listener(ls->layer_surface, &layer_surface_listener, ls);
