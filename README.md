@@ -27,7 +27,11 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 > `miru` devlogs on YouTube
 > <https://youtube.com/playlist?list=PLZraydlsV2t0&si=jystH8Ik1UjDVu5t>
 
-## What it does (planned)
+## Demo
+
+![miru](./miru.gif)
+
+### What it does (planned)
 
 Two toggleable modes, each bound to a Niri keybind:
 
@@ -40,13 +44,13 @@ Two toggleable modes, each bound to a Niri keybind:
   normally underneath. Useful for drawing viewer attention during
   streams/recordings. Not built yet.
 
-## Why
+### Why
 
 Most screen magnifiers either don't exist for Wayland, or route through XWayland
 with visible artifacts and no compositor integration. Miru talks to Niri's own
 protocols directly (`wlr-layer-shell`, `wlr-screencopy`) instead.
 
-## Requirements
+### Requirements
 
 - A Wayland compositor implementing `wlr-layer-shell-unstable-v1` and
   `wlr-screencopy-unstable-v1` (developed against Niri)
@@ -55,9 +59,9 @@ protocols directly (`wlr-layer-shell`, `wlr-screencopy`) instead.
 - CMake ≥ 3.20, Ninja (Optional)
 - A C11 compiler
 
-## Installing
+### Installing
 
-### Arch Linux (AUR)
+#### Arch Linux (AUR)
 
 ```bash
 # latest tagged release
@@ -69,11 +73,11 @@ paru -S miru-zoom-git
 (substitute your AUR helper of choice — `yay`, `paru`, or a manual
 `makepkg -si` against the PKGBUILD)
 
-### From source
+#### From source
 
 See [Building](#building) below.
 
-## Building
+### Building
 
 ```bash
 # Using Ninja
@@ -98,7 +102,7 @@ grim cast build
 This builds two binaries: `miru-daemon` (the actual Wayland client) and
 `miructl` (a tiny, Wayland-independent socket client used to control it).
 
-## Running
+### Running
 
 Start the daemon first, in the foreground or via a systemd user service /
 your compositor's `spawn-at-startup`:
@@ -154,7 +158,7 @@ to work), so clicks and most keys won't reach whatever's underneath until you
 exit; that's expected for Magnifier mode. Spotlight mode, once built, will
 behave differently — click-through by design.
 
-## Project structure
+### Project structure
 
 ```text
 .
@@ -179,7 +183,7 @@ behave differently — click-through by design.
 └── Grimoire.toml              # dev task runner (build/run/install/clean)
 ```
 
-## Roadmap
+### Roadmap
 
 - [x] Wayland connection, registry discovery, manual poll-based event loop
 - [x] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
@@ -195,6 +199,6 @@ behave differently — click-through by design.
 - [ ] Cursor tracking for spotlight mode without stealing input (Niri IPC)
 - [ ] Multi-monitor support, config file, smooth zoom animation
 
-## License
+### License
 
 See [LICENSE](./LICENSE).
