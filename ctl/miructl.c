@@ -4,9 +4,39 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include "../src/logo.h"
+
+void print_help()
+{
+    printf("\n");
+    for (unsigned int i = 0; i < miru_ans_len; i++) {
+        putchar(miru_ans[i]);
+    }
+    // Color reset and newline
+    printf("\x1b[0m\n");
+
+    printf("Usage: miructl <command>\n\n");
+
+    printf("Commands: \n");
+    printf("    toggle      Toggle the overlay\n");
+    printf("    quit        Shut down the running miru-daemon\n\n");
+    printf("Options: \n");
+    printf("    -h, --help      Show this help message\n");
+    printf("    -v, --version   Show version information and exit\n\n");
+    printf("Description: \n");
+    printf("    Sens a command to the running miru-daemon over it's Unix socket at\n");
+    printf("    $XDG_RUNTIME_DIR/miru.sock.\n");
+    printf("    The daemon must already be running\n");
+}
+
 
 int main(int argc, char *argv[])
 {
+    if (argc > 1 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
+        print_help();
+        return 0;
+    }
+
     if (argc != 2) {
         fprintf(stderr, "usage: %s <toggle|quit>\n", argv[0]);
         return 1;
