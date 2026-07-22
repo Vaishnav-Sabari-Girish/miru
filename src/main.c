@@ -14,12 +14,36 @@
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
-// static long long now_ms(void)
-// {
-//     struct timespec ts;
-//     clock_gettime(CLOCK_MONOTONIC, &ts); // monotonoic: immune to system clock changes
-//     return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-// }
+void print_help()
+{
+    printf("\n");
+    for (unsigned int i = 0; i < miru_ans_len; i++) {
+        putchar(miru_ans[i]);
+    }
+    // Color reset and newline
+    printf("\x1b[0m\n");
+
+    printf("Usage: miru-daemon [OPTIONS]\n\n");
+
+    printf("Options: \n");
+    printf("    -h, --help      Show this help message\n");
+    printf("    -v, --version   Show version information and exit\n\n");
+    printf("Description: \n");
+    printf("    Starts the miru-daemon. Connects to the Wayland Compositor, opens a\n");
+    printf("    control socket at $XDG_RUNTIME_DIR/miru.sock, and idles until \n");
+    printf("    a toggle command is received via miructl. No overlay is shown \n");
+    printf("    until toggled\n\n");
+
+    printf("Control: \n");
+    printf("    Use \"miructl toggle\" to toggle the overlay and \"miructl quit\" to exit the running daemon\n");
+}
+
+void print_version()
+{
+    printf("miru-daemon %s\n", MIRU_VERSION);
+    printf("\nCombined Distribution subject to MIT license\n");
+    printf("\nWritten by Vaishnav Sabari Girish\n");
+}
 
 static volatile sig_atomic_t should_exit = 0;
 
@@ -53,18 +77,14 @@ static void deactivate(struct miru_layer_surface *ls, struct miru_capture *captu
 }
 
 int main(int argc, char *argv[])
-{
-    if (argc > 1 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("\n");
-        for (unsigned int i = 0; i < miru_ans_len; i++) {
-            putchar(miru_ans[i]);
-        }
-        // Color reset and newline
-        printf("\x1b[0m\n");
 
-        printf("miru-daemon %s\n", MIRU_VERSION);
-        printf("\nCombined Distribution subject to MIT license\n");
-        printf("\nWritten by Vaishnav Sabari Girish\n");
+{
+    if (argc > 1 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
+        print_help();
+        return 0;
+    }
+    if (argc > 1 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
+        print_version();
         return 0;
     }
 
