@@ -24,7 +24,7 @@ void print_help()
     printf("    -h, --help      Show this help message\n");
     printf("    -v, --version   Show version information and exit\n\n");
     printf("Description: \n");
-    printf("    Sens a command to the running miru-daemon over it's Unix socket at\n");
+    printf("    Sends a command to the running miru-daemon over it's Unix socket at\n");
     printf("    $XDG_RUNTIME_DIR/miru.sock.\n");
     printf("    The daemon must already be running\n");
 }
