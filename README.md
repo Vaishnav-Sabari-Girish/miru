@@ -177,7 +177,8 @@ behave differently — click-through by design.
 │   ├── ipc_server.h/.c        # Unix socket server, parses toggle/quit commands
 │   ├── input.h/.c             # pointer/keyboard listeners: pan, zoom, Esc-to-exit
 │   ├── version.h.in           # CMake-configured version string (git describe)
-│   └── logo.h                 # generated ASCII art for --version
+│   ├── logo.h                 # ASCII logo module interface
+│   └── logo.c                 # ASCII logo data and printing implementation
 ├── ctl/
 │   └── miructl.c              # thin socket client, no Wayland dependency
 └── Grimoire.toml              # dev task runner (build/run/install/clean)
