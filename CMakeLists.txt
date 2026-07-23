@@ -64,6 +64,7 @@ wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-
 
 add_executable(miru-daemon
   src/main.c
+  src/logo.c
   src/wayland_state.c
   src/layer_surface.c
   src/shm_buffer.c
@@ -78,7 +79,10 @@ add_executable(miru-daemon
   ${wlr-screencopy-unstable-v1_HEADER}
 )
 
-add_executable(miructl ctl/miructl.c)
+add_executable(miructl 
+  ctl/miructl.c
+  src/logo.c
+)
 
 target_include_directories(miru-daemon PRIVATE
   ${WAYLAND_CLIENT_INCLUDE_DIRS}
