@@ -16,12 +16,7 @@
 
 void print_help()
 {
-    printf("\n");
-    for (unsigned int i = 0; i < miru_ans_len; i++) {
-        putchar(miru_ans[i]);
-    }
-    // Color reset and newline
-    printf("\x1b[0m\n");
+    miru_print_logo();
 
     printf("Usage: miru-daemon [OPTIONS]\n\n");
 
