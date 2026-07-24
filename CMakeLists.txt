@@ -93,3 +93,9 @@ target_include_directories(miru-daemon PRIVATE
 
 target_link_libraries(miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES})
 target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
+
+include(GNUInstallDirs)
+
+install(TARGETS miru-daemon miructl
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
