@@ -4,6 +4,7 @@
 #include "capture.h"
 #include "shm_buffer.h"
 #include "wlr-screencopy-unstable-v1-client-protocol.h"
+#include <wayland-client-protocol.h>
 
 // tracks one in-flight capture across its async callback sequence
 struct capture_ctx {
@@ -12,6 +13,20 @@ struct capture_ctx {
     int done;
     int ok;
 };
+
+static const char *shm_format_name(uint32_t format)
+{
+    switch (format) {
+    case WL_SHM_FORMAT_ARGB8888:
+        return "ARGB8888";
+    case WL_SHM_FORMAT_XRGB8888:
+        return "XRGB8888";
+    case WL_SHM_FORMAT_ABGR8888:
+        return "ABGR8888";
+    case WL_SHM_FORMAT_XBGR8888:
+        return "XBGR8888";
+    }
+}
 
 static void handle_buffer(
     void *data,
@@ -26,8 +41,21 @@ static void handle_buffer(
 
     // only handling 4-bytes-per-pixel formats for now, everything else needs
     // different pixel math downstream that doesn't exist yet
-    if (format != WL_SHM_FORMAT_ARGB8888 && format != WL_SHM_FORMAT_XRGB8888) {
-        fprintf(stderr, "capture: unsupported pixel format %u, only ARGB8888/XRGB8888 handled\n", format);
+    // if (format != WL_SHM_FORMAT_ARGB8888 && format != WL_SHM_FORMAT_XRGB8888) {
+    //     fprintf(stderr, "capture: unsupported pixel format %u, only ARGB8888/XRGB8888 handled\n", format);
+    //     ctx->done = 1;
+    //     ctx->ok = 0;
+    //     return;
+    // }
+    switch (format) {
+    case WL_SHM_FORMAT_ARGB8888:
+    case WL_SHM_FORMAT_XRGB8888:
+    case WL_SHM_FORMAT_ABGR8888:
+    case WL_SHM_FORMAT_XBGR8888:
+        break;
+
+    default:
+        fprintf(stderr, "capture: unsupported pixel format %u (%s)\n", format, shm_format_name(format));
         ctx->done = 1;
         ctx->ok = 0;
         return;
