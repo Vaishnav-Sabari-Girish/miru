@@ -31,18 +31,18 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 
 ![miru](./miru.gif)
 
-### What it does (planned)
+### What it does
 
 Two toggleable modes, each bound to a Niri keybind:
 
-- **Magnifier mode** — press a key, the screen freezes into a zoomed-in
+* **Magnifier mode** — press a key, the screen freezes into a zoomed-in
   fullscreen view centered on your cursor. Move the mouse to pan, scroll or
   press +/- to adjust zoom, press Esc (or the toggle key again) to exit. Like
   `boomer`, but native Wayland. This is working end-to-end now.
-- **Spotlight mode** — a click-through overlay that darkens the whole screen
+* **Spotlight mode** — a click-through overlay that darkens the whole screen
   except a soft-edged circle following your cursor, while you keep working
   normally underneath. Useful for drawing viewer attention during
-  streams/recordings. Not built yet.
+  streams/recordings. **Not built yet**.
 
 ### Why
 
@@ -52,12 +52,12 @@ protocols directly (`wlr-layer-shell`, `wlr-screencopy`) instead.
 
 ### Requirements
 
-- A Wayland compositor implementing `wlr-layer-shell-unstable-v1` and
+* A Wayland compositor implementing `wlr-layer-shell-unstable-v1` and
   `wlr-screencopy-unstable-v1` (developed against Niri)
-- `wayland-client`, `wayland-protocols`, `wayland-scanner` (pacman: `wayland`,
+* `wayland-client`, `wayland-protocols`, `wayland-scanner` (pacman: `wayland`,
   `wayland-protocols`)
-- CMake ≥ 3.20, Ninja (Optional)
-- A C11 compiler
+* CMake ≥ 3.20, Ninja (Optional)
+* A C11 compiler
 
 ### Installing
 
@@ -68,10 +68,42 @@ protocols directly (`wlr-layer-shell`, `wlr-screencopy`) instead.
 paru -S miru-zoom
 # or track the latest commit on main
 paru -S miru-zoom-git
+
 ```
 
 (substitute your AUR helper of choice — `yay`, `paru`, or a manual
 `makepkg -si` against the PKGBUILD)
+
+#### Nix / NixOS
+
+Run directly without installing:
+
+```bash
+nix run github:Vaishnav-Sabari-Girish/miru
+
+```
+
+Or install to your profile:
+
+```bash
+nix profile install github:Vaishnav-Sabari-Girish/miru
+
+```
+
+For development:
+
+```bash
+nix develop
+
+```
+
+#### Homebrew (Linuxbrew)
+
+```bash
+brew tap Vaishnav-Sabari-Girish/tap
+brew install miru
+
+```
 
 #### From source
 
@@ -85,18 +117,21 @@ cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 # Using Make
 cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
 ```
 
 Then run :
 
 ```bash
 cmake --build build
+
 ```
 
 Or with [Grimoire](https://github.com/Vaishnav-Sabari-Girish/grimoire):
 
 ```bash
 grim cast build
+
 ```
 
 This builds two binaries: `miru-daemon` (the actual Wayland client) and
@@ -111,6 +146,7 @@ your compositor's `spawn-at-startup`:
 ./build/miru-daemon
 # or
 grim cast run-daemon
+
 ```
 
 It connects to the compositor, logs every advertised protocol, opens a Unix
@@ -123,6 +159,7 @@ Toggle the overlay on/off:
 ./build/miru-daemon --version   # prints version info + an ASCII logo, exits immediately
 ./build/miructl toggle          # freezes + zooms the screen / returns it to normal
 ./build/miructl quit            # tells the daemon to shut down
+
 ```
 
 In practice you'll want this bound to a key rather than run manually. A Niri
@@ -134,6 +171,7 @@ keybind example:
 
 ```kdl
 Mod+Z hotkey-overlay-title="toggle miru" { spawn-sh "/path/to/miru/build/miructl toggle"; }
+
 ```
 
 On toggle-on, the daemon captures one frame via `wlr-screencopy`, blits it
@@ -141,10 +179,10 @@ into a fullscreen `wlr-layer-shell` overlay (correctly scaled on HiDPI
 outputs, double-buffered to avoid tearing), and shows it zoomed in 2x,
 centered on your cursor. While active:
 
-- **Move the mouse** to pan the zoomed view, tracking the cursor live
-- **`+`/`-`** or **scroll wheel** to adjust zoom level (1x–10x)
-- **Esc**, or pressing the toggle keybind again, to exit back to your normal
-  desktop
+* **Move the mouse** to pan the zoomed view, tracking the cursor live
+* **`+`/`-**` or **scroll wheel** to adjust zoom level (1x–10x)
+* **Esc**, or pressing the toggle keybind again, to exit back to your normal
+desktop
 
 There's deliberately no continuous re-capture of the underlying screen while
 the overlay is visible: an earlier version tried that and hit a feedback loop
@@ -182,23 +220,24 @@ behave differently — click-through by design.
 ├── ctl/
 │   └── miructl.c              # thin socket client, no Wayland dependency
 └── Grimoire.toml              # dev task runner (build/run/install/clean)
+
 ```
 
 ### Roadmap
 
-- [x] Wayland connection, registry discovery, manual poll-based event loop
-- [x] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
-- [x] Screen capture via `wlr-screencopy` (verified working, not yet rendered)
-- [x] Render the captured frame into the overlay surface (scale-aware, single
-      output)
-- [x] `miructl` control client + Unix socket IPC, daemon/client split
-- [x] Keybind-driven toggle: capture + show on activate, tear down on
-      deactivate, no continuous re-capture while visible
-- [x] Magnifier mode: cursor-centered zoom + live pan, keyboard/scroll zoom
-      controls, double-buffered rendering
-- [ ] Spotlight mode: darken + feathered cursor cutout, click-through
-- [ ] Cursor tracking for spotlight mode without stealing input (Niri IPC)
-- [ ] Multi-monitor support, config file, smooth zoom animation
+* [x] Wayland connection, registry discovery, manual poll-based event loop
+* [x] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
+* [x] Screen capture via `wlr-screencopy` (verified working, not yet rendered)
+* [x] Render the captured frame into the overlay surface (scale-aware, single
+output)
+* [x] `miructl` control client + Unix socket IPC, daemon/client split
+* [x] Keybind-driven toggle: capture + show on activate, tear down on
+deactivate, no continuous re-capture while visible
+* [x] Magnifier mode: cursor-centered zoom + live pan, keyboard/scroll zoom
+controls, double-buffered rendering
+* [ ] Spotlight mode: darken + feathered cursor cutout, click-through
+* [ ] Cursor tracking for spotlight mode without stealing input (Niri IPC)
+* [ ] Multi-monitor support, config file, smooth zoom animation
 
 ### License
 
