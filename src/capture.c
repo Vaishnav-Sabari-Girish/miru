@@ -55,7 +55,7 @@ static void handle_buffer(
         break;
 
     default:
-        fprintf(stderr, "capture: unsupported 32-bit pixel format %u (%s)\n", format, shm_format_name(format));
+        fprintf(stderr, "capture: unsupported pixel format %u (%s)\n", format, shm_format_name(format));
         ctx->done = 1;
         ctx->ok = 0;
         return;
