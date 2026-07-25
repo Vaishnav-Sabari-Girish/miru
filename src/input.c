@@ -8,12 +8,34 @@
 #define ZOOM_MIN 1.0f
 #define ZOOM_MAX 10.0f
 
+#define PAN_STEP 50.0
+
+static double pan_step(struct miru_layer_surface *ls)
+{
+    return PAN_STEP / ls->zoom;
+}
+
 static void clamp_zoom(struct miru_layer_surface *ls)
 {
     if (ls->zoom < ZOOM_MIN)
         ls->zoom = ZOOM_MIN;
     if (ls->zoom > ZOOM_MAX)
         ls->zoom = ZOOM_MAX;
+}
+
+static void clamp_pan(struct miru_layer_surface *ls)
+{
+    double half_view_width = (double)ls->buffer_width / (2.0 * ls->zoom);
+    double half_view_height = (double)ls->buffer_height / (2.0 * ls->zoom);
+    if (ls->cursor_x < half_view_width)
+        ls->cursor_x = half_view_width;
+    if (ls->cursor_x > ls->buffer_width - half_view_width)
+        ls->cursor_x = ls->buffer_width - half_view_width;
+
+    if (ls->cursor_y < half_view_height)
+        ls->cursor_y = half_view_height;
+    if (ls->cursor_y > ls->buffer_height - half_view_height)
+        ls->cursor_y = ls->buffer_height - half_view_height;
 }
 
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface)
@@ -207,13 +229,29 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
         return;
 
-    if (key == KEY_EQUAL) {
+    if (key == KEY_EQUAL || key == KEY_KPPLUS) {
         ctx->ls->zoom += ZOOM_STEP;
         clamp_zoom(ctx->ls);
         ctx->ls->dirty = 1;
-    } else if (key == KEY_MINUS) {
+    } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
         ctx->ls->zoom -= ZOOM_STEP;
         clamp_zoom(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_LEFT) {
+        ctx->ls->cursor_x -= pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_RIGHT) {
+        ctx->ls->cursor_x += pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_UP) {
+        ctx->ls->cursor_y -= pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_DOWN) {
+        ctx->ls->cursor_y += pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
         ctx->ls->dirty = 1;
     } else if (key == KEY_ESC) {
         if (ctx->request_deactivate) {
