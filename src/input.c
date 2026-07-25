@@ -8,12 +8,27 @@
 #define ZOOM_MIN 1.0f
 #define ZOOM_MAX 10.0f
 
+#define PAN_STEP 50.0f
+
 static void clamp_zoom(struct miru_layer_surface *ls)
 {
     if (ls->zoom < ZOOM_MIN)
         ls->zoom = ZOOM_MIN;
     if (ls->zoom > ZOOM_MAX)
         ls->zoom = ZOOM_MAX;
+}
+
+static void clamp_pan(struct miru_layer_surface *ls)
+{
+    if (ls->cursor_x < 0.0)
+        ls->cursor_x = 0.0;
+    if (ls->cursor_x > ls->buffer_width)
+        ls->cursor_x = ls->buffer_width;
+
+    if (ls->cursor_y < 0.0)
+        ls->cursor_y = 0.0;
+    if (ls->cursor_y > ls->buffer_height)
+        ls->cursor_y = ls->buffer_height;
 }
 
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface)
@@ -207,13 +222,29 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
         return;
 
-    if (key == KEY_EQUAL) {
+    if (key == KEY_EQUAL || key == KEY_KPPLUS) {
         ctx->ls->zoom += ZOOM_STEP;
         clamp_zoom(ctx->ls);
         ctx->ls->dirty = 1;
-    } else if (key == KEY_MINUS) {
+    } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
         ctx->ls->zoom -= ZOOM_STEP;
         clamp_zoom(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_LEFT) {
+        ctx->ls->cursor_x -= PAN_STEP;
+        clamp_pan(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_RIGHT) {
+        ctx->ls->cursor_x += PAN_STEP;
+        clamp_pan(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_UP) {
+        ctx->ls->cursor_y -= PAN_STEP;
+        clamp_pan(ctx->ls);
+        ctx->ls->dirty = 1;
+    } else if (key == KEY_DOWN) {
+        ctx->ls->cursor_y += PAN_STEP;
+        clamp_pan(ctx->ls);
         ctx->ls->dirty = 1;
     } else if (key == KEY_ESC) {
         if (ctx->request_deactivate) {
