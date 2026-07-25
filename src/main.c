@@ -127,7 +127,17 @@ int main(int argc, char *argv[])
             { .fd = ipc_server_get_fd(&ipc), .events = POLLIN },
         };
 
-        int ret = poll(pfds, 2, -1);
+        int timeout = -1;
+
+        if (input_ctx.repeating) {
+            if (!input_ctx.repeat_started) {
+                timeout = input_ctx.repeat_delay;
+            } else {
+                timeout = 1000 / input_ctx.repeat_rate;
+            }
+        }
+
+        int ret = poll(pfds, 2, timeout);
         if (ret == -1) {
             wayland_state_cancel_read(&state);
             if (errno == EINTR) {
@@ -135,6 +145,20 @@ int main(int argc, char *argv[])
             }
             fprintf(stderr, "poll failed\n");
             break;
+        }
+
+        if (ret == 0) {
+            wayland_state_cancel_read(&state);
+
+            if (active && input_ctx.repeating) {
+                input_repeat(&input_ctx);
+
+                if (ls.dirty) {
+                    layer_surface_render(&ls);
+                    ls.dirty = 0;
+                }
+            }
+            continue;
         }
 
         if (wayland_state_process(&state, pfds[0].revents) != 0) {

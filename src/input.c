@@ -200,10 +200,16 @@ static void keyboard_modifiers(
 
 static void keyboard_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay)
 {
-    (void)data;
     (void)keyboard;
-    (void)rate;
-    (void)delay;
+
+    struct miru_input_ctx *ctx = data;
+
+    ctx->repeat_rate = rate;
+    ctx->repeat_delay = delay;
+
+    if (rate <= 0) {
+        ctx->repeating = 0;
+    }
 }
 
 static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format, int fd, uint32_t size)
@@ -216,6 +222,44 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
     close(fd);
 }
 
+static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
+{
+    if (key == KEY_EQUAL || key == KEY_KPPLUS) {
+        ctx->ls->zoom += ZOOM_STEP;
+        clamp_zoom(ctx->ls);
+    } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
+        ctx->ls->zoom -= ZOOM_STEP;
+        clamp_zoom(ctx->ls);
+    } else if (key == KEY_LEFT) {
+        ctx->ls->cursor_x -= pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else if (key == KEY_RIGHT) {
+        ctx->ls->cursor_x += pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else if (key == KEY_UP) {
+        ctx->ls->cursor_y -= pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else if (key == KEY_DOWN) {
+        ctx->ls->cursor_y += pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else {
+        return 0;
+    }
+
+    ctx->ls->dirty = 1;
+    return 1;
+}
+
+void input_repeat(struct miru_input_ctx *ctx)
+{
+    if (!ctx->repeating || ctx->repeat_rate <= 0) {
+        return;
+    }
+
+    handle_key_action(ctx, ctx->repeat_key);
+    ctx->repeat_started = 1;
+}
+
 static void
 keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
 {
@@ -226,37 +270,25 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     struct miru_input_ctx *ctx = data;
     if (!ctx->ls->configured)
         return;
-    if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+    if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+        if (ctx->repeating && ctx->repeat_key == key) {
+            ctx->repeating = 0;
+            ctx->repeat_started = 0;
+        }
         return;
+    }
 
-    if (key == KEY_EQUAL || key == KEY_KPPLUS) {
-        ctx->ls->zoom += ZOOM_STEP;
-        clamp_zoom(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
-        ctx->ls->zoom -= ZOOM_STEP;
-        clamp_zoom(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_LEFT) {
-        ctx->ls->cursor_x -= pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_RIGHT) {
-        ctx->ls->cursor_x += pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_UP) {
-        ctx->ls->cursor_y -= pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_DOWN) {
-        ctx->ls->cursor_y += pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_ESC) {
+    if (key == KEY_ESC) {
         if (ctx->request_deactivate) {
             *ctx->request_deactivate = 1;
         }
+        return;
+    }
+
+    if (handle_key_action(ctx, key)) {
+        ctx->repeat_key = key;
+        ctx->repeating = ctx->repeat_rate > 0;
+        ctx->repeat_started = 0;
     }
 }
 
