@@ -233,16 +233,16 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
     } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
         ctx->ls->zoom -= ZOOM_STEP;
         clamp_zoom(ctx->ls);
-    } else if (key == KEY_LEFT) {
+    } else if (key == KEY_LEFT || key == KEY_A) {
         ctx->ls->cursor_x -= pan_step(ctx->ls);
         clamp_pan(ctx->ls);
-    } else if (key == KEY_RIGHT) {
+    } else if (key == KEY_RIGHT || key == KEY_D) {
         ctx->ls->cursor_x += pan_step(ctx->ls);
         clamp_pan(ctx->ls);
-    } else if (key == KEY_UP) {
+    } else if (key == KEY_UP || key == KEY_W) {
         ctx->ls->cursor_y -= pan_step(ctx->ls);
         clamp_pan(ctx->ls);
-    } else if (key == KEY_DOWN) {
+    } else if (key == KEY_DOWN || key == KEY_S) {
         ctx->ls->cursor_y += pan_step(ctx->ls);
         clamp_pan(ctx->ls);
     } else {
