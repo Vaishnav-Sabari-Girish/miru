@@ -286,7 +286,8 @@ void input_process_repeats(struct miru_input_ctx *ctx)
         }
         handle_key_action(ctx, slot->key);
 
-        slot->next_repeat_at = t + (ctx->repeat_rate > 0 ? (1000 / ctx->repeat_rate) : 1000);
+        slot->next_repeat_at =
+            t + (ctx->repeat_rate > 0 ? (1000 / ctx->repeat_rate + (1000 % ctx->repeat_rate != 0)) : 1000);
     }
 }
 
