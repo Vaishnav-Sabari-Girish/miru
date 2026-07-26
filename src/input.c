@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <time.h>
 #include <linux/input-event-codes.h>
 #include "input.h"
 #include "layer_surface.h"
@@ -173,10 +174,12 @@ static void keyboard_enter(
 
 static void keyboard_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface)
 {
-    (void)data;
     (void)keyboard;
     (void)serial;
     (void)surface;
+
+    struct miru_input_ctx *ctx = data;
+    input_reset_repeat(ctx);
 }
 
 static void keyboard_modifiers(
@@ -208,7 +211,7 @@ static void keyboard_repeat_info(void *data, struct wl_keyboard *keyboard, int32
     ctx->repeat_delay = delay;
 
     if (rate <= 0) {
-        ctx->repeating = 0;
+        input_reset_repeat(ctx);
     }
 }
 
@@ -250,14 +253,73 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
     return 1;
 }
 
-void input_repeat(struct miru_input_ctx *ctx)
+static long long now_ms(void)
 {
-    if (!ctx->repeating || ctx->repeat_rate <= 0) {
-        return;
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
+static struct miru_repeat_slot *find_repeat_slot(struct miru_input_ctx *ctx, uint32_t key, int allow_alloc)
+{
+    struct miru_repeat_slot *free_slot = NULL;
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        struct miru_repeat_slot *slot = &ctx->repeat_slots[i];
+        if (slot->active && slot->key == key) {
+            return slot;
+        }
+        if (!slot->active && !free_slot) {
+            free_slot = slot;
+        }
     }
 
-    handle_key_action(ctx, ctx->repeat_key);
-    ctx->repeat_started = 1;
+    return allow_alloc ? free_slot : NULL;
+}
+
+void input_process_repeats(struct miru_input_ctx *ctx)
+{
+    long long t = now_ms();
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        struct miru_repeat_slot *slot = &ctx->repeat_slots[i];
+        if (!slot->active || t < slot->next_repeat_at) {
+            continue;
+        }
+        handle_key_action(ctx, slot->key);
+
+        slot->next_repeat_at = t + (ctx->repeat_rate > 0 ? (1000 / ctx->repeat_rate) : 1000);
+    }
+}
+
+int input_next_repeat_timeout(struct miru_input_ctx *ctx)
+{
+    long long t = now_ms();
+
+    long long soonest = -1;
+
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        struct miru_repeat_slot *slot = &ctx->repeat_slots[i];
+        if (!slot->active) {
+            continue;
+        }
+
+        long long remaining = slot->next_repeat_at - t;
+
+        if (remaining < 0) {
+            remaining = 0;
+        }
+        if (soonest == -1 || remaining < soonest) {
+            soonest = remaining;
+        }
+    }
+
+    return (int)soonest;
+}
+
+void input_reset_repeat(struct miru_input_ctx *ctx)
+{
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        ctx->repeat_slots[i] = (struct miru_repeat_slot){ 0 };
+    }
 }
 
 static void
@@ -271,9 +333,9 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (!ctx->ls->configured)
         return;
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
-        if (ctx->repeating && ctx->repeat_key == key) {
-            ctx->repeating = 0;
-            ctx->repeat_started = 0;
+        struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 0);
+        if (slot) {
+            *slot = (struct miru_repeat_slot){ 0 };
         }
         return;
     }
@@ -285,10 +347,13 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
-    if (handle_key_action(ctx, key)) {
-        ctx->repeat_key = key;
-        ctx->repeating = ctx->repeat_rate > 0;
-        ctx->repeat_started = 0;
+    if (handle_key_action(ctx, key) && ctx->repeat_rate > 0) {
+        struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 1);
+        if (slot) {
+            slot->key = key;
+            slot->active = 1;
+            slot->next_repeat_at = now_ms() + ctx->repeat_delay;
+        }
     }
 }
 

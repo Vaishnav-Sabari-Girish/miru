@@ -127,15 +127,7 @@ int main(int argc, char *argv[])
             { .fd = ipc_server_get_fd(&ipc), .events = POLLIN },
         };
 
-        int timeout = -1;
-
-        if (input_ctx.repeating) {
-            if (!input_ctx.repeat_started) {
-                timeout = input_ctx.repeat_delay;
-            } else {
-                timeout = 1000 / input_ctx.repeat_rate;
-            }
-        }
+        int timeout = input_next_repeat_timeout(&input_ctx);
 
         int ret = poll(pfds, 2, timeout);
         if (ret == -1) {
@@ -147,27 +139,16 @@ int main(int argc, char *argv[])
             break;
         }
 
-        if (ret == 0) {
-            wayland_state_cancel_read(&state);
-
-            if (active && input_ctx.repeating) {
-                input_repeat(&input_ctx);
-
-                if (ls.dirty) {
-                    layer_surface_render(&ls);
-                    ls.dirty = 0;
-                }
-            }
-            continue;
-        }
-
         if (wayland_state_process(&state, pfds[0].revents) != 0) {
             break;
         }
 
-        if (active && ls.dirty) {
-            layer_surface_render(&ls);
-            ls.dirty = 0;
+        if (active) {
+            input_process_repeats(&input_ctx);
+            if (ls.dirty) {
+                layer_surface_render(&ls);
+                ls.dirty = 0;
+            }
         }
 
         if (pfds[1].revents & POLLIN) {
@@ -178,6 +159,7 @@ int main(int argc, char *argv[])
                     active = (activate(&state, &ls, &capture) == 0);
                 } else {
                     deactivate(&ls, &capture);
+                    input_reset_repeat(&input_ctx);
                     active = 0;
                 }
             } else if (cmd == MIRU_IPC_QUIT) {
@@ -192,11 +174,13 @@ int main(int argc, char *argv[])
             // etc), go back to inactive instead of looping through a dead surface
             fprintf(stderr, "layer surface closed unexpectedly, deactivating\n");
             deactivate(&ls, &capture);
+            input_reset_repeat(&input_ctx);
             active = 0;
         }
 
         if (active && request_deactivate) {
             deactivate(&ls, &capture);
+            input_reset_repeat(&input_ctx);
             active = 0;
             request_deactivate = 0;
         }
