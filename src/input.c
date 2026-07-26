@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <time.h>
 #include <linux/input-event-codes.h>
 #include "input.h"
 #include "layer_surface.h"
@@ -173,10 +174,12 @@ static void keyboard_enter(
 
 static void keyboard_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface)
 {
-    (void)data;
     (void)keyboard;
     (void)serial;
     (void)surface;
+
+    struct miru_input_ctx *ctx = data;
+    input_reset_repeat(ctx);
 }
 
 static void keyboard_modifiers(
@@ -200,10 +203,16 @@ static void keyboard_modifiers(
 
 static void keyboard_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay)
 {
-    (void)data;
     (void)keyboard;
-    (void)rate;
-    (void)delay;
+
+    struct miru_input_ctx *ctx = data;
+
+    ctx->repeat_rate = rate;
+    ctx->repeat_delay = delay;
+
+    if (rate <= 0) {
+        input_reset_repeat(ctx);
+    }
 }
 
 static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format, int fd, uint32_t size)
@@ -216,6 +225,104 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
     close(fd);
 }
 
+static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
+{
+    if (key == KEY_EQUAL || key == KEY_KPPLUS) {
+        ctx->ls->zoom += ZOOM_STEP;
+        clamp_zoom(ctx->ls);
+    } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
+        ctx->ls->zoom -= ZOOM_STEP;
+        clamp_zoom(ctx->ls);
+    } else if (key == KEY_LEFT) {
+        ctx->ls->cursor_x -= pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else if (key == KEY_RIGHT) {
+        ctx->ls->cursor_x += pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else if (key == KEY_UP) {
+        ctx->ls->cursor_y -= pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else if (key == KEY_DOWN) {
+        ctx->ls->cursor_y += pan_step(ctx->ls);
+        clamp_pan(ctx->ls);
+    } else {
+        return 0;
+    }
+
+    ctx->ls->dirty = 1;
+    return 1;
+}
+
+static long long now_ms(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
+static struct miru_repeat_slot *find_repeat_slot(struct miru_input_ctx *ctx, uint32_t key, int allow_alloc)
+{
+    struct miru_repeat_slot *free_slot = NULL;
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        struct miru_repeat_slot *slot = &ctx->repeat_slots[i];
+        if (slot->active && slot->key == key) {
+            return slot;
+        }
+        if (!slot->active && !free_slot) {
+            free_slot = slot;
+        }
+    }
+
+    return allow_alloc ? free_slot : NULL;
+}
+
+void input_process_repeats(struct miru_input_ctx *ctx)
+{
+    long long t = now_ms();
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        struct miru_repeat_slot *slot = &ctx->repeat_slots[i];
+        if (!slot->active || t < slot->next_repeat_at) {
+            continue;
+        }
+        handle_key_action(ctx, slot->key);
+
+        slot->next_repeat_at =
+            t + (ctx->repeat_rate > 0 ? (1000 / ctx->repeat_rate + (1000 % ctx->repeat_rate != 0)) : 1000);
+    }
+}
+
+int input_next_repeat_timeout(struct miru_input_ctx *ctx)
+{
+    long long t = now_ms();
+
+    long long soonest = -1;
+
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        struct miru_repeat_slot *slot = &ctx->repeat_slots[i];
+        if (!slot->active) {
+            continue;
+        }
+
+        long long remaining = slot->next_repeat_at - t;
+
+        if (remaining < 0) {
+            remaining = 0;
+        }
+        if (soonest == -1 || remaining < soonest) {
+            soonest = remaining;
+        }
+    }
+
+    return (int)soonest;
+}
+
+void input_reset_repeat(struct miru_input_ctx *ctx)
+{
+    for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
+        ctx->repeat_slots[i] = (struct miru_repeat_slot){ 0 };
+    }
+}
+
 static void
 keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
 {
@@ -226,36 +333,27 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     struct miru_input_ctx *ctx = data;
     if (!ctx->ls->configured)
         return;
-    if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+    if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+        struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 0);
+        if (slot) {
+            *slot = (struct miru_repeat_slot){ 0 };
+        }
         return;
+    }
 
-    if (key == KEY_EQUAL || key == KEY_KPPLUS) {
-        ctx->ls->zoom += ZOOM_STEP;
-        clamp_zoom(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
-        ctx->ls->zoom -= ZOOM_STEP;
-        clamp_zoom(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_LEFT) {
-        ctx->ls->cursor_x -= pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_RIGHT) {
-        ctx->ls->cursor_x += pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_UP) {
-        ctx->ls->cursor_y -= pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_DOWN) {
-        ctx->ls->cursor_y += pan_step(ctx->ls);
-        clamp_pan(ctx->ls);
-        ctx->ls->dirty = 1;
-    } else if (key == KEY_ESC) {
+    if (key == KEY_ESC) {
         if (ctx->request_deactivate) {
             *ctx->request_deactivate = 1;
+        }
+        return;
+    }
+
+    if (handle_key_action(ctx, key) && ctx->repeat_rate > 0) {
+        struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 1);
+        if (slot) {
+            slot->key = key;
+            slot->active = 1;
+            slot->next_repeat_at = now_ms() + ctx->repeat_delay;
         }
     }
 }
