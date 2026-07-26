@@ -1,5 +1,64 @@
 
-## 0.1.0 - 2026-07-19
+## v0.2.0 - 2026-07-26
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(wasd)** W/a/s/d for panning as alternatives to arrow keys
+
+- **(continuous)** Long press  continuous panning/zooming added
+
+- **(input)** Add continuous key presses for zoom and panning
+
+- **(arrow)** Add arrow key support for panning
+
+- **(nix)** Tested flake.nix
+
+- **(logo)** Optimize logo rendering
+
+- **(help)** Help for miructl too added
+
+- **(help)** Add help output
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(interval)** Rounding up interval upto 1ms
+
+- **(input)** Make arrow panning zoom-aware and clamp viewport bounds
+
+- **(capture)** Support ABGR8888 and XBGR8888 screencopy formats
+
+- **(make)** You can now use `make` to also compile
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## v0.1.0 - 2026-07-19
 
 
 
@@ -87,4 +146,4 @@
 
 
 ### :tada: New Contributors
-- @Vaishnav-Sabari-Girish made their first contribution in [#9](https://github.com/Vaishnav-Sabari-Girish/miru/pull/9)
+- @Vaishnav-Sabari-Girish made their first contribution
