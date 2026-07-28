@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <unistd.h>
 #include <time.h>
 #include <linux/input-event-codes.h>
@@ -5,9 +6,7 @@
 #include "layer_surface.h"
 #include <wayland-client-protocol.h>
 
-#define ZOOM_STEP 0.25f
 #define ZOOM_MIN 1.0f
-#define ZOOM_MAX 10.0f
 
 #define PAN_STEP 50.0
 
@@ -20,8 +19,10 @@ static void clamp_zoom(struct miru_layer_surface *ls)
 {
     if (ls->zoom < ZOOM_MIN)
         ls->zoom = ZOOM_MIN;
-    if (ls->zoom > ZOOM_MAX)
-        ls->zoom = ZOOM_MAX;
+    if (ls->zoom > ls->zoom_max) {
+        fprintf(stderr, "clamp_zoom: clamping %.3f down to zoom_max = %.3f\n", ls->zoom, ls->zoom_max);
+        ls->zoom = ls->zoom_max;
+    }
 }
 
 static void clamp_pan(struct miru_layer_surface *ls)
@@ -135,13 +136,17 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
         return;
 
     double v = wl_fixed_to_double(value);
+    fprintf(
+        stderr, "pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f\n", v, ctx->zoom_increment, ctx->ls->zoom
+    );
     if (v > 0) {
-        ctx->ls->zoom -= ZOOM_STEP;
+        ctx->ls->zoom -= ctx->zoom_increment;
     } else {
-        ctx->ls->zoom += ZOOM_STEP;
+        ctx->ls->zoom += ctx->zoom_increment;
     }
 
     clamp_zoom(ctx->ls);
+    fprintf(stderr, "pointer_axis: zoom_after=%.3f\n", ctx->ls->zoom);
     ctx->ls->dirty = 1;
 }
 
@@ -227,11 +232,19 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
 
 static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
 {
+    fprintf(
+        stderr,
+        "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f\n",
+        key,
+        ctx->zoom_increment,
+        ctx->ls->zoom,
+        ctx->ls->zoom_max
+    );
     if (key == KEY_EQUAL || key == KEY_KPPLUS) {
-        ctx->ls->zoom += ZOOM_STEP;
+        ctx->ls->zoom += ctx->zoom_increment;
         clamp_zoom(ctx->ls);
     } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
-        ctx->ls->zoom -= ZOOM_STEP;
+        ctx->ls->zoom -= ctx->zoom_increment;
         clamp_zoom(ctx->ls);
     } else if (key == KEY_LEFT || key == KEY_A) {
         ctx->ls->cursor_x -= pan_step(ctx->ls);
@@ -249,6 +262,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
         return 0;
     }
 
+    fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
     ctx->ls->dirty = 1;
     return 1;
 }

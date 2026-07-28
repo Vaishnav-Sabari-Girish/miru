@@ -18,6 +18,8 @@ struct miru_input_ctx {
     struct miru_layer_surface *ls;
     volatile sig_atomic_t *request_deactivate;
 
+    float zoom_increment;
+
     int repeat_rate;
     int repeat_delay;
     struct miru_repeat_slot repeat_slots[MIRU_MAX_REPEAT_KEYS];
