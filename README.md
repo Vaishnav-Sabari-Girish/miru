@@ -177,6 +177,12 @@ compositor has its own way to bind a command to a key:
 > Make sure `miru-daemon` is already running before triggering the keybind,
 > or `miructl` will fail with a connection error.
 
+**Mango** — `~/.config/mango/config.conf`:
+
+```conf
+bind=SUPER,Z,spawn,/path/to/miru/build/miructl toggle
+```
+
 **Niri** — `~/.config/niri/config.kdl`:
 
 ```kdl
