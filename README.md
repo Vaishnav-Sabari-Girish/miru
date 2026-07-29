@@ -127,7 +127,7 @@ nix run github:Vaishnav-Sabari-Girish/miru
 Or install to your profile:
 
 ```bash
-nix profile install github:Vaishnav-Sabari-Girish/miru
+nix profile add github:Vaishnav-Sabari-Girish/miru
 ```
 
 For development:
