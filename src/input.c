@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <time.h>
 #include <linux/input-event-codes.h>
@@ -10,6 +12,17 @@
 
 #define PAN_STEP 50.0
 
+static int debug_enabled(void)
+{
+    static int cached = -1;
+    if (cached == -1) {
+        const char *v = getenv("MIRU_DEBUG");
+        cached = (v && *v && strcmp(v, "0") != 0) ? 1 : 0;
+    }
+
+    return cached;
+}
+
 static double pan_step(struct miru_layer_surface *ls)
 {
     return PAN_STEP / ls->zoom;
@@ -20,7 +33,9 @@ static void clamp_zoom(struct miru_layer_surface *ls)
     if (ls->zoom < ZOOM_MIN)
         ls->zoom = ZOOM_MIN;
     if (ls->zoom > ls->zoom_max) {
-        fprintf(stderr, "clamp_zoom: clamping %.3f down to zoom_max = %.3f\n", ls->zoom, ls->zoom_max);
+        if (debug_enabled()) {
+            fprintf(stderr, "clamp_zoom: clamping %.3f down to zoom_max = %.3f\n", ls->zoom, ls->zoom_max);
+        }
         ls->zoom = ls->zoom_max;
     }
 }
@@ -136,9 +151,13 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
         return;
 
     double v = wl_fixed_to_double(value);
-    fprintf(
-        stderr, "pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f\n", v, ctx->zoom_increment, ctx->ls->zoom
-    );
+
+    if (debug_enabled()) {
+        fprintf(
+            stderr, "pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f\n", v, ctx->zoom_increment, ctx->ls->zoom
+        );
+    }
+
     if (v > 0) {
         ctx->ls->zoom -= ctx->zoom_increment;
     } else {
@@ -146,7 +165,11 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
     }
 
     clamp_zoom(ctx->ls);
-    fprintf(stderr, "pointer_axis: zoom_after=%.3f\n", ctx->ls->zoom);
+
+    if (debug_enabled()) {
+        fprintf(stderr, "pointer_axis: zoom_after=%.3f\n", ctx->ls->zoom);
+    }
+
     ctx->ls->dirty = 1;
 }
 
@@ -232,14 +255,17 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
 
 static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
 {
-    fprintf(
-        stderr,
-        "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f\n",
-        key,
-        ctx->zoom_increment,
-        ctx->ls->zoom,
-        ctx->ls->zoom_max
-    );
+    if (debug_enabled()) {
+        fprintf(
+            stderr,
+            "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f\n",
+            key,
+            ctx->zoom_increment,
+            ctx->ls->zoom,
+            ctx->ls->zoom_max
+        );
+    }
+
     if (key == KEY_EQUAL || key == KEY_KPPLUS) {
         ctx->ls->zoom += ctx->zoom_increment;
         clamp_zoom(ctx->ls);
@@ -262,7 +288,10 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
         return 0;
     }
 
-    fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
+    if (debug_enabled()) {
+        fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
+    }
+
     ctx->ls->dirty = 1;
     return 1;
 }
