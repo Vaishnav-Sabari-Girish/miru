@@ -391,6 +391,12 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (key == KEY_TAB) {
+        ctx->ls->spotlight_enabled = !ctx->ls->spotlight_enabled;
+        ctx->ls->dirty = 1;
+        return;
+    }
+
     if (handle_key_action(ctx, key) && ctx->repeat_rate > 0) {
         struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 1);
         if (slot) {
