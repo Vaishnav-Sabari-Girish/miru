@@ -156,6 +156,8 @@ struct toml_table *toml_parse_file(const char *path)
                 header[hlen - 1] = '\0';
                 char *inner = trim(header + 1);
                 snprintf(current_section, sizeof(current_section), "%s", inner);
+            } else {
+                current_section[0] = '\0';
             }
             // malformed header (no closing bracket left after stripping) — skip silently
             continue;
