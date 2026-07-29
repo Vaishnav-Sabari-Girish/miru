@@ -11,7 +11,7 @@ silent = true
 description = "Build miru"
 language = "shell"
 run = '''
-cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build build
 '''
 
