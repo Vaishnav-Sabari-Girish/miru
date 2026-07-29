@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(miru VERSION 0.2.0 LANGUAGES C)
+project(miru VERSION 0.3.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -71,6 +71,8 @@ add_executable(miru-daemon
   src/capture.c
   src/ipc_server.c
   src/input.c
+  src/toml.c
+  src/config.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}

@@ -11,6 +11,7 @@
 #include "input.h"
 #include "version.h"
 #include "logo.h"
+#include "config.h"
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
@@ -48,13 +49,18 @@ static void handle_sigint(int sig)
     should_exit = 1;
 }
 
-static int activate(struct miru_state *state, struct miru_layer_surface *ls, struct miru_capture *capture)
+static int activate(
+    struct miru_state *state,
+    struct miru_layer_surface *ls,
+    struct miru_capture *capture,
+    struct miru_config *config
+)
 {
     if (capture_output_frame(state, state->output, &should_exit, capture) != 0) {
         fprintf(stderr, "toggle: capture failed, staying inactive\n");
         return -1;
     }
-    if (layer_surface_create(state, ls, capture) != 0) {
+    if (layer_surface_create(state, ls, capture, (float)config->zoom_factor, (float)config->zoom_max_factor) != 0) {
         fprintf(stderr, "toggle: failed to create layer surface \n");
         capture_frame_destroy(capture);
         return -1;
@@ -87,6 +93,8 @@ int main(int argc, char *argv[])
     struct miru_layer_surface ls = { 0 };
     struct miru_capture capture = { 0 };
     struct miru_ipc_server ipc = { 0 };
+    struct miru_config config;
+    config_load(&config);
     volatile sig_atomic_t request_deactivate = 0;
     int active = 0;
 
@@ -103,6 +111,7 @@ int main(int argc, char *argv[])
     struct miru_input_ctx input_ctx = {
         .ls = &ls,
         .request_deactivate = &request_deactivate,
+        .zoom_increment = (float)config.zoom_increment,
     };
 
     input_setup(&state, &input_ctx);
@@ -156,7 +165,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "ipc: got command %d, active was %d\n", cmd, active);
             if (cmd == MIRU_IPC_TOGGLE) {
                 if (!active) {
-                    active = (activate(&state, &ls, &capture) == 0);
+                    active = (activate(&state, &ls, &capture, &config) == 0);
                 } else {
                     deactivate(&ls, &capture);
                     input_reset_repeat(&input_ctx);

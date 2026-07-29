@@ -29,9 +29,17 @@ struct miru_layer_surface {
     double cursor_y;
     float zoom;
     int dirty;
+    float zoom_default;
+    float zoom_max;
 };
 
-int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls, const struct miru_capture *capture);
+int layer_surface_create(
+    struct miru_state *state,
+    struct miru_layer_surface *ls,
+    const struct miru_capture *capture,
+    float zoom_default,
+    float zoom_max
+);
 void layer_surface_destroy(struct miru_layer_surface *ls);
 // re-blits ls -> capture into whichever buffer slot is currently free and re-commits
 // call for updating ls -> capture with a fresh frame;

@@ -3,15 +3,15 @@
 <br>
 
 <div align="center">
-  <img src="./miru_logo.svg" alt="logo" width = "300" />
+  <img src="./miru_logo.svg" alt="logo" width="300" />
 </div>
 
 <br>
 <br>
 
 A Wayland-native screen magnifier and cursor spotlight tool for streamers, built
-for [Niri](https://github.com/YaLTeR/niri). (Tested on `niri` so unless tested
-in other WM's I cannot guarantee it'll work)
+for Wayland compositors supporting the required wlroots protocols. Miru is
+primarily developed and tested on Niri.
 
 Inspired by [boomer](https://github.com/tsoding/boomer), but for Wayland —
 written in C, keybind-driven, no GUI, no mouse-required config.
@@ -19,9 +19,18 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 > **Status: early development.** Wayland connection, registry discovery,
 > one-shot screen capture via `wlr-screencopy`, scale-aware rendering into a
 > double-buffered `wlr-layer-shell` overlay, a working keybind-driven toggle
-> (via `miructl` + a Unix socket), and cursor-centered zoom/pan with
-> keyboard/WASD/scroll-wheel controls and proper key-repeat are all in place.
-> Spotlight mode isn't built yet. See [Roadmap](#roadmap).
+> (via `miructl` + a Unix socket), cursor-centered zoom/pan with
+> keyboard/WASD/scroll-wheel controls, proper key-repeat, and TOML-based
+> configuration are all in place. Spotlight mode isn't built yet.
+> See [Roadmap](#roadmap).
+
+> [!IMPORTANT]
+> Miru currently requires both `wlr-layer-shell-unstable-v1` and
+> `wlr-screencopy-unstable-v1`. Compositors that do not expose these protocols
+> are not currently supported.
+>
+> In particular, **GNOME (Mutter)** and **KDE Plasma (KWin)** are not supported
+> at this time.
 
 > [!NOTE]
 > `miru` devlogs on YouTube
@@ -48,8 +57,9 @@ Two toggleable modes, each bound to a keybind on your compositor:
 ### Why
 
 Most screen magnifiers either don't exist for Wayland, or route through XWayland
-with visible artifacts and no compositor integration. Miru talks to Niri's own
-protocols directly (`wlr-layer-shell`, `wlr-screencopy`) instead.
+with visible artifacts and no compositor integration. Miru uses Wayland
+protocols directly, currently relying on `wlr-layer-shell` for its overlay and
+`wlr-screencopy` for screen capture.
 
 ### A note on global hotkeys
 
@@ -59,21 +69,37 @@ this is deliberate, not a missing feature. Wayland's security model doesn't
 allow any client to listen for keypresses while it isn't focused; only the
 compositor itself has that privileged access, which is exactly why every
 Wayland compositor provides *some* way to bind a key to a command (a config
-file, or a GUI). Routing through the compositor is the correct, secure way
-to do this — the alternative (a client reading raw kernel input events
-directly, bypassing Wayland's input model) means running with elevated
-device permissions and having the daemon read every keystroke on your
-system at all times just to catch one hotkey, which is a meaningfully
-bigger trust ask than this project wants to make for a screen-zoom tool.
+file, or a GUI).
+
+Routing through the compositor is the correct, secure way to do this — the
+alternative (a client reading raw kernel input events directly, bypassing
+Wayland's input model) means running with elevated device permissions and
+having the daemon read every keystroke on your system at all times just to
+catch one hotkey, which is a meaningfully bigger trust ask than this project
+wants to make for a screen-zoom tool.
 
 ### Requirements
 
 * A Wayland compositor implementing `wlr-layer-shell-unstable-v1` and
-  `wlr-screencopy-unstable-v1` (developed against Niri)
+  `wlr-screencopy-unstable-v1`
 * `wayland-client`, `wayland-protocols`, `wayland-scanner` (pacman: `wayland`,
   `wayland-protocols`)
-* CMake ≥ 3.20, Ninja (Optional)
+* CMake ≥ 3.20, Ninja (optional)
 * A C11 compiler
+
+#### Compositor compatibility
+
+Miru currently requires a compositor that exposes both `wlr-layer-shell` and
+`wlr-screencopy`.
+
+* **Niri** — supported and used for development/testing
+* **Sway** — supported by the required wlroots protocols
+* **Mango** — supported if the required protocols are exposed
+* **GNOME / Mutter** — not supported
+* **KDE Plasma / KWin** — not supported
+
+Support for compositors without these protocols may be added later through
+alternative capture and overlay mechanisms.
 
 ### Installing
 
@@ -82,12 +108,13 @@ bigger trust ask than this project wants to make for a screen-zoom tool.
 ```bash
 # latest tagged release
 paru -S miru-zoom
+
 # or track the latest commit on main
 paru -S miru-zoom-git
 ```
 
-(substitute your AUR helper of choice — `yay`, `paru`, or a manual
-`makepkg -si` against the PKGBUILD)
+Substitute your AUR helper of choice — `yay`, `paru`, or a manual
+`makepkg -si` against the PKGBUILD.
 
 #### Nix / NixOS
 
@@ -152,6 +179,7 @@ your compositor's `spawn-at-startup`:
 
 ```bash
 ./build/miru-daemon
+
 # or
 grim cast run-daemon
 ```
@@ -168,25 +196,83 @@ Toggle the overlay on/off:
 ./build/miructl quit            # tells the daemon to shut down
 ```
 
+### Configuration
+
+Miru uses a TOML configuration file located at:
+
+```text
+$XDG_CONFIG_HOME/miru/config.toml
+```
+
+If `XDG_CONFIG_HOME` is not set, Miru follows the XDG fallback and uses:
+
+```text
+$HOME/.config/miru/config.toml
+```
+
+The directory and default configuration file are created automatically on
+first launch.
+
+The default configuration is:
+
+```toml
+[zoom]
+factor = 2.0
+increment = 0.25
+max_factor = 10.0
+smooth = false
+
+[spotlight]
+radius = 250
+dim = 0.65
+softness = 20
+
+[general]
+show_cursor = true
+```
+
+The currently active zoom options are:
+
+* `factor` — initial zoom level. Must be at least `1.0`.
+* `increment` — amount the zoom changes for each key or scroll input. Must be
+  greater than `0`.
+* `max_factor` — maximum zoom level. Must be at least `1.0`.
+
+Invalid numeric values, including malformed, overflowing, non-finite, and
+non-positive values where applicable, fall back to safe defaults. `factor` is
+clamped to `max_factor` when necessary.
+
+> [!NOTE]
+> `zoom.smooth`, the `[spotlight]` settings, and `general.show_cursor` are
+> currently parsed but do not have a runtime effect. They are reserved for
+> functionality that has not been implemented yet.
+
+Additional input and zoom diagnostics can be enabled by setting `MIRU_DEBUG` to
+a non-zero value:
+
+```bash
+MIRU_DEBUG=1 ./build/miru-daemon
+```
+
 #### Setting up a keybind
 
-You'll want this bound to a key rather than run manually. Every Wayland
+You'll want this bound to a key rather than run manually. Each supported
 compositor has its own way to bind a command to a key:
 
 > [!NOTE]
 > Make sure `miru-daemon` is already running before triggering the keybind,
 > or `miructl` will fail with a connection error.
 
-**Mango** — `~/.config/mango/config.conf`:
-
-```conf
-bind=SUPER,Z,spawn,/path/to/miru/build/miructl toggle
-```
-
 **Niri** — `~/.config/niri/config.kdl`:
 
 ```kdl
 Mod+Z hotkey-overlay-title="toggle miru" { spawn-sh "/path/to/miru/build/miructl toggle"; }
+```
+
+***Hyprland** - `~/.config/hypr/hyprland.conf`
+
+```config
+bind = SUPER, Z, exec, /path/to/miru/build/miructl toggle
 ```
 
 **Sway** — `~/.config/sway/config`:
@@ -195,30 +281,22 @@ Mod+Z hotkey-overlay-title="toggle miru" { spawn-sh "/path/to/miru/build/miructl
 bindsym $mod+z exec /path/to/miru/build/miructl toggle
 ```
 
-**GNOME (Mutter)** — no config file needed, it's all GUI:
+**Mango** — `~/.config/mango/config.conf`:
 
-1. Settings → Keyboard → Custom Shortcuts → `+`
-2. Name: `Toggle Miru`
-3. Command: `/path/to/miru/build/miructl toggle`
-4. Set your preferred shortcut (e.g. `Super+Z`)
-
-**KDE (KWin)** — also GUI-based:
-
-1. System Settings → Shortcuts → Custom Shortcuts
-2. New → Global Shortcut → Command/URL
-3. Set the command to `/path/to/miru/build/miructl toggle` and assign a
-   trigger key
+```conf
+bind=SUPER,Z,spawn,/path/to/miru/build/miructl toggle
+```
 
 Substitute the actual path to your built `miructl` binary in each case (or
 wherever it ends up if installed via a package manager).
 
 On toggle-on, the daemon captures one frame via `wlr-screencopy`, blits it
 into a fullscreen `wlr-layer-shell` overlay (correctly scaled on HiDPI
-outputs, double-buffered to avoid tearing), and shows it zoomed in 2x,
-centered on your cursor. While active:
+outputs, double-buffered to avoid tearing), and shows it at the configured
+zoom factor, centered on your cursor. While active:
 
 * **Move the mouse** to pan the zoomed view, tracking the cursor live
-* **`+`/`-`** or **scroll wheel** to adjust zoom level (1x–10x)
+* **`+`/`-`** or **scroll wheel** to adjust the zoom level
 * **Arrow keys or WASD** to pan by keyboard — press and hold for continuous
   panning at your keyboard's repeat rate
 * **Esc**, or pressing the toggle keybind again, to exit back to your normal
@@ -228,8 +306,8 @@ There's deliberately no continuous re-capture of the underlying screen while
 the overlay is visible: an earlier version tried that and hit a feedback loop
 where the overlay could end up capturing itself (e.g. during Alt+Tab), so the
 frozen frame is captured once per toggle-on, matching `boomer`'s actual
-freeze-on-demand behavior rather than a live feed. Zooming/panning within
-that one frozen frame is fully live, however.
+freeze-on-demand behavior rather than a live feed. Zooming/panning within that
+one frozen frame is fully live, however.
 
 The overlay grabs keyboard and pointer input while active (needed for pan/zoom
 to work), so clicks and most keys won't reach whatever's underneath until you
@@ -253,7 +331,9 @@ behave differently — click-through by design.
 │   ├── capture.h/.c           # one-shot screen capture via wlr-screencopy
 │   ├── shm_buffer.h/.c        # shared-memory pixel buffer allocation helper
 │   ├── ipc_server.h/.c        # Unix socket server, parses toggle/quit commands
-│   ├── input.h/.c             # pointer/keyboard listeners: pan (mouse/arrows/WASD), zoom, key-repeat, Esc-to-exit
+│   ├── input.h/.c             # pointer/keyboard listeners: pan, zoom, key-repeat, Esc-to-exit
+│   ├── config.h/.c            # config discovery, defaults, validation and loading
+│   ├── toml.h/.c              # minimal TOML parser used by the config loader
 │   ├── version.h.in           # CMake-configured version string (git describe)
 │   ├── logo.h                 # ASCII logo module interface
 │   └── logo.c                 # ASCII logo data and printing implementation
@@ -266,17 +346,21 @@ behave differently — click-through by design.
 
 * [x] Wayland connection, registry discovery, manual poll-based event loop
 * [x] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
-* [x] Screen capture via `wlr-screencopy` (verified working, not yet rendered)
+* [x] Screen capture via `wlr-screencopy`
 * [x] Render the captured frame into the overlay surface (scale-aware, single
-      output)
+  output)
 * [x] `miructl` control client + Unix socket IPC, daemon/client split
 * [x] Keybind-driven toggle: capture + show on activate, tear down on
-      deactivate, no continuous re-capture while visible
+  deactivate, no continuous re-capture while visible
 * [x] Magnifier mode: cursor-centered zoom + live pan, mouse/keyboard/WASD/
-      scroll zoom controls, proper multi-key repeat, double-buffered rendering
+  scroll zoom controls, proper multi-key repeat, double-buffered rendering
+* [x] TOML configuration with XDG config directory support and configurable
+  zoom behavior
 * [ ] Spotlight mode: darken + feathered cursor cutout, click-through
 * [ ] Cursor tracking for spotlight mode without stealing input (Niri IPC)
-* [ ] Multi-monitor support, config file, smooth zoom animation
+* [ ] Multi-monitor support
+* [ ] Smooth zoom animation
+* [ ] Support compositors without `wlr-screencopy` / `wlr-layer-shell`
 
 ### License
 
@@ -288,7 +372,7 @@ See [LICENSE](./LICENSE).
 it.**
 
 * **Micro-improvements:** I have used AI as an advisor to improve some bits of
-code here and there. Big refactors or new features are done by my hand though.
+  code here and there. Big refactors or new features are done by my hand though.
 
 <br>
 

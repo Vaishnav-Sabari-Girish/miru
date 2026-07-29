@@ -163,7 +163,7 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     ls->buffer_height = buffer_height;
 
     if (!ls->configured) {
-        ls->zoom = 2.0f;
+        ls->zoom = ls->zoom_default;
         ls->cursor_x = buffer_width / 2.0;
         ls->cursor_y = buffer_height / 2.0;
     }
@@ -194,11 +194,19 @@ static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
     .closed = handle_closed,
 };
 
-int layer_surface_create(struct miru_state *state, struct miru_layer_surface *ls, const struct miru_capture *capture)
+int layer_surface_create(
+    struct miru_state *state,
+    struct miru_layer_surface *ls,
+    const struct miru_capture *capture,
+    float zoom_default,
+    float zoom_max
+)
 {
     ls->shm = state->shm;
     ls->capture = capture;
     ls->output_scale = state->output_scale;
+    ls->zoom_default = zoom_default;
+    ls->zoom_max = zoom_max;
 
     ls->surface = wl_compositor_create_surface(state->compositor);
     if (!ls->surface) {
