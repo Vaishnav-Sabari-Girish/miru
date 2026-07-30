@@ -1,4 +1,53 @@
 
+## v0.3.0 - 2026-07-30
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(spotlight_mode)** Add spotlight mode
+
+- **(config)** Add robust TOML configuration support
+
+- **(config)** Add TOML configuration support
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(range)** Out of range channel conversion fixed
+
+- **(spotlight)** Fixed the lag and weird movements.
+
+- **(toml)** Clear current_section to avoid malformed headers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### :tada: New Contributors
+- @yvnth made their first contribution
 ## v0.2.0 - 2026-07-26
 
 
