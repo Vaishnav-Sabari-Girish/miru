@@ -7,3 +7,6 @@ headings = false
 
 [MD033]
 enabled = false
+
+[MD034]
+enabled = false
