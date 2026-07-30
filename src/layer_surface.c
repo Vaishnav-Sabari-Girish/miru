@@ -84,8 +84,8 @@ static void blit_and_commit(struct miru_layer_surface *ls)
         int dst_stride = bw * 4;
         int src_stride = (int)ls->capture->stride;
 
-        float dst_cursor_x = ((float)ls->cursor_x - src_left) * z;
-        float dst_cursor_y = ((float)ls->cursor_y - src_top) * z;
+        float dst_cursor_x = (float)ls->cursor_x;
+        float dst_cursor_y = (float)ls->cursor_y;
 
         float inner = ls->spotlight_radius - ls->spotlight_softness;
         float outer = ls->spotlight_radius + ls->spotlight_softness;
@@ -116,6 +116,11 @@ static void blit_and_commit(struct miru_layer_surface *ls)
             const uint8_t *src_row = src + (size_t)real_sy * src_stride;
             uint8_t *dst_row = dst + (size_t)dy * dst_stride;
 
+            float ddy = (float)dy - dst_cursor_y;
+            float ddy_sq = ddy * ddy;
+
+            int row_fully_outside = spotlight_enabled && (ddy_sq > outer_sq);
+
             for (int dx = 0; dx < bw; dx++) {
                 int sx = (int)(src_left + (float)dx / z);
                 if (sx < 0)
@@ -124,11 +129,14 @@ static void blit_and_commit(struct miru_layer_surface *ls)
                     sx = bw - 1;
                 memcpy(dst_row + (size_t)dx * 4, src_row + (size_t)sx * 4, 4);
 
-                if (spotlight_enabled) {
+                if (row_fully_outside) {
+                    uint8_t *px = dst_row + (size_t)dx * 4;
+                    px[0] = (uint8_t)((float)px[0] * dim_factor);
+                    px[1] = (uint8_t)((float)px[1] * dim_factor);
+                    px[2] = (uint8_t)((float)px[2] * dim_factor);
+                } else if (spotlight_enabled) {
                     float ddx = (float)dx - dst_cursor_x;
-                    float ddy = (float)dy - dst_cursor_y;
-
-                    float dst_sq = ddx * ddx + ddy * ddy;
+                    float dst_sq = ddx * ddx + ddy_sq;
 
                     float brightness;
                     if (dst_sq <= inner_sq) {
@@ -143,6 +151,7 @@ static void blit_and_commit(struct miru_layer_surface *ls)
                         if (brightness < 0.0f)
                             brightness = 0.0f;
                     }
+
                     uint8_t *px = dst_row + (size_t)dx * 4;
                     px[0] = (uint8_t)((float)px[0] * brightness);
                     px[1] = (uint8_t)((float)px[1] * brightness);
