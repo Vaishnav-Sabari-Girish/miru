@@ -65,7 +65,9 @@ static int activate(
         .zoom_default = (float)config->zoom_factor,
         .zoom_max = (float)config->zoom_max_factor,
         .spotlight_radius = (float)config->spotlight_radius,
-        .spotlight_dim = (float)config->spotlight_dim,
+        .spotlight_dim = (float)(config->spotlight_dim < 0.0 ? 0.0 :
+                                 config->spotlight_dim > 1.0 ? 1.0 :
+                                                               config->spotlight_dim),
         .spotlight_softness = (float)config->spotlight_softness,
     };
 
