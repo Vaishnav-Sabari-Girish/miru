@@ -40,7 +40,7 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 
 ## Demo
 
-![miru](./miru.gif)
+https://github.com/user-attachments/assets/be2a4561-ad53-4700-8ddc-b78a5f4eb616
 
 ### What it does
 
