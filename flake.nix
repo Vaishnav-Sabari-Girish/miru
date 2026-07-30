@@ -14,7 +14,7 @@
         # Define the derivation once so we can reference it in 'packages' and 'apps'
         miru = pkgs.stdenv.mkDerivation {
           pname = "miru";
-          version = "0.2.0";
+          version = "0.3.0";
           src = ./.;
 
           nativeBuildInputs = with pkgs; [
