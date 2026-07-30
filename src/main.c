@@ -60,7 +60,18 @@ static int activate(
         fprintf(stderr, "toggle: capture failed, staying inactive\n");
         return -1;
     }
-    if (layer_surface_create(state, ls, capture, (float)config->zoom_factor, (float)config->zoom_max_factor) != 0) {
+
+    struct layer_surface_config ls_config = {
+        .zoom_default = (float)config->zoom_factor,
+        .zoom_max = (float)config->zoom_max_factor,
+        .spotlight_radius = (float)config->spotlight_radius,
+        .spotlight_dim = (float)(config->spotlight_dim < 0.0 ? 0.0 :
+                                 config->spotlight_dim > 1.0 ? 1.0 :
+                                                               config->spotlight_dim),
+        .spotlight_softness = (float)config->spotlight_softness,
+    };
+
+    if (layer_surface_create(state, ls, capture, &ls_config) != 0) {
         fprintf(stderr, "toggle: failed to create layer surface \n");
         capture_frame_destroy(capture);
         return -1;

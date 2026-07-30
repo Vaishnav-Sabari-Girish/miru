@@ -20,8 +20,10 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 > one-shot screen capture via `wlr-screencopy`, scale-aware rendering into a
 > double-buffered `wlr-layer-shell` overlay, a working keybind-driven toggle
 > (via `miructl` + a Unix socket), cursor-centered zoom/pan with
-> keyboard/WASD/scroll-wheel controls, proper key-repeat, and TOML-based
-> configuration are all in place. Spotlight mode isn't built yet.
+> keyboard/WASD/scroll-wheel controls, proper key-repeat, TOML-based
+> configuration, and a Cursor Highlight toggle (darken + feathered cutout,
+> within Magnifier mode) are all in place. Standalone Spotlight mode — a
+> separate, click-through feature — isn't built yet.
 > See [Roadmap](#roadmap).
 
 > [!IMPORTANT]
@@ -42,17 +44,28 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 
 ### What it does
 
-Two toggleable modes, each bound to a keybind on your compositor:
+Two distinct features — one built, one planned. They share a visual
+similarity (dim + soft-edged circle around the cursor) but are not the same
+feature, and it's worth being clear about which one you're getting:
 
 * **Magnifier mode** — press a key, the screen freezes into a zoomed-in
   fullscreen view centered on your cursor. Move the mouse to pan, scroll or
   press +/- to adjust zoom, use arrow keys or WASD to pan by keyboard, press
   Esc (or the toggle key again) to exit. Like `boomer`, but native Wayland.
-  This is working end-to-end now.
-* **Spotlight mode** — a click-through overlay that darkens the whole screen
-  except a soft-edged circle following your cursor, while you keep working
-  normally underneath. Useful for drawing viewer attention during
-  streams/recordings. **Not built yet**.
+  While active, pressing **Tab** toggles **Cursor Highlight** on top of the
+  zoomed view — darkening everything except a soft-edged circle that tracks
+  your cursor, configurable via `[spotlight]` in the config file. This only
+  works *inside* an active Magnifier session; it isn't a separate mode you
+  can toggle on its own, and the desktop underneath is still frozen/grabbed
+  while it's on. **Built and working now.**
+* **Spotlight mode** — a fully independent, click-through overlay that
+  darkens the whole screen except a cursor-tracking circle, while you keep
+  working normally underneath — no freeze, no input grab, usable during
+  normal desktop work rather than only inside a Magnifier session. This is a
+  different, harder problem than Cursor Highlight above: it needs cursor
+  tracking without stealing pointer/keyboard focus, which Cursor Highlight
+  sidesteps entirely by already owning input while Magnifier is active.
+  **Not built yet.**
 
 ### Why
 
@@ -93,7 +106,9 @@ Miru currently requires a compositor that exposes both `wlr-layer-shell` and
 `wlr-screencopy`.
 
 * **Niri** — supported and used for development/testing
-* **Sway** — supported by the required wlroots protocols
+* **Sway** — supported; both required protocols are core to the wlroots
+  ecosystem Sway is built on
+* **Hyprland** — supported by the required wlroots protocols
 * **Mango** — supported if the required protocols are exposed
 * **GNOME / Mutter** — not supported
 * **KDE Plasma / KWin** — not supported
@@ -166,7 +181,7 @@ cmake --build build
 Or with [Grimoire](https://github.com/Vaishnav-Sabari-Girish/grimoire):
 
 ```bash
-grim cast build
+grim cast build        # Uses make to build by default
 ```
 
 This builds two binaries: `miru-daemon` (the actual Wayland client) and
@@ -231,21 +246,31 @@ softness = 20
 show_cursor = true
 ```
 
-The currently active zoom options are:
+The currently active options are:
 
-* `factor` — initial zoom level. Must be at least `1.0`.
-* `increment` — amount the zoom changes for each key or scroll input. Must be
+* `zoom.factor` — initial zoom level applied on each toggle-on. Must be at
+  least `1.0`.
+* `zoom.increment` — amount the zoom changes per key/scroll input. Must be
   greater than `0`.
-* `max_factor` — maximum zoom level. Must be at least `1.0`.
+* `zoom.max_factor` — maximum zoom level. Must be at least `1.0`.
+* `spotlight.radius` — radius, in pixels, of the fully-bright circle around
+  the cursor.
+* `spotlight.dim` — how much darker the dimmed area gets, from `0.0` (no
+  effect) to `1.0` (fully black).
+* `spotlight.softness` — width, in pixels, of the feathered transition
+  between the bright circle and the dimmed area.
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
-non-positive values where applicable, fall back to safe defaults. `factor` is
-clamped to `max_factor` when necessary.
+non-positive values where applicable, fall back to safe defaults. `zoom.factor`
+is clamped to `zoom.max_factor` when necessary.
 
 > [!NOTE]
-> `zoom.smooth`, the `[spotlight]` settings, and `general.show_cursor` are
-> currently parsed but do not have a runtime effect. They are reserved for
-> functionality that has not been implemented yet.
+> `zoom.smooth` and `general.show_cursor` are currently parsed but do not have
+> a runtime effect yet. `[spotlight]` values ARE live — they control the
+> Cursor Highlight effect toggled with Tab while Magnifier mode is active
+> (see below). They're named `[spotlight]` in the config because they'll be
+> shared with standalone Spotlight mode once that's built, not because
+> Cursor Highlight and Spotlight mode are the same feature.
 
 Additional input and zoom diagnostics can be enabled by setting `MIRU_DEBUG` to
 a non-zero value:
@@ -269,7 +294,7 @@ compositor has its own way to bind a command to a key:
 Mod+Z hotkey-overlay-title="toggle miru" { spawn-sh "/path/to/miru/build/miructl toggle"; }
 ```
 
-***Hyprland** - `~/.config/hypr/hyprland.conf`
+**Hyprland** — `~/.config/hypr/hyprland.conf`:
 
 ```config
 bind = SUPER, Z, exec, /path/to/miru/build/miructl toggle
@@ -299,6 +324,10 @@ zoom factor, centered on your cursor. While active:
 * **`+`/`-`** or **scroll wheel** to adjust the zoom level
 * **Arrow keys or WASD** to pan by keyboard — press and hold for continuous
   panning at your keyboard's repeat rate
+* **Tab** to toggle Cursor Highlight on/off — darkens everything except a
+  soft-edged circle tracking your cursor, using the `[spotlight]` config
+  values. This is separate from the standalone Spotlight mode described
+  above; see [What it does](#what-it-does) for the distinction.
 * **Esc**, or pressing the toggle keybind again, to exit back to your normal
   desktop
 
@@ -306,13 +335,14 @@ There's deliberately no continuous re-capture of the underlying screen while
 the overlay is visible: an earlier version tried that and hit a feedback loop
 where the overlay could end up capturing itself (e.g. during Alt+Tab), so the
 frozen frame is captured once per toggle-on, matching `boomer`'s actual
-freeze-on-demand behavior rather than a live feed. Zooming/panning within that
-one frozen frame is fully live, however.
+freeze-on-demand behavior rather than a live feed. Zooming/panning/Cursor
+Highlight within that one frozen frame is fully live, however.
 
-The overlay grabs keyboard and pointer input while active (needed for pan/zoom
-to work), so clicks and most keys won't reach whatever's underneath until you
-exit; that's expected for Magnifier mode. Spotlight mode, once built, will
-behave differently — click-through by design.
+The overlay grabs keyboard and pointer input while active (needed for
+pan/zoom/Cursor Highlight to work), so clicks and most keys won't reach
+whatever's underneath until you exit; that's expected for Magnifier mode. A
+future standalone Spotlight mode would behave differently — click-through by
+design, see [What it does](#what-it-does) above.
 
 ### Project structure
 
@@ -327,11 +357,11 @@ behave differently — click-through by design.
 ├── src/
 │   ├── main.c                 # daemon entrypoint, IPC-driven toggle loop
 │   ├── wayland_state.h/.c     # connection, registry, seat/output tracking, poll-based event loop
-│   ├── layer_surface.h/.c     # double-buffered wlr-layer-shell overlay, zoom/pan blit
+│   ├── layer_surface.h/.c     # double-buffered wlr-layer-shell overlay, zoom/pan/Cursor Highlight blit
 │   ├── capture.h/.c           # one-shot screen capture via wlr-screencopy
 │   ├── shm_buffer.h/.c        # shared-memory pixel buffer allocation helper
 │   ├── ipc_server.h/.c        # Unix socket server, parses toggle/quit commands
-│   ├── input.h/.c             # pointer/keyboard listeners: pan, zoom, key-repeat, Esc-to-exit
+│   ├── input.h/.c             # pointer/keyboard listeners: pan, zoom, Cursor Highlight toggle, key-repeat, Esc-to-exit
 │   ├── config.h/.c            # config discovery, defaults, validation and loading
 │   ├── toml.h/.c              # minimal TOML parser used by the config loader
 │   ├── version.h.in           # CMake-configured version string (git describe)
@@ -355,9 +385,13 @@ behave differently — click-through by design.
 * [x] Magnifier mode: cursor-centered zoom + live pan, mouse/keyboard/WASD/
   scroll zoom controls, proper multi-key repeat, double-buffered rendering
 * [x] TOML configuration with XDG config directory support and configurable
-  zoom behavior
-* [ ] Spotlight mode: darken + feathered cursor cutout, click-through
-* [ ] Cursor tracking for spotlight mode without stealing input (Niri IPC)
+  zoom/spotlight behavior
+* [x] Cursor Highlight (Tab): darken + feathered cursor cutout on top of the
+  zoomed view, tracks the real cursor position
+* [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
+  freeze, works alongside normal desktop use)
+* [ ] Cursor tracking for Spotlight mode without stealing input (likely
+  Niri IPC or similar)
 * [ ] Multi-monitor support
 * [ ] Smooth zoom animation
 * [ ] Support compositors without `wlr-screencopy` / `wlr-layer-shell`

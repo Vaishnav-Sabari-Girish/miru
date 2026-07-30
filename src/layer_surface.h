@@ -4,6 +4,14 @@
 #include "wayland_state.h"
 #include "capture.h"
 
+struct layer_surface_config {
+    float zoom_default;
+    float zoom_max;
+    float spotlight_radius;
+    float spotlight_dim;
+    float spotlight_softness;
+};
+
 // one shm-backed wl_buffer and its own independent busy/release tracking
 struct miru_buffer_slot {
     struct wl_buffer *buffer;
@@ -31,14 +39,19 @@ struct miru_layer_surface {
     int dirty;
     float zoom_default;
     float zoom_max;
+    float spotlight_radius;
+    float spotlight_dim;
+    float spotlight_softness;
+    int spotlight_enabled;
 };
 
 int layer_surface_create(
     struct miru_state *state,
     struct miru_layer_surface *ls,
     const struct miru_capture *capture,
-    float zoom_default,
-    float zoom_max
+    // float zoom_default,
+    // float zoom_max
+    const struct layer_surface_config *config
 );
 void layer_surface_destroy(struct miru_layer_surface *ls);
 // re-blits ls -> capture into whichever buffer slot is currently free and re-commits
