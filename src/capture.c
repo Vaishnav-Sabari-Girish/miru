@@ -6,6 +6,11 @@
 #include "wlr-screencopy-unstable-v1-client-protocol.h"
 #include <wayland-client-protocol.h>
 
+#define DRM_FORMAT_ARGB8888 0x34325241u // AR24
+#define DRM_FORMAT_XRGB8888 0x34325258u // XR24
+// #define DRM_FORMAT_ABGR8888 0x34324241u  // AB24
+// #define DRM_FORMAT_XBGR8888 0x34324258u  // XB24
+
 // tracks one in-flight capture across its async callback sequence
 struct capture_ctx {
     struct miru_state *state;
@@ -25,6 +30,17 @@ static const char *shm_format_name(uint32_t format)
         return "ABGR8888";
     case WL_SHM_FORMAT_XBGR8888:
         return "XBGR8888";
+
+    case DRM_FORMAT_ARGB8888:
+        return "ARGB8888 (DRM FourCC)";
+    case DRM_FORMAT_XRGB8888:
+        return "XRGB8888 ARGB8888 (DRM FourCC)";
+    // case DRM_FORMAT_ABGR8888:
+    //     return "ABGR8888 (DRM FourCC)";
+    // case DRM_FORMAT_XBGR8888:
+    //     return "XBGR8888 (DRM FourCC)";
+    default:
+        return "Unknown";
     }
 }
 
@@ -52,6 +68,11 @@ static void handle_buffer(
     case WL_SHM_FORMAT_XRGB8888:
     case WL_SHM_FORMAT_ABGR8888:
     case WL_SHM_FORMAT_XBGR8888:
+    case DRM_FORMAT_ARGB8888:
+    case DRM_FORMAT_XRGB8888:
+        // case DRM_FORMAT_ABGR8888:
+        // case DRM_FORMAT_XBGR8888:
+
         break;
 
     default:
