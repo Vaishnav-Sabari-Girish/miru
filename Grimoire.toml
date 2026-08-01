@@ -1,4 +1,4 @@
-version = "1"
+version = "2"
 
 [sigil.clean]
 silent = true
@@ -11,13 +11,18 @@ silent = true
 description = "Build miru"
 language = "shell"
 run = '''
-cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=~/.local
 cmake --build build
 '''
 
+[sigil.install]
+silent = true
+description = "Install miru binaries to ~/.local/bin"
+language = "shell"
+run = "cmake --install build"
+
 [sigil.run-daemon]
 silent = true
-description = "Run miru-daemon"
+description = "Run miru-daemon locally"
 language = "shell"
 run = "./build/miru-daemon"
-    
