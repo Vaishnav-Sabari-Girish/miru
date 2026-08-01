@@ -74,6 +74,18 @@ with visible artifacts and no compositor integration. Miru uses Wayland
 protocols directly, currently relying on `wlr-layer-shell` for its overlay and
 `wlr-screencopy` for screen capture.
 
+### Performance
+
+Because there's no continuous re-capture while the overlay is inactive (see
+[Setting up a keybind](#setting-up-a-keybind) below for why), `miru-daemon`
+sits completely idle — blocked in `poll()` waiting for either a Wayland event
+or a toggle command — for as long as you're not actively using it. In
+practice this means ~0% CPU usage at rest:
+
+<div align="center">
+  <img src="./miru_cpu_usage.png" alt="miru-daemon at 0% CPU while idle" width="500" />
+</div>
+
 ### A note on global hotkeys
 
 Miru is toggled via a compositor-level keybind (see [Setting up a
@@ -187,10 +199,26 @@ grim cast build        # Uses make to build by default
 This builds two binaries: `miru-daemon` (the actual Wayland client) and
 `miructl` (a tiny, Wayland-independent socket client used to control it).
 
+#### Installing the built binaries
+
+To install `miru-daemon` and `miructl` to `~/.local/bin`:
+
+```bash
+cmake --install build
+```
+
+Or with Grimoire, which also configures `CMAKE_INSTALL_PREFIX` for you:
+
+```bash
+grim cast install
+```
+
 ### Running
 
-Start the daemon first, in the foreground or via a systemd user service /
-your compositor's `spawn-at-startup`:
+You can run `miru-daemon` directly in the foreground, or set it up as a
+systemd user service so it starts automatically with your graphical session.
+
+#### Running directly
 
 ```bash
 ./build/miru-daemon
@@ -199,9 +227,42 @@ your compositor's `spawn-at-startup`:
 grim cast run-daemon
 ```
 
-It connects to the compositor, logs every advertised protocol, opens a Unix
-socket at `$XDG_RUNTIME_DIR/miru.sock`, and then idles — no overlay is shown
-until told to toggle. Nothing else happens until a toggle command arrives.
+#### As a systemd user service
+
+Create `~/.config/systemd/user/miru.service`:
+
+```ini
+[Unit]
+Description=Miru Zooming Daemon
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=WAYLAND_DISPLAY
+ConditionPathExists=%h/.local/bin/miru-daemon
+
+[Service]
+ExecStart=%h/.local/bin/miru-daemon
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=graphical-session.target
+```
+
+This assumes `miru-daemon` has been installed to `~/.local/bin` (see
+[Installing the built binaries](#installing-the-built-binaries) above) — adjust
+`ExecStart`/`ConditionPathExists` if yours lives elsewhere.
+
+Then enable and start it:
+
+```bash
+systemctl --user enable --now miru.service
+```
+
+Either way, once running, `miru-daemon` connects to the compositor, logs
+every advertised protocol, opens a Unix socket at
+`$XDG_RUNTIME_DIR/miru.sock`, and then idles — no overlay is shown until told
+to toggle. Nothing else happens until a toggle command arrives (see
+[Performance](#performance) above for what that idling actually costs).
 
 Toggle the overlay on/off:
 
@@ -388,6 +449,7 @@ design, see [What it does](#what-it-does) above.
   zoom/spotlight behavior
 * [x] Cursor Highlight (Tab): darken + feathered cursor cutout on top of the
   zoomed view, tracks the real cursor position
+* [x] systemd user service + `cmake --install`/`grim cast install` support
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
