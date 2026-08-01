@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <signal.h>
 #include "wayland_state.h"
 
@@ -15,7 +16,7 @@ struct miru_capture {
     uint32_t height;
     uint32_t stride; // exact stride the compositor told us to use, may include padding
     uint32_t format; // WL_SHM_FORMAT_* the compositor actually gave us, not something we choose
-    int y_invert; // 1 if this frame is delivered upside-down, blit code must flip rows
+    bool y_invert; // 1 if this frame is delivered upside-down, blit code must flip rows
 };
 
 // blocks until the compositor delivers one full frame from `output`, returns -1 on failure

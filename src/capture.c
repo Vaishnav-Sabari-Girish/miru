@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <string.h>
 #include "capture.h"
@@ -15,8 +16,8 @@
 struct capture_ctx {
     struct miru_state *state;
     struct miru_capture *out;
-    int done;
-    int ok;
+    bool done;
+    bool ok;
 };
 
 static const char *shm_format_name(uint32_t format)
@@ -34,7 +35,7 @@ static const char *shm_format_name(uint32_t format)
     case DRM_FORMAT_ARGB8888:
         return "ARGB8888 (DRM FourCC)";
     case DRM_FORMAT_XRGB8888:
-        return "XRGB8888 ARGB8888 (DRM FourCC)";
+        return "XRGB8888 (DRM FourCC)";
     // case DRM_FORMAT_ABGR8888:
     //     return "ABGR8888 (DRM FourCC)";
     // case DRM_FORMAT_XBGR8888:
@@ -77,8 +78,8 @@ static void handle_buffer(
 
     default:
         fprintf(stderr, "capture: unsupported pixel format %u (%s)\n", format, shm_format_name(format));
-        ctx->done = 1;
-        ctx->ok = 0;
+        ctx->done = true;
+        ctx->ok = false;
         return;
     }
 
@@ -94,8 +95,8 @@ static void handle_buffer(
         shm_buffer_create_stride(ctx->state->shm, (int)width, (int)height, (int)stride, format, &pixels, &size);
     if (!ctx->out->buffer) {
         fprintf(stderr, "capture: failed to allocate shm buffer for frame\n");
-        ctx->done = 1;
-        ctx->ok = 0;
+        ctx->done = true;
+        ctx->ok = false;
         return;
     }
     ctx->out->shm_data = pixels;
@@ -124,8 +125,8 @@ static void handle_ready(
     (void)tv_sec_lo;
     (void)tv_nsec;
     struct capture_ctx *ctx = data;
-    ctx->done = 1;
-    ctx->ok = 1;
+    ctx->done = true;
+    ctx->ok = true;
 }
 
 static void handle_failed(void *data, struct zwlr_screencopy_frame_v1 *frame)
@@ -133,8 +134,8 @@ static void handle_failed(void *data, struct zwlr_screencopy_frame_v1 *frame)
     (void)frame;
     struct capture_ctx *ctx = data;
     fprintf(stderr, "capture: compositor reported capture failed\n");
-    ctx->done = 1;
-    ctx->ok = 0;
+    ctx->done = true;
+    ctx->ok = false;
 }
 
 static const struct zwlr_screencopy_frame_v1_listener frame_listener = {
@@ -158,7 +159,7 @@ int capture_output_frame(
         return -1;
     }
 
-    struct capture_ctx ctx = { .state = state, .out = out, .done = 0, .ok = 0 };
+    struct capture_ctx ctx = { .state = state, .out = out, .done = false, .ok = false };
 
     struct zwlr_screencopy_frame_v1 *frame =
         zwlr_screencopy_manager_v1_capture_output(state->screencopy_manager, 0, output);

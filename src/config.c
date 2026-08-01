@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -143,7 +144,7 @@ void config_load(struct miru_config *out)
     out->zoom_factor = 2.0;
     out->zoom_increment = 0.25;
     out->zoom_max_factor = 10.0;
-    out->zoom_smooth = 0;
+    out->zoom_smooth = false;
 
     // [spotlight]/[general] below are parsed and stored but not yet
     // consumed anywhere — Spotlight mode and cursor rendering aren't built
@@ -153,7 +154,7 @@ void config_load(struct miru_config *out)
     out->spotlight_dim = 0.65;
     out->spotlight_softness = 20;
 
-    out->show_cursor = 1;
+    out->show_cursor = true;
 
     char config_dir[512];
     char config_path[512];

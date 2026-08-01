@@ -1,12 +1,14 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdbool.h>
+
 struct miru_config {
     // Zoom
     double zoom_factor;
     double zoom_increment;
     double zoom_max_factor;
-    int zoom_smooth;
+    bool zoom_smooth;
 
     // Spotlight
     long spotlight_radius;
@@ -14,7 +16,7 @@ struct miru_config {
     long spotlight_softness;
 
     // General
-    int show_cursor;
+    bool show_cursor;
 };
 
 void config_load(struct miru_config *out);

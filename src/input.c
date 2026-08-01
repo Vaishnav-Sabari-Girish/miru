@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
@@ -12,7 +13,7 @@
 
 #define PAN_STEP 50.0
 
-static int debug_enabled(void)
+static bool debug_enabled(void)
 {
     static int cached = -1;
     if (cached == -1) {
@@ -20,7 +21,7 @@ static int debug_enabled(void)
         cached = (v && *v && strcmp(v, "0") != 0) ? 1 : 0;
     }
 
-    return cached;
+    return cached != 0;
 }
 
 static double pan_step(struct miru_layer_surface *ls)
@@ -123,7 +124,7 @@ static void pointer_enter(
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
     ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
 
-    ctx->ls->dirty = 1;
+    ctx->ls->dirty = true;
 }
 
 static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
@@ -136,7 +137,7 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
 
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
     ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
-    ctx->ls->dirty = 1;
+    ctx->ls->dirty = true;
 }
 
 static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value)
@@ -170,7 +171,7 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
         fprintf(stderr, "pointer_axis: zoom_after=%.3f\n", ctx->ls->zoom);
     }
 
-    ctx->ls->dirty = 1;
+    ctx->ls->dirty = true;
 }
 
 static const struct wl_pointer_listener pointer_listener = {
@@ -292,7 +293,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
         fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
     }
 
-    ctx->ls->dirty = 1;
+    ctx->ls->dirty = true;
     return 1;
 }
 
@@ -393,7 +394,7 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
 
     if (key == KEY_TAB) {
         ctx->ls->spotlight_enabled = !ctx->ls->spotlight_enabled;
-        ctx->ls->dirty = 1;
+        ctx->ls->dirty = true;
         return;
     }
 
@@ -401,7 +402,7 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 1);
         if (slot) {
             slot->key = key;
-            slot->active = 1;
+            slot->active = true;
             slot->next_repeat_at = now_ms() + ctx->repeat_delay;
         }
     }
