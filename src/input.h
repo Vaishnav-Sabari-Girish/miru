@@ -10,7 +10,7 @@
 
 struct miru_repeat_slot {
     uint32_t key;
-    int active;
+    bool active;
     long long next_repeat_at;
 };
 

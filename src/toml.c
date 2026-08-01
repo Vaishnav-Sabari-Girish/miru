@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -269,17 +270,17 @@ double toml_get_double(const struct toml_table *t, const char *section, const ch
     return result;
 }
 
-int toml_get_bool(const struct toml_table *t, const char *section, const char *key, int def)
+bool toml_get_bool(const struct toml_table *t, const char *section, const char *key, bool def)
 {
     const char *v = find_raw(t, section, key);
     if (!v) {
         return def;
     }
     if (strcmp(v, "true") == 0) {
-        return 1;
+        return true;
     }
     if (strcmp(v, "false") == 0) {
-        return 0;
+        return false;
     }
     return def;
 }

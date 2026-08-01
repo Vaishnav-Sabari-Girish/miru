@@ -226,12 +226,12 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
         fprintf(stderr, "failed to create shm buffers\n");
         free_slot(&ls->slots[0]);
         free_slot(&ls->slots[1]);
-        ls->configured = 0;
+        ls->configured = false;
         return;
     }
 
     blit_and_commit(ls);
-    ls->configured = 1;
+    ls->configured = true;
 }
 
 static void handle_closed(void *data, struct zwlr_layer_surface_v1 *surface)
@@ -239,8 +239,8 @@ static void handle_closed(void *data, struct zwlr_layer_surface_v1 *surface)
     (void)surface;
     struct miru_layer_surface *ls = data;
     fprintf(stderr, "compositor closed our layer surface\n");
-    ls->configured = 0;
-    ls->closed = 1; // main's loop checks this and exits instead of spinning on a dead surface
+    ls->configured = false;
+    ls->closed = true; // main's loop checks this and exits instead of spinning on a dead surface
 }
 
 static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {

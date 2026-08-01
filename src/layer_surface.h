@@ -1,6 +1,7 @@
 #ifndef LAYER_SURFACE_H
 #define LAYER_SURFACE_H
 #include <stddef.h>
+#include <stdbool.h>
 #include "wayland_state.h"
 #include "capture.h"
 
@@ -29,20 +30,20 @@ struct miru_layer_surface {
     int height;
     int buffer_width; // actual allocated buffer size (capture's physical size)
     int buffer_height;
-    int configured;
-    int closed; // set by handle_closed, main's loop checks this to exit cleanly
+    bool configured;
+    bool closed; // set by handle_closed, main's loop checks this to exit cleanly
     const struct miru_capture *capture;
     int output_scale;
     double cursor_x;
     double cursor_y;
     float zoom;
-    int dirty;
+    bool dirty;
     float zoom_default;
     float zoom_max;
     float spotlight_radius;
     float spotlight_dim;
     float spotlight_softness;
-    int spotlight_enabled;
+    bool spotlight_enabled;
 };
 
 int layer_surface_create(
