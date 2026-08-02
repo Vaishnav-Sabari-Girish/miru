@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
 #include <sys/file.h>
 // #include <sys/time.h>
 #include <poll.h>
@@ -38,11 +40,14 @@ static int build_socket_path(char *out, size_t out_size)
 static int build_lock_path(char *out, size_t out_size)
 {
     const char *runtime_dir = getenv("XDG_RUNTIME_DIR");
-    if (!runtime_dir) {
-        runtime_dir = "/tmp";
+    int n;
+
+    if (runtime_dir && *runtime_dir) {
+        n = snprintf(out, out_size, "%s/miru.lock", runtime_dir);
+    } else {
+        n = snprintf(out, out_size, "/tmp/miru-%d.lock", (int)getuid());
     }
 
-    int n = snprintf(out, out_size, "%s/miru.lock", runtime_dir);
     if (n < 0 || (size_t)n >= out_size) {
         fprintf(stderr, "ipc_server: lock path too long\n");
         return -1;
@@ -60,6 +65,13 @@ static int acquire_instance_lock(struct miru_ipc_server *srv)
     int fd = open(lock_path, O_CREAT | O_RDWR, 0644);
     if (fd < 0) {
         fprintf(stderr, "ipc_server: failed to open lockfile %s: %s\n", lock_path, strerror(errno));
+        return -1;
+    }
+
+    struct stat st;
+    if (fstat(fd, &st) != 0 || st.st_uid != getuid()) {
+        fprintf(stderr, "ipc_server: refusing to use lockfile %s not owned by us\n", lock_path);
+        close(fd);
         return -1;
     }
 
