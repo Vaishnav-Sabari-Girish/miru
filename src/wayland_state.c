@@ -261,6 +261,12 @@ int wayland_state_prepare(struct miru_state *state, short *out_poll_events)
 
 int wayland_state_process(struct miru_state *state, short revents)
 {
+    if (revents & (POLLHUP | POLLERR)) {
+        wl_display_cancel_read(state->display);
+        fprintf(stderr, "wayland_state_process: POLLHUP/POLLERR on display fd. connection lost\n");
+        return -1;
+    }
+
     if (revents & POLLIN) {
         wl_display_read_events(state->display);
     } else {

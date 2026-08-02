@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
         }
 
         if (wayland_state_process(&state, pfds[0].revents) != 0) {
-            fprintf(stderr, "fatal: wayland_state_prepare failed. connection to compositor lost\n");
+            fprintf(stderr, "fatal: wayland_state_process failed. connection to compositor lost\n");
             wayland_connection_lost = true;
             break;
         }
