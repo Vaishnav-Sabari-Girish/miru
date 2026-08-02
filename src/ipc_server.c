@@ -39,6 +39,21 @@ int ipc_server_init(struct miru_ipc_server *srv)
         return -1;
     }
 
+    int probe_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (probe_fd >= 0) {
+        struct sockaddr_un probe_addr = { 0 };
+        probe_addr.sun_family = AF_UNIX;
+        strncpy(probe_addr.sun_path, srv->socket_path, sizeof(probe_addr.sun_path) - 1);
+        if (connect(probe_fd, (struct sockaddr *)&probe_addr, sizeof(probe_addr)) == 0) {
+            close(probe_fd);
+            fprintf(
+                stderr, "ipc_server: another miru-daemon is already running (socket %s is live)\n", srv->socket_path
+            );
+            return -1;
+        }
+        close(probe_fd);
+    }
+
     unlink(srv->socket_path); // remove any previous stale sockets
 
     srv->listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
