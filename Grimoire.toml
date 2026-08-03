@@ -16,6 +16,7 @@ cmake --build build
 '''
 
 [sigil.install]
+depends = ["build"] 
 silent = true
 description = "Install miru binaries to ~/.local/bin"
 language = "shell"
