@@ -16,15 +16,9 @@ primarily developed and tested on Niri.
 Inspired by [boomer](https://github.com/tsoding/boomer), but for Wayland —
 written in C, keybind-driven, no GUI, no mouse-required config.
 
-> **Status: early development.** Wayland connection, registry discovery,
-> one-shot screen capture via `wlr-screencopy`, scale-aware rendering into a
-> double-buffered `wlr-layer-shell` overlay, a working keybind-driven toggle
-> (via `miructl` + a Unix socket), cursor-centered zoom/pan with
-> keyboard/WASD/scroll-wheel controls, proper key-repeat, TOML-based
-> configuration, and a Cursor Highlight toggle (darken + feathered cutout,
-> within Magnifier mode) are all in place. Standalone Spotlight mode — a
-> separate, click-through feature — isn't built yet.
-> See [Roadmap](#roadmap).
+> [!WARNING]
+> Early in Development
+> See [Roadmap](#roadmap)
 
 > [!IMPORTANT]
 > Miru currently requires both `wlr-layer-shell-unstable-v1` and
@@ -424,6 +418,7 @@ design, see [What it does](#what-it-does) above.
 │   ├── ipc_server.h/.c        # Unix socket server, parses toggle/quit commands
 │   ├── input.h/.c             # pointer/keyboard listeners: pan, zoom, Cursor Highlight toggle, key-repeat, Esc-to-exit
 │   ├── config.h/.c            # config discovery, defaults, validation and loading
+│   ├── config_watch.h/.c      # Files to check the config directory for changes and Hot-reload new config
 │   ├── toml.h/.c              # minimal TOML parser used by the config loader
 │   ├── version.h.in           # CMake-configured version string (git describe)
 │   ├── logo.h                 # ASCII logo module interface
@@ -450,6 +445,7 @@ design, see [What it does](#what-it-does) above.
 * [x] Cursor Highlight (Tab): darken + feathered cursor cutout on top of the
   zoomed view, tracks the real cursor position
 * [x] systemd user service + `cmake --install`/`grim cast install` support
+* [x] Hot-reloading of the config while `miru-daemon` is running.
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
@@ -457,6 +453,13 @@ design, see [What it does](#what-it-does) above.
 * [ ] Multi-monitor support
 * [ ] Smooth zoom animation
 * [ ] Support compositors without `wlr-screencopy` / `wlr-layer-shell`
+
+### Similar tools
+
+1. [`woomer`](https://github.com/coffeeispower/woomer): `boomer` for `wayland`
+   written in Rust (Uses `raylib`)
+2. [`hyprmagnifier`](https://github.com/st0rmbtw/hyprmagnifier): A
+   `wlroots`-compatible `wayland` magnifier that does not suck
 
 ### License
 
