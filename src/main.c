@@ -211,7 +211,14 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "config: change detected, reloading\n");
                 struct miru_config new_config = { 0 };
                 config_load(&new_config);
-                if (memcmp(&config, &new_config, sizeof(struct miru_config)) != 0) {
+                if (config.zoom_factor != new_config.zoom_factor ||
+                    config.zoom_increment != new_config.zoom_increment ||
+                    config.zoom_max_factor != new_config.zoom_max_factor ||
+                    config.zoom_smooth != new_config.zoom_smooth ||
+                    config.spotlight_radius != new_config.spotlight_radius ||
+                    config.spotlight_dim != new_config.spotlight_dim ||
+                    config.spotlight_softness != new_config.spotlight_softness ||
+                    config.show_cursor != new_config.show_cursor) {
                     fprintf(stderr, "config: change detected reloading\n");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
