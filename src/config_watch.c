@@ -26,7 +26,7 @@ int config_watch_init(struct miru_config_watch *watch)
 
     // Watch the config directory and not the file
     // This is incase an app writes to a temp file and then overwrites the main once saved
-    watch->watch_wd = inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+    watch->watch_wd = inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO);
 
     if (watch->watch_wd < 0) {
         fprintf(
@@ -55,6 +55,14 @@ int config_watch_check(struct miru_config_watch *watch)
 
     char buf[4096] __attribute__((aligned(__alignof(struct inotify_event))));
     int changed = 0;
+
+    if (watch->watch_wd < 0) {
+        watch->watch_wd = inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO);
+        if (watch->watch_wd >= 0) {
+            fprintf(stderr, "config_watch: re-established watch on %s\n", watch->config_dir);
+            changed = 1;
+        }
+    }
 
     for (;;) {
         ssize_t n = read(watch->inotify_fd, buf, sizeof(buf));
@@ -86,18 +94,20 @@ int config_watch_check(struct miru_config_watch *watch)
             if (ev->mask & IN_IGNORED) {
                 // config dir was removed or moved
                 fprintf(stderr, "config_watch: watch invalidated, attempting to re-add\n");
-                watch->watch_wd =
-                    inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+                watch->watch_wd = inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO);
 
                 if (watch->watch_wd < 0) {
-                    fprintf(stderr, "config_watch: re-add failed (%s), will retry on next event\n", strerror(errno));
+                    fprintf(stderr, "config_watch: re-add failed (%s), will retry periodically\n", strerror(errno));
+                } else {
+                    changed = 1;
                 }
 
                 offset += (ssize_t)sizeof(struct inotify_event) + ev->len;
                 continue;
             }
 
-            if (ev->len > 0 && strcmp(ev->name, watch->config_filename) == 0) {
+            if ((ev->mask & (IN_CLOSE_WRITE | IN_MOVED_TO)) && ev->len > 0 &&
+                strcmp(ev->name, watch->config_filename) == 0) {
                 changed = 1;
             }
             offset += (ssize_t)sizeof(struct inotify_event) + ev->len;
