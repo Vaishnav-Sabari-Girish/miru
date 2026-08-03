@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     struct miru_layer_surface ls = { 0 };
     struct miru_capture capture = { 0 };
     struct miru_ipc_server ipc = { 0 };
-    struct miru_config config;
+    struct miru_config config = { 0 };
     config_load(&config);
     struct miru_config_watch config_watch = { 0 };
     config_watch_init(&config_watch);
@@ -209,23 +209,25 @@ int main(int argc, char *argv[])
             int changed = config_watch_check(&config_watch);
             if (changed > 0) {
                 fprintf(stderr, "config: change detected, reloading\n");
-                struct miru_config new_config;
+                struct miru_config new_config = { 0 };
                 config_load(&new_config);
-                config = new_config;
+                if (memcmp(&config, &new_config, sizeof(struct miru_config)) != 0) {
+                    fprintf(stderr, "config: change detected reloading\n");
+                    config = new_config;
+                    input_ctx.zoom_increment = (float)config.zoom_increment;
+                    if (active) {
+                        struct layer_surface_config ls_config = {
+                            .zoom_default = (float)config.zoom_factor,
+                            .zoom_max = (float)config.zoom_max_factor,
+                            .spotlight_radius = (float)config.spotlight_radius,
+                            .spotlight_dim = (float)config.spotlight_dim,
+                            .spotlight_softness = (float)config.spotlight_softness,
+                        };
 
-                input_ctx.zoom_increment = (float)config.zoom_increment;
-                if (active) {
-                    struct layer_surface_config ls_config = {
-                        .zoom_default = (float)config.zoom_factor,
-                        .zoom_max = (float)config.zoom_max_factor,
-                        .spotlight_radius = (float)config.spotlight_radius,
-                        .spotlight_dim = (float)config.spotlight_dim,
-                        .spotlight_softness = (float)config.spotlight_softness,
-                    };
-
-                    layer_surface_apply_config(&ls, &ls_config);
-                    layer_surface_render(&ls);
-                    ls.dirty = false;
+                        layer_surface_apply_config(&ls, &ls_config);
+                        layer_surface_render(&ls);
+                        ls.dirty = false;
+                    }
                 }
             } else if (changed < 0) {
                 fprintf(stderr, "config_watch: error reading events, disabling hot-reloading\n");
