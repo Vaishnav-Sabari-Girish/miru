@@ -73,6 +73,21 @@ int config_watch_check(struct miru_config_watch *watch)
         ssize_t offset = 0;
         while (offset < n) {
             struct inotify_event *ev = (struct inotify_event *)(buf + offset);
+
+            if (ev->mask & IN_IGNORED) {
+                // config dir was removed or moved
+                fprintf(stderr, "config_watch: watch invalidated, attempting to re-add\n");
+                watch->watch_wd =
+                    inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+
+                if (watch->watch_wd < 0) {
+                    fprintf(stderr, "config_watch: re-add failed (%s), will retry on next event\n", strerror(errno));
+                }
+
+                offset += (ssize_t)sizeof(struct inotify_event) + ev->len;
+                continue;
+            }
+
             if (ev->len > 0 && strcmp(ev->name, watch->config_filename) == 0) {
                 changed = 1;
             }

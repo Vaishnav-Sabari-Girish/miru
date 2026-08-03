@@ -151,6 +151,24 @@ static void sanitize_config(struct miru_config *c)
         fprintf(stderr, "config: zoom.factor exceeds zoom.max_factor, clamping\n");
         c->zoom_factor = c->zoom_max_factor;
     }
+
+    if (!isfinite(c->spotlight_dim) || c->spotlight_dim < 0.0) {
+        fprintf(stderr, "config: invalid spotlight.dim, clamping to 0.0\n");
+        c->spotlight_dim = 0.0;
+    } else if (c->spotlight_dim > 1.0) {
+        fprintf(stderr, "config: spotlight.dim exceeds 1.0, clamping to 1.0\n");
+        c->spotlight_dim = 1.0;
+    }
+
+    if (c->spotlight_radius < 0) {
+        fprintf(stderr, "config: invalid spotlight.radius, falling back to default\n");
+        c->spotlight_radius = 250;
+    }
+
+    if (c->spotlight_softness < 0) {
+        fprintf(stderr, "config: invalid spotlight.softness, falling back to default\n");
+        c->spotlight_softness = 20;
+    }
 }
 
 void config_load(struct miru_config *out)

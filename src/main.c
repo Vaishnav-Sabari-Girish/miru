@@ -218,6 +218,8 @@ int main(int argc, char *argv[])
                     };
 
                     layer_surface_apply_config(&ls, &ls_config);
+                    layer_surface_render(&ls);
+                    ls.dirty = false;
                 }
             } else if (changed < 0) {
                 fprintf(stderr, "config_watch: error reading events, disabling hot-reloading\n");
