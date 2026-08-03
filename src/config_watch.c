@@ -61,6 +61,8 @@ int config_watch_check(struct miru_config_watch *watch)
         if (watch->watch_wd >= 0) {
             fprintf(stderr, "config_watch: re-established watch on %s\n", watch->config_dir);
             changed = 1;
+        } else {
+            return 0;
         }
     }
 

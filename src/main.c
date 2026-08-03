@@ -156,6 +156,12 @@ int main(int argc, char *argv[])
 
         int timeout = input_next_repeat_timeout(&input_ctx);
 
+        if (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0) {
+            if (timeout < 0 || timeout > 1000) {
+                timeout = 1000;
+            }
+        }
+
         int ret = poll(pfds, 3, timeout);
         if (ret == -1) {
             wayland_state_cancel_read(&state);
@@ -199,7 +205,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "activate is now %d\n", active);
         }
 
-        if (pfds[2].revents & POLLIN) {
+        if ((pfds[2].revents & POLLIN) || (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0)) {
             int changed = config_watch_check(&config_watch);
             if (changed > 0) {
                 fprintf(stderr, "config: change detected, reloading\n");
