@@ -108,6 +108,7 @@ int main(int argc, char *argv[])
     config_load(&config);
     volatile sig_atomic_t request_deactivate = 0;
     int active = 0;
+    bool wayland_connection_lost = false;
 
     struct sigaction sa = { 0 };
     sa.sa_handler = handle_sigint;
@@ -139,6 +140,8 @@ int main(int argc, char *argv[])
     while (state.running && !should_exit) {
         short wayland_events = 0;
         if (wayland_state_prepare(&state, &wayland_events) != 0) {
+            fprintf(stderr, "fatal: wayland_state_prepare failed. connection to compositor lost\n");
+            wayland_connection_lost = true;
             break;
         }
 
@@ -156,10 +159,13 @@ int main(int argc, char *argv[])
                 continue;
             }
             fprintf(stderr, "poll failed\n");
+            wayland_connection_lost = true;
             break;
         }
 
         if (wayland_state_process(&state, pfds[0].revents) != 0) {
+            fprintf(stderr, "fatal: wayland_state_process failed. connection to compositor lost\n");
+            wayland_connection_lost = true;
             break;
         }
 
@@ -214,6 +220,10 @@ int main(int argc, char *argv[])
     capture_frame_destroy(&capture);
     ipc_server_cleanup(&ipc);
     wayland_state_cleanup(&state);
+    if (wayland_connection_lost) {
+        fprintf(stderr, "exiting with failure due to lost wayland connection\n");
+        return 1;
+    }
     return 0;
 
     // if (capture_output_frame(&state, state.output, &should_exit, &capture) != 0) {

@@ -11,6 +11,7 @@ enum miru_ipc_command {
 struct miru_ipc_server {
     int listen_fd;
     char socket_path[256];
+    int lock_fd;
 };
 
 int ipc_server_init(struct miru_ipc_server *srv);

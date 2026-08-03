@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/file.h>
 // #include <sys/time.h>
 #include <poll.h>
 #include <errno.h>
@@ -33,11 +37,132 @@ static int build_socket_path(char *out, size_t out_size)
     return 0;
 }
 
-int ipc_server_init(struct miru_ipc_server *srv)
+static int build_lock_path(char *out, size_t out_size)
 {
-    if (build_socket_path(srv->socket_path, sizeof(srv->socket_path)) != 0) {
+    const char *runtime_dir = getenv("XDG_RUNTIME_DIR");
+    int n;
+
+    if (runtime_dir && *runtime_dir) {
+        n = snprintf(out, out_size, "%s/miru.lock", runtime_dir);
+        if (n < 0 || (size_t)n >= out_size) {
+            fprintf(stderr, "ipc_server: lock path too long\n");
+            return -1;
+        }
+        return 0;
+    }
+    // else {
+    //     n = snprintf(out, out_size, "/tmp/miru-%d.lock", (int)getuid());
+    // }
+
+    char run_user_dir[64];
+    snprintf(run_user_dir, sizeof(run_user_dir), "/run/user/%d", (int)getuid());
+
+    struct stat dir_st;
+
+    if (stat(run_user_dir, &dir_st) == 0 && S_ISDIR(dir_st.st_mode) && dir_st.st_uid == getuid() &&
+        (dir_st.st_mode & (S_IWGRP | S_IWOTH)) == 0) {
+        n = snprintf(out, out_size, "%s/miru.lock", run_user_dir);
+
+        if (n < 0 || (size_t)n >= out_size) {
+            fprintf(stderr, "ipc_server: lock path too long\n");
+            return -1;
+        }
+
+        fprintf(stderr, "ipc_server: XDG_RUNTIME_DIR not set, use %s instead\n", run_user_dir);
+        return 0;
+    }
+
+    fprintf(
+        stderr,
+        "ipc_server: no trusted per-user runtime directory found, falling back to a UID-scoped /tmp lock (less secure)\n"
+    );
+    n = snprintf(out, out_size, "/tmp/miru-%d.lock", (int)getuid());
+    if (n < 0 || (size_t)n >= out_size) {
+        fprintf(stderr, "ipc_server: lock path too long\n");
         return -1;
     }
+
+    return 0;
+}
+
+static int acquire_instance_lock(struct miru_ipc_server *srv)
+{
+    char lock_path[256];
+    if (build_lock_path(lock_path, sizeof(lock_path))) {
+        return -1;
+    }
+
+    int fd = open(lock_path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0644);
+    if (fd < 0) {
+        if (errno == ELOOP) {
+            fprintf(
+                stderr, "ipc_server: refusing to open %s, it is a symlink (possible attack or leftover)\n", lock_path
+            );
+        } else if (errno == EACCES) {
+            fprintf(
+                stderr,
+                "ipc_server: cannot open lockfile %s (permission denied) - a file at this path "
+                "may already be owned by another user; If XDG_RUNTIME_DIR is unset, set it or "
+                "ensure a proper per-user runtime directory exists\n",
+                lock_path
+            );
+        } else {
+            fprintf(stderr, "ipc_server: failed to open lockfile %s: %s\n", lock_path, strerror(errno));
+        }
+        return -1;
+    }
+
+    struct stat st;
+    if (fstat(fd, &st) != 0 || st.st_uid != getuid()) {
+        fprintf(stderr, "ipc_server: refusing to use lockfile %s not owned by us\n", lock_path);
+        close(fd);
+        return -1;
+    }
+
+    if (flock(fd, LOCK_EX | LOCK_NB) != 0) {
+        if (errno == EWOULDBLOCK) {
+            fprintf(
+                stderr, "ipc_server: another miru-daemon instance is already running (lock held on %s)\n", lock_path
+            );
+        } else {
+            fprintf(stderr, "ipc_server: flock failed on %s: %s\n", lock_path, strerror(errno));
+        }
+        close(fd);
+        return -1;
+    }
+
+    srv->lock_fd = fd;
+    return 0;
+}
+
+int ipc_server_init(struct miru_ipc_server *srv)
+{
+    srv->lock_fd = -1;
+
+    if (acquire_instance_lock(srv) != 0) {
+        return -1;
+    }
+
+    if (build_socket_path(srv->socket_path, sizeof(srv->socket_path)) != 0) {
+        close(srv->lock_fd);
+        srv->lock_fd = -1;
+        return -1;
+    }
+
+    // int probe_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    // if (probe_fd >= 0) {
+    //     struct sockaddr_un probe_addr = { 0 };
+    //     probe_addr.sun_family = AF_UNIX;
+    //     strncpy(probe_addr.sun_path, srv->socket_path, sizeof(probe_addr.sun_path) - 1);
+    //     if (connect(probe_fd, (struct sockaddr *)&probe_addr, sizeof(probe_addr)) == 0) {
+    //         close(probe_fd);
+    //         fprintf(
+    //             stderr, "ipc_server: another miru-daemon is already running (socket %s is live)\n", srv->socket_path
+    //         );
+    //         return -1;
+    //     }
+    //     close(probe_fd);
+    // }
 
     unlink(srv->socket_path); // remove any previous stale sockets
 
@@ -142,4 +267,9 @@ void ipc_server_cleanup(struct miru_ipc_server *srv)
         srv->listen_fd = -1;
     }
     unlink(srv->socket_path);
+
+    if (srv->lock_fd >= 0) {
+        close(srv->lock_fd);
+        srv->lock_fd = -1;
+    }
 }
