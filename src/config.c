@@ -116,6 +116,21 @@ static int get_config_path(char *dir, size_t dir_size, char *file, size_t file_s
     return 0;
 }
 
+int config_get_watch_paths(char *dir, size_t dir_size, char *filename, size_t filename_size)
+{
+    char full_path[512];
+    if (get_config_path(dir, dir_size, full_path, sizeof(full_path)) != 0) {
+        return -1;
+    }
+
+    int n = snprintf(filename, filename_size, "config.toml");
+    if (n < 0 || (size_t)n >= filename_size) {
+        return -1;
+    }
+
+    return 0;
+}
+
 // clamps/rejects anything a user could put in the file that would otherwise
 // reach layer_surface/input as NaN, negative, or otherwise nonsensical
 static void sanitize_config(struct miru_config *c)
@@ -135,6 +150,24 @@ static void sanitize_config(struct miru_config *c)
     if (c->zoom_factor > c->zoom_max_factor) {
         fprintf(stderr, "config: zoom.factor exceeds zoom.max_factor, clamping\n");
         c->zoom_factor = c->zoom_max_factor;
+    }
+
+    if (!isfinite(c->spotlight_dim) || c->spotlight_dim < 0.0) {
+        fprintf(stderr, "config: invalid spotlight.dim, clamping to 0.0\n");
+        c->spotlight_dim = 0.0;
+    } else if (c->spotlight_dim > 1.0) {
+        fprintf(stderr, "config: spotlight.dim exceeds 1.0, clamping to 1.0\n");
+        c->spotlight_dim = 1.0;
+    }
+
+    if (c->spotlight_radius < 0) {
+        fprintf(stderr, "config: invalid spotlight.radius, falling back to default\n");
+        c->spotlight_radius = 250;
+    }
+
+    if (c->spotlight_softness < 0) {
+        fprintf(stderr, "config: invalid spotlight.softness, falling back to default\n");
+        c->spotlight_softness = 20;
     }
 }
 

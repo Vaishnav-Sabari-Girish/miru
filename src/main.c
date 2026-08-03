@@ -12,6 +12,7 @@
 #include "version.h"
 #include "logo.h"
 #include "config.h"
+#include "config_watch.h"
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
@@ -104,8 +105,10 @@ int main(int argc, char *argv[])
     struct miru_layer_surface ls = { 0 };
     struct miru_capture capture = { 0 };
     struct miru_ipc_server ipc = { 0 };
-    struct miru_config config;
+    struct miru_config config = { 0 };
     config_load(&config);
+    struct miru_config_watch config_watch = { 0 };
+    config_watch_init(&config_watch);
     volatile sig_atomic_t request_deactivate = 0;
     int active = 0;
     bool wayland_connection_lost = false;
@@ -145,14 +148,21 @@ int main(int argc, char *argv[])
             break;
         }
 
-        struct pollfd pfds[2] = {
+        struct pollfd pfds[3] = {
             { .fd = wayland_state_get_fd(&state), .events = wayland_events },
             { .fd = ipc_server_get_fd(&ipc), .events = POLLIN },
+            { .fd = config_watch_get_fd(&config_watch), .events = POLLIN },
         };
 
         int timeout = input_next_repeat_timeout(&input_ctx);
 
-        int ret = poll(pfds, 2, timeout);
+        if (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0) {
+            if (timeout < 0 || timeout > 1000) {
+                timeout = 1000;
+            }
+        }
+
+        int ret = poll(pfds, 3, timeout);
         if (ret == -1) {
             wayland_state_cancel_read(&state);
             if (errno == EINTR) {
@@ -195,6 +205,43 @@ int main(int argc, char *argv[])
             fprintf(stderr, "activate is now %d\n", active);
         }
 
+        if ((pfds[2].revents & POLLIN) || (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0)) {
+            int changed = config_watch_check(&config_watch);
+            if (changed > 0) {
+                fprintf(stderr, "config: change detected, reloading\n");
+                struct miru_config new_config = { 0 };
+                config_load(&new_config);
+                if (config.zoom_factor != new_config.zoom_factor ||
+                    config.zoom_increment != new_config.zoom_increment ||
+                    config.zoom_max_factor != new_config.zoom_max_factor ||
+                    config.zoom_smooth != new_config.zoom_smooth ||
+                    config.spotlight_radius != new_config.spotlight_radius ||
+                    config.spotlight_dim != new_config.spotlight_dim ||
+                    config.spotlight_softness != new_config.spotlight_softness ||
+                    config.show_cursor != new_config.show_cursor) {
+                    fprintf(stderr, "config: change detected reloading\n");
+                    config = new_config;
+                    input_ctx.zoom_increment = (float)config.zoom_increment;
+                    if (active) {
+                        struct layer_surface_config ls_config = {
+                            .zoom_default = (float)config.zoom_factor,
+                            .zoom_max = (float)config.zoom_max_factor,
+                            .spotlight_radius = (float)config.spotlight_radius,
+                            .spotlight_dim = (float)config.spotlight_dim,
+                            .spotlight_softness = (float)config.spotlight_softness,
+                        };
+
+                        layer_surface_apply_config(&ls, &ls_config);
+                        layer_surface_render(&ls);
+                        ls.dirty = false;
+                    }
+                }
+            } else if (changed < 0) {
+                fprintf(stderr, "config_watch: error reading events, disabling hot-reloading\n");
+                config_watch_cleanup(&config_watch);
+            }
+        }
+
         if (active && ls.closed) {
             // the compositor tore the surface down on it's own (output unplugged
             // etc), go back to inactive instead of looping through a dead surface
@@ -219,6 +266,7 @@ int main(int argc, char *argv[])
 
     capture_frame_destroy(&capture);
     ipc_server_cleanup(&ipc);
+    config_watch_cleanup(&config_watch);
     wayland_state_cleanup(&state);
     if (wayland_connection_lost) {
         fprintf(stderr, "exiting with failure due to lost wayland connection\n");

@@ -55,6 +55,9 @@ int layer_surface_create(
     const struct layer_surface_config *config
 );
 void layer_surface_destroy(struct miru_layer_surface *ls);
+
+void layer_surface_apply_config(struct miru_layer_surface *ls, const struct layer_surface_config *config);
+
 // re-blits ls -> capture into whichever buffer slot is currently free and re-commits
 // call for updating ls -> capture with a fresh frame;
 // no-op if not yet configured, both slots are still busy, or the new capture's
@@ -64,4 +67,5 @@ void layer_surface_destroy(struct miru_layer_surface *ls);
 // and blit_and_commit's split-out-from-handle_configure structure should
 // just be removed rather than left as unreferenced API.
 void layer_surface_render(struct miru_layer_surface *ls);
+
 #endif
