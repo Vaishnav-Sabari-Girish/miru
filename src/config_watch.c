@@ -74,6 +74,15 @@ int config_watch_check(struct miru_config_watch *watch)
         while (offset < n) {
             struct inotify_event *ev = (struct inotify_event *)(buf + offset);
 
+            if (ev->mask & IN_Q_OVERFLOW) {
+                // event queue overflow
+                // some events were dropped
+                fprintf(stderr, "config_watch: event queue overflow, reloading defensively\n");
+                changed = 1;
+                offset += (ssize_t)sizeof(struct inotify_event) + ev->len;
+                continue;
+            }
+
             if (ev->mask & IN_IGNORED) {
                 // config dir was removed or moved
                 fprintf(stderr, "config_watch: watch invalidated, attempting to re-add\n");
