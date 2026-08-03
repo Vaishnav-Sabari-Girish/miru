@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 struct miru_config {
     // Zoom
@@ -21,4 +22,5 @@ struct miru_config {
 
 void config_load(struct miru_config *out);
 
+int config_get_watch_paths(char *dir, size_t dir_size, char *filename, size_t filename_size);
 #endif // !CONFIG_H

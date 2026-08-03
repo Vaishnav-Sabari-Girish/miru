@@ -73,6 +73,7 @@ add_executable(miru-daemon
   src/input.c
   src/toml.c
   src/config.c
+  src/config_watch.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}

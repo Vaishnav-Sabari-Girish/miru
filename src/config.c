@@ -116,6 +116,21 @@ static int get_config_path(char *dir, size_t dir_size, char *file, size_t file_s
     return 0;
 }
 
+int config_get_watch_paths(char *dir, size_t dir_size, char *filename, size_t filename_size)
+{
+    char full_path[512];
+    if (get_config_path(dir, dir_size, full_path, sizeof(full_path)) != 0) {
+        return -1;
+    }
+
+    int n = snprintf(filename, filename_size, "config.toml");
+    if (n < 0 || (size_t)n >= filename_size) {
+        return -1;
+    }
+
+    return 0;
+}
+
 // clamps/rejects anything a user could put in the file that would otherwise
 // reach layer_surface/input as NaN, negative, or otherwise nonsensical
 static void sanitize_config(struct miru_config *c)

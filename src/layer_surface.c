@@ -295,6 +295,20 @@ int layer_surface_create(
     return 0;
 }
 
+void layer_surface_apply_config(struct miru_layer_surface *ls, const struct layer_surface_config *config)
+{
+    ls->zoom_max = config->zoom_max;
+    ls->spotlight_radius = config->spotlight_radius;
+    ls->spotlight_dim = config->spotlight_dim;
+    ls->spotlight_softness = config->spotlight_softness;
+
+    if (ls->zoom > ls->zoom_max) {
+        ls->zoom = ls->zoom_max;
+    }
+
+    ls->dirty = true;
+}
+
 void layer_surface_destroy(struct miru_layer_surface *ls)
 {
     free_slot(&ls->slots[0]);
