@@ -44,14 +44,44 @@ static int build_lock_path(char *out, size_t out_size)
 
     if (runtime_dir && *runtime_dir) {
         n = snprintf(out, out_size, "%s/miru.lock", runtime_dir);
-    } else {
-        n = snprintf(out, out_size, "/tmp/miru-%d.lock", (int)getuid());
+        if (n < 0 || (size_t)n >= out_size) {
+            fprintf(stderr, "ipc_server: lock path too long\n");
+            return -1;
+        }
+        return 0;
+    }
+    // else {
+    //     n = snprintf(out, out_size, "/tmp/miru-%d.lock", (int)getuid());
+    // }
+
+    char run_user_dir[64];
+    snprintf(run_user_dir, sizeof(run_user_dir), "/run/user/%d", (int)getuid());
+
+    struct stat dir_st;
+
+    if (stat(run_user_dir, &dir_st) == 0 && S_ISDIR(dir_st.st_mode) && dir_st.st_uid == getuid() &&
+        (dir_st.st_mode & (S_IWGRP | S_IWOTH)) == 0) {
+        n = snprintf(out, out_size, "%s/miru.lock", run_user_dir);
+
+        if (n < 0 || (size_t)n >= out_size) {
+            fprintf(stderr, "ipc_server: lock path too long\n");
+            return -1;
+        }
+
+        fprintf(stderr, "ipc_server: XDG_RUNTIME_DIR not set, use %s instead\n", run_user_dir);
+        return 0;
     }
 
+    fprintf(
+        stderr,
+        "ipc_server: no trusted per-user runtime directory found, falling back to a UID-scoped /tmp lock (less secure)\n"
+    );
+    n = snprintf(out, out_size, "/tmp/miru-%d.lock", (int)getuid());
     if (n < 0 || (size_t)n >= out_size) {
         fprintf(stderr, "ipc_server: lock path too long\n");
         return -1;
     }
+
     return 0;
 }
 
@@ -62,9 +92,23 @@ static int acquire_instance_lock(struct miru_ipc_server *srv)
         return -1;
     }
 
-    int fd = open(lock_path, O_CREAT | O_RDWR, 0644);
+    int fd = open(lock_path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0644);
     if (fd < 0) {
-        fprintf(stderr, "ipc_server: failed to open lockfile %s: %s\n", lock_path, strerror(errno));
+        if (errno == ELOOP) {
+            fprintf(
+                stderr, "ipc_server: refusing to open %s, it is a symlink (possible attack or leftover)\n", lock_path
+            );
+        } else if (errno == EACCES) {
+            fprintf(
+                stderr,
+                "ipc_server: cannot open lockfile %s (permission denied) - a file at this path "
+                "may already be owned by another user; If XDG_RUNTIME_DIR is unset, set it or "
+                "ensure a proper per-user runtime directory exists\n",
+                lock_path
+            );
+        } else {
+            fprintf(stderr, "ipc_server: failed to open lockfile %s: %s\n", lock_path, strerror(errno));
+        }
         return -1;
     }
 
