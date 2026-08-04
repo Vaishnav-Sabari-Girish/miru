@@ -5,17 +5,18 @@
 #include <stdint.h>
 #include "shm_buffer.h"
 
-struct wl_buffer *shm_buffer_create_stride(
+struct wl_buffer *shm_buffer_create_stride_bpp(
     struct wl_shm *shm,
     int width,
     int height,
     int stride,
+    int bpp,
     uint32_t format,
     void **out_data,
     size_t *out_size
 )
 {
-    if (width <= 0 || height <= 0 || stride <= 0) {
+    if (width <= 0 || height <= 0 || stride <= 0 || bpp <= 0) {
         fprintf(stderr, "shm_buffer_create_stride: invalid dimensions %dx%d stride=%d\n", width, height, stride);
         return NULL;
     }
@@ -23,17 +24,17 @@ struct wl_buffer *shm_buffer_create_stride(
     // must bound width before computing width * 4 below, otherwise the
     // multiplication itself can silently overflow (signed int UB) before
     // any check ever runs, letting an undersized stride slip through
-    if (width > (INT32_MAX / 4)) {
+    if (width > (INT32_MAX / bpp)) {
         fprintf(stderr, "shm_buffer_create_stride: width %d too large\n", width);
         return NULL;
     }
 
-    int min_stride = width * 4;
+    int min_stride = width * bpp;
 
-    // every format we currently handle is 4 bytes/pixel, so stride can never
-    // legitimately be smaller than that, even before padding is considered
+    // stride can never legitimately  be smaller than width * bpp for the
+    // caller-specified pixel size, even before row padding is considered.
     if (stride < min_stride) {
-        fprintf(stderr, "shm_buffer_create_stride: stride %d smaller than width*4 (%d)\n", stride, min_stride);
+        fprintf(stderr, "shm_buffer_create_stride: stride %d smaller than width*bpp (%d)\n", stride, min_stride);
         return NULL;
     }
     if ((int64_t)stride * (int64_t)height > INT32_MAX) {
@@ -84,6 +85,19 @@ struct wl_buffer *shm_buffer_create_stride(
         *out_size = size;
     }
     return buffer;
+}
+
+struct wl_buffer *shm_buffer_create_stride(
+    struct wl_shm *shm,
+    int width,
+    int height,
+    int stride,
+    uint32_t format,
+    void **out_data,
+    size_t *out_size
+)
+{
+    return shm_buffer_create_stride_bpp(shm, width, height, stride, 4, format, out_data, out_size);
 }
 
 struct wl_buffer *

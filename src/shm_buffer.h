@@ -4,6 +4,17 @@
 #include <wayland-client.h>
 #include <stddef.h>
 
+struct wl_buffer *shm_buffer_create_stride_bpp(
+    struct wl_shm *shm,
+    int width,
+    int height,
+    int stride,
+    int bpp,
+    uint32_t format,
+    void **out_data,
+    size_t *out_size
+);
+
 // allocates using an explicit stride (bytes per row), needed when a protocol
 // (like screencopy) tells us exactly what layout to use, including any padding
 struct wl_buffer *shm_buffer_create_stride(
