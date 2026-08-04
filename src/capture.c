@@ -204,7 +204,7 @@ static void handle_ready(
         for (uint32_t y = 0; y < ctx->raw_height; y++) {
             const uint8_t *src_row = src + (size_t)y * ctx->raw_stride;
             uint8_t *dst_row = dst + (size_t)y * dst_stride;
-            for (uint32_t x = 0; x < ctx->raw_height; x++) {
+            for (uint32_t x = 0; x < ctx->raw_width; x++) {
                 dst_row[x * 4 + 0] = src_row[x * 3 + 0];
                 dst_row[x * 4 + 1] = src_row[x * 3 + 1];
                 dst_row[x * 4 + 2] = src_row[x * 3 + 2];
