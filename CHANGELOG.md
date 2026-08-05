@@ -1,4 +1,74 @@
 
+## v0.4.0 - 2026-08-05
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(config_hot_reload)** Add hot-reloading during config changes
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(color)** Color inversion in MangoWM
+
+- **(conversion)** Conversion is kept within allocated rows
+
+- **(mangowm)** Pixel error
+
+- **(config)** Config removal/recreation fixed
+
+- **(config_watch)** Fix watch retry
+
+- **(periodic)** Try re-add periodically in case the watch is removed
+
+- **(overflow)** Overlow is now a reload trigger
+
+- **(out-of-range)** Fixed out-of-range conditions
+
+- **(ipc)** Harden the lockfile fallback against symlink and pre-owned-file attacks
+
+- **(ipc)** Remove redundant, buggy connect-probe now that flock covers it
+
+- **(ipc)** Scope the lockfile fallback by UID instead of a fixed /tmp path
+
+- **(ipc)** Atomic single-instance lock, detect `POLLHUP/POLLERR` as fatal
+
+- **(daemon)** Exit nonzero on lost Wayland connection, refuse second instance
+
+- **(mangowm)** Unknown pixel error
+
+
+
+
+
+
+
+
+
+
+### :recycle: Refactoring
+
+- **(types)** Replace int-as-boolean fields with real bool across the codebase
+
+
+
+
+
+
+
+
+
+
+
 ## v0.3.0 - 2026-07-30
 
 
