@@ -460,6 +460,12 @@ design, see [What it does](#what-it-does) above.
    written in Rust (Uses `raylib`)
 2. [`hyprmagnifier`](https://github.com/st0rmbtw/hyprmagnifier): A
    `wlroots`-compatible `wayland` magnifier that does not suck
+3. [`cboomer`](https://github.com/laserattack/cboomer): A port of `boomer`
+   written in C
+4. [`cboomer`](https://github.com/DavidBalishyan/cboomer): A port of `boomer`
+   written in C (Different one than the above `cboomer`).
+5. [`zoomer`](https://codeberg.org/imal/zoomer): A port of `boomer` written in
+   Zig with Wayland support and X11 fallback.
 
 ### License
 
