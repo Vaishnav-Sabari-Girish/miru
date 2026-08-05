@@ -9,6 +9,7 @@
 
 #define DRM_FORMAT_ARGB8888 0x34325241u // AR24
 #define DRM_FORMAT_XRGB8888 0x34325258u // XR24
+#define DRM_FORMAT_BGR888 0x34324742u // BG24
 // #define DRM_FORMAT_ABGR8888 0x34324241u  // AB24
 // #define DRM_FORMAT_XBGR8888 0x34324258u  // XB24
 
@@ -18,6 +19,13 @@ struct capture_ctx {
     struct miru_capture *out;
     bool done;
     bool ok;
+    bool needs_conversion;
+    struct wl_buffer *raw_buffer;
+    void *raw_shm_data;
+    size_t raw_shm_size;
+    uint32_t raw_stride;
+    uint32_t raw_width;
+    uint32_t raw_height;
 };
 
 static const char *shm_format_name(uint32_t format)
@@ -36,12 +44,29 @@ static const char *shm_format_name(uint32_t format)
         return "ARGB8888 (DRM FourCC)";
     case DRM_FORMAT_XRGB8888:
         return "XRGB8888 (DRM FourCC)";
-    // case DRM_FORMAT_ABGR8888:
-    //     return "ABGR8888 (DRM FourCC)";
-    // case DRM_FORMAT_XBGR8888:
-    //     return "XBGR8888 (DRM FourCC)";
+        // case DRM_FORMAT_ABGR8888:
+        //     return "ABGR8888 (DRM FourCC)";
+        // case DRM_FORMAT_XBGR8888:
+        //     return "XBGR8888 (DRM FourCC)";
+
+    case DRM_FORMAT_BGR888:
+        return "BGR888 (DRM FourCC, 24bpp packed)";
     default:
         return "Unknown";
+    }
+}
+
+static void free_raw(struct capture_ctx *ctx)
+{
+    if (ctx->raw_shm_data) {
+        shm_buffer_free(ctx->raw_shm_data, ctx->raw_shm_size);
+        ctx->raw_shm_data = NULL;
+        ctx->raw_shm_size = 0;
+    }
+
+    if (ctx->raw_buffer) {
+        wl_buffer_destroy(ctx->raw_buffer);
+        ctx->raw_buffer = NULL;
     }
 }
 
@@ -71,15 +96,44 @@ static void handle_buffer(
     case WL_SHM_FORMAT_XBGR8888:
     case DRM_FORMAT_ARGB8888:
     case DRM_FORMAT_XRGB8888:
+        break;
         // case DRM_FORMAT_ABGR8888:
         // case DRM_FORMAT_XBGR8888:
-
+    case DRM_FORMAT_BGR888:
+        ctx->needs_conversion = true;
         break;
 
     default:
         fprintf(stderr, "capture: unsupported pixel format %u (%s)\n", format, shm_format_name(format));
         ctx->done = true;
         ctx->ok = false;
+        return;
+    }
+
+    if (ctx->needs_conversion) {
+        void *raw_pixels = NULL;
+        size_t raw_size = 0;
+        ctx->raw_buffer = shm_buffer_create_stride_bpp(
+            ctx->state->shm, (int)width, (int)height, (int)stride, 3, format, &raw_pixels, &raw_size
+        );
+
+        if (!ctx->raw_buffer) {
+            fprintf(stderr, "capture: failed to allocate raw 24bpp buffer for frame\n");
+            ctx->done = true;
+            ctx->ok = false;
+            return;
+        }
+
+        ctx->raw_shm_data = raw_pixels;
+        ctx->raw_shm_size = raw_size;
+        ctx->raw_stride = stride;
+        ctx->raw_width = width;
+        ctx->raw_height = height;
+
+        ctx->out->width = width;
+        ctx->out->height = height;
+
+        zwlr_screencopy_frame_v1_copy(frame, ctx->raw_buffer);
         return;
     }
 
@@ -125,6 +179,48 @@ static void handle_ready(
     (void)tv_sec_lo;
     (void)tv_nsec;
     struct capture_ctx *ctx = data;
+
+    if (ctx->needs_conversion) {
+        void *conv_pixels = NULL;
+
+        size_t conv_size = 0;
+
+        struct wl_buffer *conv_buffer = shm_buffer_create(
+            ctx->state->shm, (int)ctx->raw_width, (int)ctx->raw_height, WL_SHM_FORMAT_XRGB8888, &conv_pixels, &conv_size
+        );
+
+        if (!conv_buffer) {
+            fprintf(stderr, "capture: failed to allocate conversion buffer\n");
+            free_raw(ctx);
+            ctx->done = true;
+            ctx->ok = false;
+            return;
+        }
+
+        uint8_t *dst = (uint8_t *)conv_pixels;
+        const uint8_t *src = (const uint8_t *)ctx->raw_shm_data;
+        int dst_stride = (int)ctx->raw_width * 4;
+
+        for (uint32_t y = 0; y < ctx->raw_height; y++) {
+            const uint8_t *src_row = src + (size_t)y * ctx->raw_stride;
+            uint8_t *dst_row = dst + (size_t)y * dst_stride;
+            for (uint32_t x = 0; x < ctx->raw_width; x++) {
+                dst_row[x * 4 + 0] = src_row[x * 3 + 2];
+                dst_row[x * 4 + 1] = src_row[x * 3 + 1];
+                dst_row[x * 4 + 2] = src_row[x * 3 + 0];
+                dst_row[x * 4 + 3] = 0xFF;
+            }
+        }
+
+        free_raw(ctx);
+
+        ctx->out->buffer = conv_buffer;
+        ctx->out->shm_data = conv_pixels;
+        ctx->out->shm_size = conv_size;
+        ctx->out->format = WL_SHM_FORMAT_XRGB8888;
+        ctx->out->stride = (uint32_t)dst_stride;
+    }
+
     ctx->done = true;
     ctx->ok = true;
 }
@@ -134,6 +230,7 @@ static void handle_failed(void *data, struct zwlr_screencopy_frame_v1 *frame)
     (void)frame;
     struct capture_ctx *ctx = data;
     fprintf(stderr, "capture: compositor reported capture failed\n");
+    free_raw(ctx);
     ctx->done = true;
     ctx->ok = false;
 }
@@ -173,6 +270,7 @@ int capture_output_frame(
     while (!ctx.done) {
         if (cancel && *cancel) {
             fprintf(stderr, "capture: cancelled before frame was ready\n");
+            free_raw(&ctx);
             zwlr_screencopy_frame_v1_destroy(frame);
             return -1;
         }
@@ -181,6 +279,7 @@ int capture_output_frame(
                 continue; // loop back, cancel gets rechecked above next iteration
             }
             fprintf(stderr, "capture: display dispatch failed while waiting for frame\n");
+            free_raw(&ctx);
             zwlr_screencopy_frame_v1_destroy(frame);
             return -1;
         }
