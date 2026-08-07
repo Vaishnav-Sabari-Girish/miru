@@ -44,10 +44,6 @@ body = """
 {%- macro remote_url() -%}
   https://codeberg.org/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}
 {%- endmacro -%}
-
-{%- macro remote_url() -%}
-  https://codeberg.org/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}
-{%- endmacro -%}
 """
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
