@@ -12,6 +12,7 @@ steps:
       - wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh
       - chmod +x /tmp/llvm.sh
       - /tmp/llvm.sh 22
+      - apt-get install -y -qq clang-format-22
       - echo "Checking C and Header files in src/..."
       - find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format-22 --dry-run -Werror {} +
       - echo "All files are formatted correctly!"
