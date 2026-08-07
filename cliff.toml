@@ -1,7 +1,7 @@
 # git-cliff ~ configuration file
 # https://git-cliff.org/docs/configuration
 
-[remote.github]
+[remote.gitea]
 owner = "Vaishnav-Sabari-Girish"
 repo = "miru"
 
@@ -32,18 +32,21 @@ body = """
 {{ self::render_group(group_name="Styling", emoji=":art:") }}
 {{ self::render_group(group_name="Build", emoji=":hammer:") }}
 
-{%- if github -%}
-{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+{%- if gitea -%}
+{% if gitea.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
 ### :tada: New Contributors
 {%- endif %}\
-{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+{% for contributor in gitea.contributors | filter(attribute="is_first_time", value=true) %}
 - @{{ contributor.username }} made their first contribution
-  {%- if contributor.pr_number %} in [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}){%- endif %}
+  {%- if contributor.pr_number %} in [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pulls/{{ contributor.pr_number }}){%- endif %}
 {%- endfor -%}
 {%- endif -%}
+{%- macro remote_url() -%}
+  https://codeberg.org/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}
+{%- endmacro -%}
 
 {%- macro remote_url() -%}
-  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+  https://codeberg.org/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}
 {%- endmacro -%}
 """
 # Remove leading and trailing whitespaces from the changelog's body.
