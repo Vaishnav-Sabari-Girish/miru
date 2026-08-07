@@ -39,7 +39,10 @@ steps:
   publish-release:
     image: woodpeckerci/plugin-release
     when:
-      - evaluate: '!contains(CI_COMMIT_TAG, "-")'
+      - event: tag
+        ref:
+          - refs/tags/*
+          - exclude: refs/tags/*-*
     settings:
       api_key:
         from_secret: woodpecker-release 
@@ -53,10 +56,11 @@ steps:
   publish-prerelease:
     image: woodpeckerci/plugin-release
     when:
-      - evaluate: 'contains(CI_COMMIT_TAG, "-")'
+      - event: tag
+        ref: refs/tags/*-*
     settings:
       api_key:
-        from_secret: codeberg_token
+        from_secret: woodpecker-release
       files:
         - "miru-*.tar.gz"
         - "miru-*.tar.gz.sha256"
