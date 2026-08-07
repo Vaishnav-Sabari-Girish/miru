@@ -8,7 +8,10 @@ steps:
     image: debian:bookworm-slim
     commands:
       - apt-get update -qq
-      - apt-get install -y -qq clang-format
+      - apt-get install -y -qq wget gnupg lsb-release software-properties-common
+      - wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh
+      - chmod +x /tmp/llvm.sh
+      - /tmp/llvm.sh 22
       - echo "Checking C and Header files in src/..."
-      - find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format --dry-run -Werror {} +
+      - find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format-22 --dry-run -Werror {} +
       - echo "All files are formatted correctly!"
