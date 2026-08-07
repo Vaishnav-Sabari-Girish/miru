@@ -1,0 +1,11 @@
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+
+steps:
+  rumdl-check:
+    image: python:3.13-slim
+    commands:
+      - pip install --no-cache-dir rumdl
+      - rumdl check . --exclude CHANGELOG.md

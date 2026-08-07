@@ -1,0 +1,14 @@
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+
+steps:
+  format-check:
+    image: debian:bookworm-slim
+    commands:
+      - apt-get update -qq
+      - apt-get install -y -qq clang-format
+      - echo "Checking C and Header files in src/..."
+      - find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format --dry-run -Werror {} +
+      - echo "All files are formatted correctly!"
