@@ -14,7 +14,7 @@ steps:
     image: ubuntu:24.04
     commands:
       - apt-get update
-      - apt-get install -y build-essential cmake ninja-build pkg-config libwayland-dev wayland-protocols libegl1-mesa-dev
+      - apt-get install -y build-essential cmake ninja-build pkg-config libwayland-dev wayland-protocols libegl1-mesa-dev file
       - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - cmake --build build
       - ./build/miru-daemon --version
