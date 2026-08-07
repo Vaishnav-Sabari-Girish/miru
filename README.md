@@ -9,6 +9,11 @@
 <br>
 <br>
 
+> [!IMPORTANT]
+> Development is done on
+> [Codeberg](https://codeberg.org/Vaishnav-Sabari-Girish/miru) with a mirror in
+> [GitHub](https://github.com/Vaishnav-Sabari-Girish/miru)
+
 A Wayland-native screen magnifier and cursor spotlight tool for streamers, built
 for Wayland compositors supporting the required wlroots protocols. Miru is
 primarily developed and tested on Niri.
