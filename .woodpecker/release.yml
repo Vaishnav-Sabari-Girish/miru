@@ -23,13 +23,14 @@ steps:
   package:
     image: ubuntu:24.04
     commands:
+      # Use $$ to prevent Woodpecker from consuming local shell variables
       - version="${CI_COMMIT_TAG}"
-      - pkg_dir="miru-${version}-linux-x86_64"
-      - mkdir -p "${pkg_dir}"
-      - cp build/miru-daemon build/miructl "${pkg_dir}/"
-      - cp README.md LICENSE "${pkg_dir}/"
-      - tar czf "${pkg_dir}.tar.gz" "${pkg_dir}"
-      - sha256sum "${pkg_dir}.tar.gz" > "${pkg_dir}.tar.gz.sha256"
+      - pkg_dir="miru-$${version}-linux-x86_64"
+      - mkdir -p "$${pkg_dir}"
+      - cp build/miru-daemon build/miructl "$${pkg_dir}/"
+      - cp README.md LICENSE "$${pkg_dir}/"
+      - tar czf "$${pkg_dir}.tar.gz" "$${pkg_dir}"
+      - sha256sum "$${pkg_dir}.tar.gz" > "$${pkg_dir}.tar.gz.sha256"
 
   changelog:
     image: orhunp/git-cliff:latest
