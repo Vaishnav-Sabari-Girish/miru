@@ -41,8 +41,10 @@ steps:
     when:
       - event: tag
         ref:
-          - refs/tags/*
-          - exclude: refs/tags/*-*
+          include: 
+            - refs/tags/*
+          exclude: 
+            - refs/tags/*-*
     settings:
       api_key:
         from_secret: woodpecker-release 
@@ -57,7 +59,9 @@ steps:
     image: woodpeckerci/plugin-release
     when:
       - event: tag
-        ref: refs/tags/*-*
+        ref:
+          include:
+            - refs/tags/*-*
     settings:
       api_key:
         from_secret: woodpecker-release
