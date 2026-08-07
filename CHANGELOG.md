@@ -1,4 +1,38 @@
 
+## v0.4.1 - 2026-08-07
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### :art: Styling
+
+- **(cliff)** Changelog changed
+
+
+
+
+
+
+
 ## v0.4.0 - 2026-08-05
 
 
@@ -116,8 +150,6 @@
 
 
 
-### :tada: New Contributors
-- @yvnth made their first contribution
 ## v0.2.0 - 2026-07-26
 
 
@@ -266,3 +298,4 @@
 
 ### :tada: New Contributors
 - @Vaishnav-Sabari-Girish made their first contribution
+- @ made their first contribution in [#9](https://codeberg.org/Vaishnav-Sabari-Girish/miru/pulls/9)
