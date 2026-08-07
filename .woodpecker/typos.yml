@@ -11,5 +11,8 @@ steps:
       - |
         TYPOS_VERSION="1.49.0"
         curl -LsSf --fail "https://github.com/crate-ci/typos/releases/download/v$${TYPOS_VERSION}/typos-v$${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/typos.tar.gz
-        tar xz -C /usr/local/bin -f /tmp/typos.tar.gz typos
+        mkdir -p /tmp/typos-extract
+        tar xzf /tmp/typos.tar.gz -C /tmp/typos-extract
+        find /tmp/typos-extract -type f -name typos -exec cp {} /usr/local/bin/typos \;
+        chmod +x /usr/local/bin/typos
       - typos
