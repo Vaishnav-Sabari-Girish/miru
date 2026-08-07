@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(miru VERSION 0.4.1 LANGUAGES C)
+project(miru VERSION 0.5.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -102,3 +102,24 @@ include(GNUInstallDirs)
 install(TARGETS miru-daemon miructl
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+set(MAN_PAGES 
+  "${CMAKE_SOURCE_DIR}/miru-daemon.1"
+  "${CMAKE_SOURCE_DIR}/miructl.1"
+)
+
+foreach(MAN_PAGE ${MAN_PAGES})
+  if(EXISTS "${MAN_PAGE}")
+    get_filename_component(MAN_NAME ${MAN_PAGE} NAME)
+    get_filename_component(MAN_EXT ${MAN_PAGE} EXT)
+    string(SUBSTRING "${MAN_EXT}" 1 -1 SECTION_NUM)
+
+    install(
+      FILES "${MAN_PAGE}"
+      DESTINATION "${CMAKE_INSTALL_MANDIR}/man${SECTION_NUM}"
+    )
+
+    else()
+      message(WARNING "Pre-compiled man page not found ${MAN_PAGE}")
+  endif()
+endforeach()

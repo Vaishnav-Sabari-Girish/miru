@@ -17,8 +17,10 @@ Inspired by [boomer](https://github.com/tsoding/boomer), but for Wayland —
 written in C, keybind-driven, no GUI, no mouse-required config.
 
 > [!WARNING]
-> Early in Development
-> See [Roadmap](#roadmap)
+> **Early in development.** Core functionality — capture, the overlay,
+> keybind-driven toggle, zoom/pan, Cursor Highlight, TOML config with
+> hot-reload — all work today. Standalone Spotlight mode and multi-monitor
+> support don't exist yet. See [Roadmap](#roadmap) for the full picture.
 
 > [!IMPORTANT]
 > Miru currently requires both `wlr-layer-shell-unstable-v1` and
@@ -35,6 +37,23 @@ written in C, keybind-driven, no GUI, no mouse-required config.
 ## Demo
 
 https://github.com/user-attachments/assets/be2a4561-ad53-4700-8ddc-b78a5f4eb616
+
+## Table of contents
+
+* [What it does](#what-it-does)
+* [Why](#why)
+* [Performance](#performance)
+* [A note on global hotkeys](#a-note-on-global-hotkeys)
+* [Requirements](#requirements)
+* [Installing](#installing)
+* [Building](#building)
+* [Running](#running)
+* [Man pages](#man-pages)
+* [Configuration](#configuration)
+* [Project structure](#project-structure)
+* [Roadmap](#roadmap)
+* [Similar tools](#similar-tools)
+* [License](#license)
 
 ### What it does
 
@@ -266,6 +285,23 @@ Toggle the overlay on/off:
 ./build/miructl quit            # tells the daemon to shut down
 ```
 
+### Man pages
+
+`miru-daemon` and `miructl` each have their own `man` page. How you access
+them depends on how you installed Miru:
+
+* **Installed via `miru-zoom-git` (AUR), `cmake --install build`, or
+  `grim cast build`/`grim cast install`** — no extra step, `man miru-daemon`
+  and `man miructl` work immediately.
+* **Homebrew** — not wired up yet, coming soon.
+* **Built from source but not installed to `$PATH`** — point `man` at the
+  page directly from the repo root:
+
+```bash
+  man ./miru-daemon.1
+  man ./miructl.1
+```
+
 ### Configuration
 
 Miru uses a TOML configuration file located at:
@@ -326,6 +362,13 @@ is clamped to `zoom.max_factor` when necessary.
 > (see below). They're named `[spotlight]` in the config because they'll be
 > shared with standalone Spotlight mode once that's built, not because
 > Cursor Highlight and Spotlight mode are the same feature.
+
+The config file is watched while `miru-daemon` is running — saving changes
+takes effect immediately, no restart needed. `zoom.max_factor` and every
+`[spotlight]` value update live, including on an already-active overlay;
+`zoom.factor` (the *initial* zoom on toggle-on) takes effect starting with
+the next toggle, since retroactively snapping an in-progress session to a
+different zoom level would be jarring rather than useful.
 
 Additional input and zoom diagnostics can be enabled by setting `MIRU_DEBUG` to
 a non-zero value:
@@ -418,7 +461,7 @@ design, see [What it does](#what-it-does) above.
 │   ├── ipc_server.h/.c        # Unix socket server, parses toggle/quit commands
 │   ├── input.h/.c             # pointer/keyboard listeners: pan, zoom, Cursor Highlight toggle, key-repeat, Esc-to-exit
 │   ├── config.h/.c            # config discovery, defaults, validation and loading
-│   ├── config_watch.h/.c      # Files to check the config directory for changes and Hot-reload new config
+│   ├── config_watch.h/.c      # inotify-based watch on the config directory, drives hot-reload
 │   ├── toml.h/.c              # minimal TOML parser used by the config loader
 │   ├── version.h.in           # CMake-configured version string (git describe)
 │   ├── logo.h                 # ASCII logo module interface
@@ -445,7 +488,8 @@ design, see [What it does](#what-it-does) above.
 * [x] Cursor Highlight (Tab): darken + feathered cursor cutout on top of the
   zoomed view, tracks the real cursor position
 * [x] systemd user service + `cmake --install`/`grim cast install` support
-* [x] Hot-reloading of the config while `miru-daemon` is running.
+* [x] Hot-reloading of the config while `miru-daemon` is running
+* [x] `man` pages for `miru-daemon` and `miructl`
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
@@ -456,16 +500,16 @@ design, see [What it does](#what-it-does) above.
 
 ### Similar tools
 
-1. [`woomer`](https://github.com/coffeeispower/woomer): `boomer` for `wayland`
-   written in Rust (Uses `raylib`)
-2. [`hyprmagnifier`](https://github.com/st0rmbtw/hyprmagnifier): A
-   `wlroots`-compatible `wayland` magnifier that does not suck
-3. [`cboomer`](https://github.com/laserattack/cboomer): A port of `boomer`
+1. [`woomer`](https://github.com/coffeeispower/woomer) — `boomer` for
+   Wayland, written in Rust (uses `raylib`)
+2. [`hyprmagnifier`](https://github.com/st0rmbtw/hyprmagnifier) — a
+   wlroots-compatible Wayland magnifier that does not suck
+3. [`cboomer`](https://github.com/laserattack/cboomer) — a port of `boomer`
    written in C
-4. [`cboomer`](https://github.com/DavidBalishyan/cboomer): A port of `boomer`
-   written in C (Different one than the above `cboomer`).
-5. [`zoomer`](https://codeberg.org/imal/zoomer): A port of `boomer` written in
-   Zig with Wayland support and X11 fallback.
+4. [`cboomer` (DavidBalishyan)](https://github.com/DavidBalishyan/cboomer) —
+   a different port of `boomer`, also written in C
+5. [`zoomer`](https://codeberg.org/imal/zoomer) — a port of `boomer` written
+   in Zig, with Wayland support and an X11 fallback
 
 ### License
 
