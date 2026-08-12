@@ -62,6 +62,10 @@ wayland_generate_protocol(${XDG_SHELL_XML} xdg-shell)
 wayland_generate_protocol(${EXT_CAPTURE_SOURCE_XML} ext-image-capture-source-v1)
 wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-v1)
 
+pkg_check_modules(EGL REQUIRED egl)
+pkg_check_modules(GLESV2 REQUIRED glesv2)
+pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
+
 add_executable(miru-daemon
   src/main.c
   src/logo.c
@@ -74,6 +78,8 @@ add_executable(miru-daemon
   src/toml.c
   src/config.c
   src/config_watch.c
+  src/egl_context.c
+  src/gl_renderer.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}
@@ -89,12 +95,19 @@ add_executable(miructl
 
 target_include_directories(miru-daemon PRIVATE
   ${WAYLAND_CLIENT_INCLUDE_DIRS}
+  ${EGL_INCLUDE_DIRS}
+  ${GLESV2_INCLUDE_DIRS}
+  ${WAYLAND_EGL_INCLUDE_DIRS}
   ${CMAKE_BINARY_DIR}/protocol       # so #include "*-client-protocol.h" in main.c resolves
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_BINARY_DIR}/generated
 )
 
-target_link_libraries(miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES})
+target_link_libraries(miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES}
+  ${EGL_LIBRARIES}
+  ${GLESV2_LIBRARIES}
+  ${WAYLAND_EGL_LIBRARIES}
+)
 target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
 
 include(GNUInstallDirs)

@@ -156,6 +156,12 @@ int main(int argc, char *argv[])
 
         int timeout = input_next_repeat_timeout(&input_ctx);
 
+        if (active && layer_surface_is_animating(&ls)) {
+            int anim_timeout = 16;
+            if (timeout < 0 || anim_timeout < timeout)
+                timeout = anim_timeout;
+        }
+
         if (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0) {
             if (timeout < 0 || timeout > 1000) {
                 timeout = 1000;
