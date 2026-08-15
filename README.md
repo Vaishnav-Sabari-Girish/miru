@@ -1,11 +1,9 @@
 # Miru
 
 <br>
-
 <div align="center">
   <img src="./miru_logo.svg" alt="logo" width="300" />
 </div>
-
 <br>
 <br>
 
@@ -21,11 +19,7 @@ primarily developed and tested on Niri.
 Inspired by [boomer](https://github.com/tsoding/boomer), but for Wayland —
 written in C, keybind-driven, no GUI, no mouse-required config.
 
-> [!WARNING]
-> **Early in development.** Core functionality — capture, the overlay,
-> keybind-driven toggle, zoom/pan, Cursor Highlight, TOML config with
-> hot-reload — all work today. Standalone Spotlight mode and multi-monitor
-> support don't exist yet. See [Roadmap](#roadmap) for the full picture.
+See [Roadmap](#roadmap) for the full picture.
 
 > [!IMPORTANT]
 > Miru currently requires both `wlr-layer-shell-unstable-v1` and
@@ -71,11 +65,13 @@ feature, and it's worth being clear about which one you're getting:
   press +/- to adjust zoom, use arrow keys or WASD to pan by keyboard, press
   Esc (or the toggle key again) to exit. Like `boomer`, but native Wayland.
   While active, pressing **Tab** toggles **Cursor Highlight** on top of the
-  zoomed view — darkening everything except a soft-edged circle that tracks
-  your cursor, configurable via `[spotlight]` in the config file. This only
+  zoomed view — darkening everything except a soft-edged circle that follows
+  the real pointer position across the screen (absolute tracking), even when
+  zoomed in. Configurable via `[spotlight]` in the config file. This only
   works *inside* an active Magnifier session; it isn't a separate mode you
   can toggle on its own, and the desktop underneath is still frozen/grabbed
   while it's on. **Built and working now.**
+
 * **Spotlight mode** — a fully independent, click-through overlay that
   darkens the whole screen except a cursor-tracking circle, while you keep
   working normally underneath — no freeze, no input grab, usable during
@@ -90,7 +86,8 @@ feature, and it's worth being clear about which one you're getting:
 Most screen magnifiers either don't exist for Wayland, or route through XWayland
 with visible artifacts and no compositor integration. Miru uses Wayland
 protocols directly, currently relying on `wlr-layer-shell` for its overlay and
-`wlr-screencopy` for screen capture.
+`wlr-screencopy` for screen capture. The overlay itself is rendered with
+OpenGL ES 2 via EGL.
 
 ### Performance
 
@@ -127,6 +124,7 @@ wants to make for a screen-zoom tool.
   `wlr-screencopy-unstable-v1`
 * `wayland-client`, `wayland-protocols`, `wayland-scanner` (pacman: `wayland`,
   `wayland-protocols`)
+* EGL + OpenGL ES 2 development packages
 * CMake ≥ 3.20, Ninja (optional)
 * A C11 compiler
 
@@ -153,7 +151,6 @@ alternative capture and overlay mechanisms.
 ```bash
 # latest tagged release
 paru -S miru-zoom
-
 # or track the latest commit on main
 paru -S miru-zoom-git
 ```
@@ -197,7 +194,6 @@ See [Building](#building) below.
 ```bash
 # Using Ninja
 cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
 # Using Make
 cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
@@ -211,7 +207,7 @@ cmake --build build
 Or with [Grimoire](https://github.com/Vaishnav-Sabari-Girish/grimoire):
 
 ```bash
-grim cast build        # Uses make to build by default
+grim cast build # Uses make to build by default
 ```
 
 This builds two binaries: `miru-daemon` (the actual Wayland client) and
@@ -240,7 +236,6 @@ systemd user service so it starts automatically with your graphical session.
 
 ```bash
 ./build/miru-daemon
-
 # or
 grim cast run-daemon
 ```
@@ -285,9 +280,9 @@ to toggle. Nothing else happens until a toggle command arrives (see
 Toggle the overlay on/off:
 
 ```bash
-./build/miru-daemon --version   # prints version info + an ASCII logo, exits immediately
-./build/miructl toggle          # freezes + zooms the screen / returns it to normal
-./build/miructl quit            # tells the daemon to shut down
+./build/miru-daemon --version # prints version info + an ASCII logo, exits immediately
+./build/miructl toggle        # freezes + zooms the screen / returns it to normal
+./build/miructl quit          # tells the daemon to shut down
 ```
 
 ### Man pages
@@ -349,34 +344,36 @@ The currently active options are:
 * `zoom.increment` — amount the zoom changes per key/scroll input. Must be
   greater than `0`.
 * `zoom.max_factor` — maximum zoom level. Must be at least `1.0`.
+* `zoom.smooth` — when `true`, zoom level and pan position are smoothly
+  interpolated toward their targets instead of snapping.
 * `spotlight.radius` — radius, in pixels, of the fully-bright circle around
   the cursor.
 * `spotlight.dim` — how much darker the dimmed area gets, from `0.0` (no
   effect) to `1.0` (fully black).
 * `spotlight.softness` — width, in pixels, of the feathered transition
   between the bright circle and the dimmed area.
+* `general.show_cursor` — currently parsed; runtime effect is still limited.
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
 non-positive values where applicable, fall back to safe defaults. `zoom.factor`
 is clamped to `zoom.max_factor` when necessary.
 
 > [!NOTE]
-> `zoom.smooth` and `general.show_cursor` are currently parsed but do not have
-> a runtime effect yet. `[spotlight]` values ARE live — they control the
-> Cursor Highlight effect toggled with Tab while Magnifier mode is active
-> (see below). They're named `[spotlight]` in the config because they'll be
-> shared with standalone Spotlight mode once that's built, not because
-> Cursor Highlight and Spotlight mode are the same feature.
+> `[spotlight]` values are live — they control the Cursor Highlight effect
+> toggled with Tab while Magnifier mode is active. They're named `[spotlight]`
+> in the config because they'll be shared with standalone Spotlight mode once
+> that's built, not because Cursor Highlight and Spotlight mode are the same
+> feature.
 
 The config file is watched while `miru-daemon` is running — saving changes
-takes effect immediately, no restart needed. `zoom.max_factor` and every
-`[spotlight]` value update live, including on an already-active overlay;
-`zoom.factor` (the *initial* zoom on toggle-on) takes effect starting with
-the next toggle, since retroactively snapping an in-progress session to a
+takes effect immediately, no restart needed. `zoom.max_factor`, `zoom.smooth`
+and every `[spotlight]` value update live, including on an already-active
+overlay; `zoom.factor` (the *initial* zoom on toggle-on) takes effect starting
+with the next toggle, since retroactively snapping an in-progress session to a
 different zoom level would be jarring rather than useful.
 
-Additional input and zoom diagnostics can be enabled by setting `MIRU_DEBUG` to
-a non-zero value:
+Additional input, zoom and texture-upload diagnostics can be enabled by
+setting `MIRU_DEBUG` to a non-zero value:
 
 ```bash
 MIRU_DEBUG=1 ./build/miru-daemon
@@ -418,19 +415,20 @@ bind=SUPER,Z,spawn,/path/to/miru/build/miructl toggle
 Substitute the actual path to your built `miructl` binary in each case (or
 wherever it ends up if installed via a package manager).
 
-On toggle-on, the daemon captures one frame via `wlr-screencopy`, blits it
-into a fullscreen `wlr-layer-shell` overlay (correctly scaled on HiDPI
-outputs, double-buffered to avoid tearing), and shows it at the configured
-zoom factor, centered on your cursor. While active:
+On toggle-on, the daemon captures one frame via `wlr-screencopy`, uploads it
+as an OpenGL ES texture, and shows it in a fullscreen `wlr-layer-shell`
+overlay (correctly scaled on HiDPI outputs) at the configured zoom factor,
+centered on your cursor. While active:
 
-* **Move the mouse** to pan the zoomed view, tracking the cursor live
+* **Move the mouse** to pan the zoomed view
 * **`+`/`-`** or **scroll wheel** to adjust the zoom level
 * **Arrow keys or WASD** to pan by keyboard — press and hold for continuous
   panning at your keyboard's repeat rate
 * **Tab** to toggle Cursor Highlight on/off — darkens everything except a
-  soft-edged circle tracking your cursor, using the `[spotlight]` config
-  values. This is separate from the standalone Spotlight mode described
-  above; see [What it does](#what-it-does) for the distinction.
+  soft-edged circle that follows the real pointer position across the
+  screen (absolute tracking), using the `[spotlight]` config values. This
+  is separate from the standalone Spotlight mode described above; see
+  [What it does](#what-it-does) for the distinction.
 * **Esc**, or pressing the toggle keybind again, to exit back to your normal
   desktop
 
@@ -453,54 +451,55 @@ design, see [What it does](#what-it-does) above.
 .
 ├── CMakeLists.txt
 ├── cmake/
-│   └── WaylandScanner.cmake   # wraps wayland-scanner as CMake custom commands
-├── protocol/                  # vendored protocol XML (not shipped by wayland-protocols)
+│   └── WaylandScanner.cmake          # wraps wayland-scanner as CMake custom commands
+├── protocol/                         # vendored protocol XML (not shipped by wayland-protocols)
 │   ├── wlr-layer-shell-unstable-v1.xml
 │   └── wlr-screencopy-unstable-v1.xml
 ├── src/
-│   ├── main.c                 # daemon entrypoint, IPC-driven toggle loop
-│   ├── wayland_state.h/.c     # connection, registry, seat/output tracking, poll-based event loop
-│   ├── layer_surface.h/.c     # double-buffered wlr-layer-shell overlay, zoom/pan/Cursor Highlight blit
-│   ├── capture.h/.c           # one-shot screen capture via wlr-screencopy
-│   ├── shm_buffer.h/.c        # shared-memory pixel buffer allocation helper
-│   ├── ipc_server.h/.c        # Unix socket server, parses toggle/quit commands
-│   ├── input.h/.c             # pointer/keyboard listeners: pan, zoom, Cursor Highlight toggle, key-repeat, Esc-to-exit
-│   ├── config.h/.c            # config discovery, defaults, validation and loading
-│   ├── config_watch.h/.c      # inotify-based watch on the config directory, drives hot-reload
-│   ├── toml.h/.c              # minimal TOML parser used by the config loader
-│   ├── version.h.in           # CMake-configured version string (git describe)
-│   ├── logo.h                 # ASCII logo module interface
-│   └── logo.c                 # ASCII logo data and printing implementation
+│   ├── main.c                        # daemon entrypoint, IPC-driven toggle loop
+│   ├── wayland_state.h/.c            # connection, registry, seat/output tracking, poll-based event loop
+│   ├── layer_surface.h/.c            # wlr-layer-shell overlay, zoom/pan, Cursor Highlight, GL draw
+│   ├── capture.h/.c                  # one-shot screen capture via wlr-screencopy
+│   ├── shm_buffer.h/.c               # shared-memory pixel buffer allocation helper
+│   ├── egl_context.h/.c              # EGL display / context / window-surface setup
+│   ├── gl_renderer.h/.c              # OpenGL ES 2 shaders, texture upload, spotlight draw
+│   ├── ipc_server.h/.c               # Unix socket server, parses toggle/quit commands
+│   ├── input.h/.c                    # pointer/keyboard listeners: pan, zoom, Tab highlight, key-repeat, Esc
+│   ├── config.h/.c                   # config discovery, defaults, validation and loading
+│   ├── config_watch.h/.c             # inotify-based watch on the config directory, drives hot-reload
+│   ├── toml.h/.c                     # minimal TOML parser used by the config loader
+│   ├── version.h.in                  # CMake-configured version string (git describe)
+│   ├── logo.h                        # ASCII logo module interface
+│   └── logo.c                        # ASCII logo data and printing implementation
 ├── ctl/
-│   └── miructl.c              # thin socket client, no Wayland dependency
-└── Grimoire.toml              # dev task runner (build/run/install/clean)
+│   └── miructl.c                     # thin socket client, no Wayland dependency
+└── Grimoire.toml                     # dev task runner (build/run/install/clean)
 ```
 
 ### Roadmap
 
 * [x] Wayland connection, registry discovery, manual poll-based event loop
-* [x] Fullscreen `wlr-layer-shell` overlay surface (solid color, no capture yet)
+* [x] Fullscreen `wlr-layer-shell` overlay surface
 * [x] Screen capture via `wlr-screencopy`
-* [x] Render the captured frame into the overlay surface (scale-aware, single
-  output)
+* [x] Render the captured frame into the overlay (OpenGL ES + EGL, scale-aware)
 * [x] `miructl` control client + Unix socket IPC, daemon/client split
 * [x] Keybind-driven toggle: capture + show on activate, tear down on
   deactivate, no continuous re-capture while visible
 * [x] Magnifier mode: cursor-centered zoom + live pan, mouse/keyboard/WASD/
-  scroll zoom controls, proper multi-key repeat, double-buffered rendering
+  scroll zoom controls, proper multi-key repeat
 * [x] TOML configuration with XDG config directory support and configurable
   zoom/spotlight behavior
-* [x] Cursor Highlight (Tab): darken + feathered cursor cutout on top of the
-  zoomed view, tracks the real cursor position
+* [x] Cursor Highlight (Tab): darken + feathered cursor cutout that follows
+  the real pointer position (absolute tracking) even while zoomed
 * [x] systemd user service + `cmake --install`/`grim cast install` support
 * [x] Hot-reloading of the config while `miru-daemon` is running
 * [x] `man` pages for `miru-daemon` and `miructl`
+* [x] Optional smooth interpolation for zoom/pan (`zoom.smooth`)
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
   Niri IPC or similar)
 * [ ] Multi-monitor support
-* [ ] Smooth zoom animation
 * [ ] Support compositors without `wlr-screencopy` / `wlr-layer-shell`
 
 ### Similar tools
@@ -527,7 +526,5 @@ it.**
 
 * **Micro-improvements:** I have used AI as an advisor to improve some bits of
   code here and there. Big refactors or new features are done by my hand though.
-
 <br>
-
 ![img](https://brainmade.org/white-logo.svg)
