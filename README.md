@@ -163,13 +163,13 @@ Substitute your AUR helper of choice — `yay`, `paru`, or a manual
 Run directly without installing:
 
 ```bash
-nix run github:Vaishnav-Sabari-Girish/miru
+nix run git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
 ```
 
 Or install to your profile:
 
 ```bash
-nix profile add github:Vaishnav-Sabari-Girish/miru
+nix profile add git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
 ```
 
 For development:
