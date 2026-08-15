@@ -11,7 +11,6 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        # Define the derivation once so we can reference it in 'packages' and 'apps'
         miru = pkgs.stdenv.mkDerivation {
           pname = "miru";
           version = "0.5.0";
@@ -27,6 +26,9 @@
           buildInputs = with pkgs; [
             wayland
             wayland-protocols
+            libffi
+            mesa
+            libGL
           ];
         };
       in
@@ -42,23 +44,24 @@
           buildInputs = with pkgs; [
             wayland
             wayland-protocols
+            libffi
+            mesa
+            libGL
           ];
 
           shellHook = ''
-            echo Entering Nix Dev Shell
+            echo "Entering Nix Dev Shell for Miru"
           '';
         };
 
         packages.default = miru;
 
-        # Defines default binary for 'nix run'
         apps = {
           default = {
             type = "app";
             program = "${miru}/bin/miru-daemon";
           };
           
-          # Optional: allows running 'nix run .#miructl -- toggle'
           miructl = {
             type = "app";
             program = "${miru}/bin/miructl";
