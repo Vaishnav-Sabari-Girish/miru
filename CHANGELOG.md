@@ -1,4 +1,49 @@
 
+## v0.5.0 - 2026-08-15
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(flake)** Flake.nix updated
+
+- **(gpu)** Zooming now uses the GPU for a more smoother experience
+
+- **(smooth_zoom)** Smooth zoom
+
+- **(man_pages)** Add man pages
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(display)** Fixed the weird display bug due to gl_renderer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## v0.4.1 - 2026-08-07
 
 
@@ -9,6 +54,13 @@
 
 
 
+
+
+### :bug: Bug fixes
+
+- **(ci)** Variable unravelling in package step
+
+- **(ci)** Install file package in build step
 
 
 
