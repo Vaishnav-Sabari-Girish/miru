@@ -6,6 +6,7 @@
 #include <time.h>
 #include <linux/input-event-codes.h>
 #include "input.h"
+#include "debug.h"
 #include "layer_surface.h"
 #include <wayland-client-protocol.h>
 
@@ -13,7 +14,7 @@
 
 #define PAN_STEP 50.0
 
-static bool debug_enabled(void)
+bool miru_debug_enabled(void)
 {
     static int cached = -1;
     if (cached == -1) {
@@ -34,7 +35,7 @@ static void clamp_zoom(struct miru_layer_surface *ls)
     if (ls->zoom < ZOOM_MIN)
         ls->zoom = ZOOM_MIN;
     if (ls->zoom > ls->zoom_max) {
-        if (debug_enabled()) {
+        if (miru_debug_enabled()) {
             fprintf(stderr, "clamp_zoom: clamping %.3f down to zoom_max = %.3f\n", ls->zoom, ls->zoom_max);
         }
         ls->zoom = ls->zoom_max;
@@ -153,7 +154,7 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
 
     double v = wl_fixed_to_double(value);
 
-    if (debug_enabled()) {
+    if (miru_debug_enabled()) {
         fprintf(
             stderr, "pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f\n", v, ctx->zoom_increment, ctx->ls->zoom
         );
@@ -167,7 +168,7 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
 
     clamp_zoom(ctx->ls);
 
-    if (debug_enabled()) {
+    if (miru_debug_enabled()) {
         fprintf(stderr, "pointer_axis: zoom_after=%.3f\n", ctx->ls->zoom);
     }
 
@@ -256,7 +257,7 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
 
 static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
 {
-    if (debug_enabled()) {
+    if (miru_debug_enabled()) {
         fprintf(
             stderr,
             "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f\n",
@@ -289,7 +290,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
         return 0;
     }
 
-    if (debug_enabled()) {
+    if (miru_debug_enabled()) {
         fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
     }
 

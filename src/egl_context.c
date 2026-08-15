@@ -70,7 +70,7 @@ int egl_create_surface(struct miru_egl *egl, struct wl_surface *wl_surface, int 
     }
 
     egl->surface = eglCreateWindowSurface(egl->display, egl->config, (EGLNativeWindowType)egl->egl_window, NULL);
-    if (egl->surface = EGL_NO_SURFACE) {
+    if (egl->surface == EGL_NO_SURFACE) {
         fprintf(stderr, "egl: eglCreateWindowSurface failed\n");
         wl_egl_window_destroy(egl->egl_window);
         egl->egl_window = NULL;

@@ -424,8 +424,10 @@ void layer_surface_render(struct miru_layer_surface *ls)
 
     // spotlight cursor must be in on-screen (post-zoom) pixel space not
     // raw sourcae-buffer space
-    float dst_cursor_x = ((float)ls->cursor_x - src_left) * z;
-    float dst_cursor_y = ((float)ls->cursor_y - src_top) * z;
+    float dst_cursor_x = (float)ls->cursor_x;
+    float dst_cursor_y = (float)ls->cursor_y;
+
+    dst_cursor_y = (float)ls->buffer_height - dst_cursor_y;
 
     gl_renderer_draw(
         &ls->gl,
