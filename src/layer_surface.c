@@ -260,7 +260,8 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
             (const uint8_t *)ls->capture->shm_data,
             (int)ls->capture->width,
             (int)ls->capture->height,
-            (int)ls->capture->stride
+            (int)ls->capture->stride,
+            ls->capture->format
         );
     }
 
