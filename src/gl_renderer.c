@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include "gl_renderer.h"
 #include "debug.h"
+#include <wayland-client-protocol.h>
 
 /* bool miru_debug_enabled(void) */
 /* { */
@@ -17,6 +18,13 @@
 
 /*     return cached != 0; */
 /* } */
+
+#ifndef GL_BGRA_EXT
+#define GL_BGRA_EXT 0x80E1
+#endif /* ifndef MACRO */
+
+#define DRM_FORMAT_ARGB8888 0x34325241
+#define DRM_FORMAT_XRGB8888 0x34325258
 
 static const char *vertex_shader_src = "attribute vec2 a_position;\n"
                                        "attribute vec2 a_texcoord;\n"
@@ -42,7 +50,7 @@ static const char *fragment_shader_src = "precision mediump float;\n"
                                          "    vec2 uv = v_texcoord;\n"
                                          "    if (u_y_invert > 0.5) { uv.y = 1.0 - uv.y; }\n"
                                          "    vec2 sample_uv = u_crop_origin + uv * u_crop_scale;\n"
-                                         "    vec3 color = texture2D(u_texture, sample_uv).bgr;\n"
+                                         "    vec3 color = texture2D(u_texture, sample_uv).rgb;\n"
                                          "    if (u_spotlight_enabled > 0.5) {\n"
                                          "        vec2 frag_px = gl_FragCoord.xy;\n"
                                          "        float dist = distance(frag_px, u_cursor_px);\n"
@@ -134,7 +142,14 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     return 0;
 }
 
-void gl_renderer_upload_texture(struct miru_gl_renderer *r, const uint8_t *pixels, int width, int height, int stride)
+void gl_renderer_upload_texture(
+    struct miru_gl_renderer *r,
+    const uint8_t *pixels,
+    int width,
+    int height,
+    int stride,
+    uint32_t format
+)
 {
     fprintf(
         stderr,
@@ -146,13 +161,33 @@ void gl_renderer_upload_texture(struct miru_gl_renderer *r, const uint8_t *pixel
         (stride == width * 4) ? "FAST" : "ROW BY ROW"
     );
 
+    GLenum gl_fmt = GL_RGBA;
+    bool need_swizzle = false;
+
+    switch (format) {
+    case WL_SHM_FORMAT_ARGB8888:
+    case WL_SHM_FORMAT_XRGB8888:
+    case DRM_FORMAT_ARGB8888:
+    case DRM_FORMAT_XRGB8888:
+        // little-endian BGRA in memory
+        gl_fmt = GL_BGRA_EXT;
+        break;
+    case WL_SHM_FORMAT_ABGR8888:
+    case WL_SHM_FORMAT_XBGR8888:
+        gl_fmt = GL_RGBA;
+        break;
+    default:
+        gl_fmt = GL_RGBA;
+        break;
+    }
+
     glBindTexture(GL_TEXTURE_2D, r->texture);
     if (stride == width * 4) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, gl_fmt, GL_UNSIGNED_BYTE, pixels);
     } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, gl_fmt, GL_UNSIGNED_BYTE, NULL);
         for (int y = 0; y < height; y++) {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, width, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels + (size_t)y * stride);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, width, 1, gl_fmt, GL_UNSIGNED_BYTE, pixels + (size_t)y * stride);
         }
     }
 }

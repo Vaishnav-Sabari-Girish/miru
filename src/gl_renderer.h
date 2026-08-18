@@ -14,7 +14,14 @@ struct miru_gl_renderer {
 };
 
 int gl_renderer_init(struct miru_gl_renderer *r);
-void gl_renderer_upload_texture(struct miru_gl_renderer *r, const uint8_t *pixels, int width, int height, int stride);
+void gl_renderer_upload_texture(
+    struct miru_gl_renderer *r,
+    const uint8_t *pixels,
+    int width,
+    int height,
+    int stride,
+    uint32_t format
+);
 void gl_renderer_draw(
     struct miru_gl_renderer *r,
     float crop_x,
