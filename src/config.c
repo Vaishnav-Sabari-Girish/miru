@@ -70,6 +70,7 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "radius = 250\n"
                                          "dim = 0.65\n"
                                          "softness = 20\n"
+                                         "animation_speed = 14.0\n"
                                          "\n"
                                          "[general]\n"
                                          "show_cursor = true\n";
@@ -169,6 +170,14 @@ static void sanitize_config(struct miru_config *c)
         fprintf(stderr, "config: invalid spotlight.softness, falling back to default\n");
         c->spotlight_softness = 20;
     }
+
+    if (!isfinite(c->spotlight_animation_speed) || c->spotlight_animation_speed <= 0.0) {
+        fprintf(stderr, "config: invalid spotlight.animation_speed (must be positive). falling back to default\n");
+        c->spotlight_animation_speed = 14.0;
+    } else if (c->spotlight_animation_speed > 60.0) {
+        fprintf(stderr, "config: spotlight.animation_speed exceeds 60.0. clamping\n");
+        c->spotlight_animation_speed = 60.0;
+    }
 }
 
 void config_load(struct miru_config *out)
@@ -186,6 +195,7 @@ void config_load(struct miru_config *out)
     out->spotlight_radius = 250;
     out->spotlight_dim = 0.65;
     out->spotlight_softness = 20;
+    out->spotlight_animation_speed = 14.0;
 
     out->show_cursor = true;
 
@@ -215,6 +225,7 @@ void config_load(struct miru_config *out)
     out->spotlight_radius = toml_get_int(t, "spotlight", "radius", out->spotlight_radius);
     out->spotlight_dim = toml_get_double(t, "spotlight", "dim", out->spotlight_dim);
     out->spotlight_softness = toml_get_int(t, "spotlight", "softness", out->spotlight_softness);
+    out->spotlight_animation_speed = toml_get_double(t, "spotlight", "animation_speed", out->spotlight_animation_speed);
 
     out->show_cursor = toml_get_bool(t, "general", "show_cursor", out->show_cursor);
 

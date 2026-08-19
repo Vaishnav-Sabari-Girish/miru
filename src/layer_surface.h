@@ -13,6 +13,7 @@ struct layer_surface_config {
     float spotlight_radius;
     float spotlight_dim;
     float spotlight_softness;
+    float spotlight_animation_speed;
     bool smooth_enabled;
 };
 
@@ -39,6 +40,7 @@ struct miru_layer_surface {
     bool spotlight_enabled;
     float display_spotlight_radius;
     float display_spotlight_dim;
+    float spotlight_animation_speed;
     bool smooth_enabled;
     bool dirty;
 };

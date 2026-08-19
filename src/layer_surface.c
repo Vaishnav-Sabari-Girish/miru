@@ -11,7 +11,6 @@
 #define SMOOTH_SPEED 12.0f
 #define ZOOM_EPSILON 0.01f
 #define CURSOR_EPSILON 0.5
-#define SPOTLIGHT_SPEED 14.0f
 #define SPOTLIGHT_EPSILON 0.5f
 
 static void
@@ -133,6 +132,8 @@ int layer_surface_create(
     ls->spotlight_enabled = false;
     ls->display_spotlight_radius = 0.0f;
     ls->display_spotlight_dim = 0.0f;
+    ls->spotlight_animation_speed = config->spotlight_animation_speed > 0.0f ? config->spotlight_animation_speed :
+                                                                               14.0f;
     ls->smooth_enabled = config->smooth_enabled;
 
     if (egl_init(&ls->egl, state->display) != 0) {
@@ -174,6 +175,8 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
     ls->spotlight_radius = config->spotlight_radius;
     ls->spotlight_dim = config->spotlight_dim;
     ls->spotlight_softness = config->spotlight_softness;
+    if (config->spotlight_animation_speed > 0.0f)
+        ls->spotlight_animation_speed = config->spotlight_animation_speed;
     ls->smooth_enabled = config->smooth_enabled;
 
     if (ls->zoom > ls->zoom_max) {
@@ -238,7 +241,8 @@ void layer_surface_render(struct miru_layer_surface *ls)
     ls->display_cursor_x += (ls->cursor_x - ls->display_cursor_x) * t;
     ls->display_cursor_y += (ls->cursor_y - ls->display_cursor_y) * t;
 
-    float st = 1.0f - expf(-SPOTLIGHT_SPEED * (1.0f / 60.0f));
+    float speed = ls->spotlight_animation_speed > 0.0f ? ls->spotlight_animation_speed : 14.0f;
+    float st = 1.0f - expf(-speed * (1.0f / 60.0f));
     float target_radius = ls->spotlight_enabled ? ls->spotlight_radius : 0.0f;
     float target_dim = ls->spotlight_enabled ? ls->spotlight_dim : 0.0f;
     ls->display_spotlight_radius += (target_radius - ls->display_spotlight_radius) * st;

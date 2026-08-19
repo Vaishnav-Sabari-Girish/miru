@@ -15,6 +15,7 @@ struct miru_config {
     long spotlight_radius;
     double spotlight_dim;
     long spotlight_softness;
+    double spotlight_animation_speed;
 
     // General
     bool show_cursor;
