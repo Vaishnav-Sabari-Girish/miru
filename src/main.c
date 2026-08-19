@@ -187,9 +187,8 @@ int main(int argc, char *argv[])
 
         if (active) {
             input_process_repeats(&input_ctx);
-            if (ls.dirty) {
+            if (ls.dirty || layer_surface_is_animating(&ls)) {
                 layer_surface_render(&ls);
-                ls.dirty = 0;
             }
         }
 
