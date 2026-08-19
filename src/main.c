@@ -70,6 +70,7 @@ static int activate(
                                  config->spotlight_dim > 1.0 ? 1.0 :
                                                                config->spotlight_dim),
         .spotlight_softness = (float)config->spotlight_softness,
+        .spotlight_animation_speed = (float)config->spotlight_animation_speed,
     };
 
     if (layer_surface_create(state, ls, capture, &ls_config) != 0) {
@@ -187,9 +188,8 @@ int main(int argc, char *argv[])
 
         if (active) {
             input_process_repeats(&input_ctx);
-            if (ls.dirty) {
+            if (ls.dirty || layer_surface_is_animating(&ls)) {
                 layer_surface_render(&ls);
-                ls.dirty = 0;
             }
         }
 
@@ -224,6 +224,7 @@ int main(int argc, char *argv[])
                     config.spotlight_radius != new_config.spotlight_radius ||
                     config.spotlight_dim != new_config.spotlight_dim ||
                     config.spotlight_softness != new_config.spotlight_softness ||
+                    config.spotlight_animation_speed != new_config.spotlight_animation_speed ||
                     config.show_cursor != new_config.show_cursor) {
                     fprintf(stderr, "config: change detected reloading\n");
                     config = new_config;
@@ -235,6 +236,7 @@ int main(int argc, char *argv[])
                             .spotlight_radius = (float)config.spotlight_radius,
                             .spotlight_dim = (float)config.spotlight_dim,
                             .spotlight_softness = (float)config.spotlight_softness,
+                            .spotlight_animation_speed = (float)config.spotlight_animation_speed,
                         };
 
                         layer_surface_apply_config(&ls, &ls_config);

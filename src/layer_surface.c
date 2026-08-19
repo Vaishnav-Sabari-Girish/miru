@@ -4,185 +4,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-/* #include <string.h> */
-/* #include <stdint.h> */
 #include <math.h>
 #include <wayland-client-protocol.h>
 #include "layer_surface.h"
-/* #include "shm_buffer.h" */
-/* #include <sys/types.h> */
 
 #define SMOOTH_SPEED 12.0f
 #define ZOOM_EPSILON 0.01f
 #define CURSOR_EPSILON 0.5
-
-/* static void handle_buffer_release(void *data, struct wl_buffer *buffer) */
-/* { */
-/*     (void)buffer; */
-/*     // data is the specific slot this buffer belongs to, not the whole */
-/*     // layer_surface — each slot tracks its own busy state independently */
-/*     struct miru_buffer_slot *slot = data; */
-/*     slot->busy = 0; */
-/* } */
-
-/* static const struct wl_buffer_listener buffer_listener = { */
-/*     .release = handle_buffer_release, */
-/* }; */
-
-/* static void free_slot(struct miru_buffer_slot *slot) */
-/* { */
-/*     shm_buffer_free(slot->shm_data, slot->shm_size); */
-/*     if (slot->buffer) { */
-/*         wl_buffer_destroy(slot->buffer); */
-/*     } */
-/*     *slot = (struct miru_buffer_slot){ 0 }; */
-/* } */
-
-/* static int alloc_slot(struct miru_layer_surface *ls, struct miru_buffer_slot *slot, uint32_t format) */
-/* { */
-/*     void *pixels = NULL; */
-/*     size_t size = 0; */
-/*     slot->buffer = shm_buffer_create(ls->shm, ls->buffer_width, ls->buffer_height, format, &pixels, &size); */
-/*     if (!slot->buffer) { */
-/*         return -1; */
-/*     } */
-/*     slot->shm_data = pixels; */
-/*     slot->shm_size = size; */
-/*     slot->busy = 0; */
-/*     wl_buffer_add_listener(slot->buffer, &buffer_listener, slot); */
-/*     return 0; */
-
-/* static void blit_and_commit(struct miru_layer_surface *ls) */
-/* { */
-/*     // pick whichever slot isn't currently attached/awaiting release from the */
-/*     // compositor. with two slots this should basically always find one — */
-/*     // if somehow neither is free, skip this render rather than tear a buffer */
-/*     // the compositor might still be reading */
-/*     struct miru_buffer_slot *slot = NULL; */
-/*     if (!ls->slots[0].busy) { */
-/*         slot = &ls->slots[0]; */
-/*     } else if (!ls->slots[1].busy) { */
-/*         slot = &ls->slots[1]; */
-/*     } else { */
-/*         return; */
-/*     } */
-
-/*     int have_capture = ls->capture && ls->capture->buffer; */
-
-/*     if (have_capture) { */
-/*         int bw = ls->buffer_width; */
-/*         int bh = ls->buffer_height; */
-/*         float z = ls->zoom < 1.0f ? 1.0f : ls->zoom; // never zoom below 1:1 */
-
-/*         float src_w = (float)bw / z; */
-/*         float src_h = (float)bh / z; */
-
-/*         float src_left = (float)ls->cursor_x - src_w / 2.0f; */
-/*         float src_top = (float)ls->cursor_y - src_h / 2.0f; */
-
-/*         if (src_left < 0) */
-/*             src_left = 0; */
-/*         if (src_top < 0) */
-/*             src_top = 0; */
-/*         if (src_left + src_w > bw) */
-/*             src_left = (float)bw - src_w; */
-/*         if (src_top + src_h > bh) */
-/*             src_top = (float)bh - src_h; */
-
-/*         int dst_stride = bw * 4; */
-/*         int src_stride = (int)ls->capture->stride; */
-
-/*         float dst_cursor_x = (float)ls->cursor_x; */
-/*         float dst_cursor_y = (float)ls->cursor_y; */
-
-/*         float inner = ls->spotlight_radius - ls->spotlight_softness; */
-/*         float outer = ls->spotlight_radius + ls->spotlight_softness; */
-/*         if (inner < 0.0f) */
-/*             inner = 0.0f; */
-
-/*         float inner_sq = inner * inner; */
-/*         float outer_sq = outer * outer; */
-/*         float inv_softness = (outer > inner) ? (1.0f / (outer - inner)) : 0.0f; */
-
-/*         float dim_factor = 1.0f - ls->spotlight_dim; */
-/*         if (dim_factor < 0.0f) */
-/*             dim_factor = 0.0f; */
-
-/*         float spotlight_dim = ls->spotlight_dim; */
-/*         int spotlight_enabled = ls->spotlight_enabled; */
-
-/*         uint8_t *dst = (uint8_t *)slot->shm_data; */
-/*         const uint8_t *src = (const uint8_t *)ls->capture->shm_data; */
-
-/*         for (int dy = 0; dy < bh; dy++) { */
-/*             int sy = (int)(src_top + (float)dy / z); */
-/*             if (sy < 0) */
-/*                 sy = 0; */
-/*             if (sy >= bh) */
-/*                 sy = bh - 1; */
-/*             int real_sy = ls->capture->y_invert ? (bh - 1 - sy) : sy; */
-/*             const uint8_t *src_row = src + (size_t)real_sy * src_stride; */
-/*             uint8_t *dst_row = dst + (size_t)dy * dst_stride; */
-
-/*             float ddy = (float)dy - dst_cursor_y; */
-/*             float ddy_sq = ddy * ddy; */
-
-/*             int row_fully_outside = spotlight_enabled && (ddy_sq > outer_sq); */
-
-/*             for (int dx = 0; dx < bw; dx++) { */
-/*                 int sx = (int)(src_left + (float)dx / z); */
-/*                 if (sx < 0) */
-/*                     sx = 0; */
-/*                 if (sx >= bw) */
-/*                     sx = bw - 1; */
-/*                 memcpy(dst_row + (size_t)dx * 4, src_row + (size_t)sx * 4, 4); */
-
-/*                 if (row_fully_outside) { */
-/*                     uint8_t *px = dst_row + (size_t)dx * 4; */
-/*                     px[0] = (uint8_t)((float)px[0] * dim_factor); */
-/*                     px[1] = (uint8_t)((float)px[1] * dim_factor); */
-/*                     px[2] = (uint8_t)((float)px[2] * dim_factor); */
-/*                 } else if (spotlight_enabled) { */
-/*                     float ddx = (float)dx - dst_cursor_x; */
-/*                     float dst_sq = ddx * ddx + ddy_sq; */
-
-/*                     float brightness; */
-/*                     if (dst_sq <= inner_sq) { */
-/*                         brightness = 1.0f; // inside the spotlight, full brightness */
-/*                     } else if (dst_sq >= outer_sq) { */
-/*                         brightness = dim_factor; // fully dimmed */
-/*                     } else { */
-/*                         float dist = sqrtf(dst_sq); */
-/*                         float t = (dist - inner) * inv_softness; */
-/*                         t = t * t * (3.0f - 2.0f * t); */
-/*                         brightness = 1.0f - spotlight_dim * t; */
-/*                         if (brightness < 0.0f) */
-/*                             brightness = 0.0f; */
-/*                     } */
-
-/*                     uint8_t *px = dst_row + (size_t)dx * 4; */
-/*                     px[0] = (uint8_t)((float)px[0] * brightness); */
-/*                     px[1] = (uint8_t)((float)px[1] * brightness); */
-/*                     px[2] = (uint8_t)((float)px[2] * brightness); */
-/*                 } */
-/*             } */
-/*         } */
-
-/*         wl_surface_set_buffer_scale(ls->surface, ls->output_scale); */
-/*     } else { */
-/*         wl_surface_set_buffer_scale(ls->surface, 1); */
-/*         uint32_t *pixel_data = (uint32_t *)slot->shm_data; */
-/*         uint32_t color = 0x88202020; */
-/*         for (int i = 0; i < ls->buffer_width * ls->buffer_height; i++) { */
-/*             pixel_data[i] = color; */
-/*         } */
-/*     } */
-
-/*     wl_surface_attach(ls->surface, slot->buffer, 0, 0); */
-/*     wl_surface_damage_buffer(ls->surface, 0, 0, ls->buffer_width, ls->buffer_height); */
-/*     wl_surface_commit(ls->surface); */
-
-/*     slot->busy = 1; */
+#define SPOTLIGHT_EPSILON 0.5f
 
 static void
 handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial, uint32_t width, uint32_t height)
@@ -300,6 +129,11 @@ int layer_surface_create(
     ls->spotlight_radius = config->spotlight_radius;
     ls->spotlight_dim = config->spotlight_dim;
     ls->spotlight_softness = config->spotlight_softness;
+    ls->spotlight_enabled = false;
+    ls->display_spotlight_radius = 0.0f;
+    ls->display_spotlight_dim = 0.0f;
+    ls->spotlight_animation_speed = config->spotlight_animation_speed > 0.0f ? config->spotlight_animation_speed :
+                                                                               14.0f;
     ls->smooth_enabled = config->smooth_enabled;
 
     if (egl_init(&ls->egl, state->display) != 0) {
@@ -341,6 +175,8 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
     ls->spotlight_radius = config->spotlight_radius;
     ls->spotlight_dim = config->spotlight_dim;
     ls->spotlight_softness = config->spotlight_softness;
+    if (config->spotlight_animation_speed > 0.0f)
+        ls->spotlight_animation_speed = config->spotlight_animation_speed;
     ls->smooth_enabled = config->smooth_enabled;
 
     if (ls->zoom > ls->zoom_max) {
@@ -379,6 +215,14 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls)
     if (fabs(ls->display_cursor_y - ls->cursor_y) > CURSOR_EPSILON)
         return true;
 
+    float target_r = ls->spotlight_enabled ? ls->spotlight_radius : 0.0f;
+    float target_d = ls->spotlight_enabled ? ls->spotlight_dim : 0.0f;
+
+    if (fabsf(ls->display_spotlight_radius - target_r) > SPOTLIGHT_EPSILON)
+        return true;
+    if (fabsf(ls->display_spotlight_dim - target_d) > 0.01f)
+        return true;
+
     return false;
 }
 
@@ -396,6 +240,18 @@ void layer_surface_render(struct miru_layer_surface *ls)
     ls->display_zoom += (ls->zoom - ls->display_zoom) * t;
     ls->display_cursor_x += (ls->cursor_x - ls->display_cursor_x) * t;
     ls->display_cursor_y += (ls->cursor_y - ls->display_cursor_y) * t;
+
+    float speed = ls->spotlight_animation_speed > 0.0f ? ls->spotlight_animation_speed : 14.0f;
+    float st = 1.0f - expf(-speed * (1.0f / 60.0f));
+    float target_radius = ls->spotlight_enabled ? ls->spotlight_radius : 0.0f;
+    float target_dim = ls->spotlight_enabled ? ls->spotlight_dim : 0.0f;
+    ls->display_spotlight_radius += (target_radius - ls->display_spotlight_radius) * st;
+    ls->display_spotlight_dim += (target_dim - ls->display_spotlight_dim) * st;
+
+    if (fabsf(ls->display_spotlight_radius - target_radius) <= SPOTLIGHT_EPSILON)
+        ls->display_spotlight_radius = target_radius;
+    if (fabsf(ls->display_spotlight_dim - target_dim) <= 0.01f)
+        ls->display_spotlight_dim = target_dim;
 
     if (fabsf(ls->display_zoom - ls->zoom) <= ZOOM_EPSILON)
         ls->display_zoom = ls->zoom;
@@ -430,6 +286,8 @@ void layer_surface_render(struct miru_layer_surface *ls)
 
     dst_cursor_y = (float)ls->buffer_height - dst_cursor_y;
 
+    bool spotlight_active = ls->display_spotlight_radius > 0.5f || ls->display_spotlight_dim > 0.001f;
+
     gl_renderer_draw(
         &ls->gl,
         src_left / (float)ls->buffer_width,
@@ -441,10 +299,10 @@ void layer_surface_render(struct miru_layer_surface *ls)
         dst_cursor_y,
         ls->buffer_width,
         ls->buffer_height,
-        ls->spotlight_enabled,
-        ls->spotlight_radius,
+        spotlight_active,
+        ls->display_spotlight_radius,
         ls->spotlight_softness,
-        ls->spotlight_dim
+        ls->display_spotlight_dim
     );
 
     egl_swap_buffers(&ls->egl);
