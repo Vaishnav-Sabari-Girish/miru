@@ -20,6 +20,9 @@ struct miru_input_ctx {
 
     float zoom_increment;
 
+    bool shift_held;
+    bool ctrl_held;
+
     int repeat_rate;
     int repeat_delay;
     struct miru_repeat_slot repeat_slots[MIRU_MAX_REPEAT_KEYS];
