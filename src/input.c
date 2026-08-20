@@ -37,6 +37,16 @@ static void clamp_radius(struct miru_layer_surface *ls)
         ls->spotlight_radius = RADIUS_MAX;
 }
 
+static void apply_cursor_visibility(struct miru_input_ctx *ctx)
+{
+    if (!ctx->pointer || !ctx->pointer_enter_serial)
+        return;
+
+    if (!ctx->show_cursor) {
+        wl_pointer_set_cursor(ctx->pointer, ctx->pointer_enter_serial, NULL, 0, 0);
+    }
+}
+
 static void adjust_spotlight_radius(struct miru_layer_surface *ls, float delta)
 {
     ls->spotlight_radius += delta;
@@ -83,10 +93,13 @@ static void clamp_pan(struct miru_layer_surface *ls)
 
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface)
 {
-    (void)data;
+    // (void)data;
     (void)serial;
     (void)pointer;
     (void)surface;
+
+    struct miru_input_ctx *ctx = data;
+    ctx->has_pointer_enter = false;
 }
 
 static void
@@ -138,13 +151,18 @@ static void pointer_enter(
     wl_fixed_t y
 )
 {
-    (void)pointer;
-    (void)serial;
+    // (void)pointer;
+    // (void)serial;
     (void)surface;
 
     struct miru_input_ctx *ctx = data;
     if (!ctx->ls->configured)
         return;
+
+    ctx->pointer = pointer;
+    ctx->pointer_enter_serial = serial;
+    ctx->has_pointer_enter = true;
+    apply_cursor_visibility(ctx);
 
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
     ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
@@ -408,6 +426,12 @@ void input_reset_repeat(struct miru_input_ctx *ctx)
     for (int i = 0; i < MIRU_MAX_REPEAT_KEYS; i++) {
         ctx->repeat_slots[i] = (struct miru_repeat_slot){ 0 };
     }
+}
+
+void input_set_show_cursor(struct miru_input_ctx *ctx, bool show)
+{
+    ctx->show_cursor = show;
+    apply_cursor_visibility(ctx);
 }
 
 static void

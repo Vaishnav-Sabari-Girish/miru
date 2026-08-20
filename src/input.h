@@ -23,6 +23,10 @@ struct miru_input_ctx {
 
     bool shift_held;
     bool ctrl_held;
+    bool show_cursor;
+    uint32_t pointer_enter_serial;
+    bool has_pointer_enter;
+    struct wl_pointer *pointer;
 
     int repeat_rate;
     int repeat_delay;
@@ -39,5 +43,7 @@ void input_process_repeats(struct miru_input_ctx *ctx);
 int input_next_repeat_timeout(struct miru_input_ctx *ctx);
 
 void input_reset_repeat(struct miru_input_ctx *ctx);
+
+void input_set_show_cursor(struct miru_input_ctx *ctx, bool show);
 
 #endif // !INPUT_H

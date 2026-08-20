@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
         .request_deactivate = &request_deactivate,
         .zoom_increment = (float)config.zoom_increment,
         .radius_step = (float)config.spotlight_radius_step,
+        .show_cursor = config.show_cursor,
     };
 
     input_setup(&state, &input_ctx);
@@ -232,6 +233,7 @@ int main(int argc, char *argv[])
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
                     input_ctx.radius_step = (float)config.spotlight_radius_step;
+                    input_set_show_cursor(&input_ctx, config.show_cursor);
                     if (active) {
                         struct layer_surface_config ls_config = {
                             .zoom_default = (float)config.zoom_factor,
