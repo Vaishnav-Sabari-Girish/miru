@@ -1,4 +1,51 @@
 
+## v0.6.0 - 2026-08-20
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(cursor)** `show_cursor` implemented
+
+- **(smooth)** Cursor highlight zoom made smoother
+
+- **(ch)** Change cursor highlight when zoomed
+
+- **(animation_speed)** Add animation_speed as a parameter in config
+
+- **(animation)** Cursor highlight mode entry and exit is now animated
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(gl_renderer)** Correct color order for screencopy channels
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## v0.5.0 - 2026-08-15
 
 
