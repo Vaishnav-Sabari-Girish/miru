@@ -156,7 +156,7 @@ static void pointer_enter(
     (void)surface;
 
     struct miru_input_ctx *ctx = data;
-    if (!ctx->ls->configured)
+    if (!ctx->ls)
         return;
 
     ctx->pointer = pointer;
@@ -167,7 +167,15 @@ static void pointer_enter(
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
     ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
 
-    ctx->ls->dirty = true;
+    ctx->ls->display_cursor_x = ctx->ls->cursor_x;
+    ctx->ls->display_cursor_y = ctx->ls->cursor_y;
+    ctx->ls->cursor_seeded = true;
+
+    // ctx->ls->dirty = true;
+    if (ctx->ls->configured) {
+        ctx->ls->dirty = true;
+        layer_surface_render(ctx->ls);
+    }
 }
 
 static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
@@ -178,8 +186,23 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
     if (!ctx->ls->configured)
         return;
 
-    ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
-    ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
+    // ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
+    // ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
+    // ctx->ls->dirty = true;
+
+    double nx = wl_fixed_to_double(x) * ctx->ls->output_scale;
+    double ny = wl_fixed_to_double(y) * ctx->ls->output_scale;
+
+    ctx->ls->cursor_x = nx;
+    ctx->ls->cursor_y = ny;
+
+    if (ctx->ls->cursor_snap_pending) {
+        ctx->ls->display_cursor_x = nx;
+        ctx->ls->display_cursor_y = ny;
+        ctx->ls->cursor_snap_pending = false;
+        ctx->ls->cursor_seeded = true;
+    }
+
     ctx->ls->dirty = true;
 }
 

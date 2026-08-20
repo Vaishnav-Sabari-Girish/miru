@@ -55,10 +55,16 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     if (!ls->configured) {
         ls->zoom = ls->zoom_default;
         ls->display_zoom = ls->zoom_default;
-        ls->cursor_x = ls->buffer_width / 2.0;
-        ls->cursor_y = ls->buffer_height / 2.0;
-        ls->display_cursor_x = ls->cursor_x;
-        ls->display_cursor_y = ls->cursor_y;
+        // ls->cursor_x = ls->buffer_width / 2.0;
+        // ls->cursor_y = ls->buffer_height / 2.0;
+        // ls->display_cursor_x = ls->cursor_x;
+        // ls->display_cursor_y = ls->cursor_y;
+        if (!ls->cursor_seeded) {
+            ls->cursor_x = ls->buffer_width / 2.0;
+            ls->cursor_y = ls->buffer_height / 2.0;
+            ls->display_cursor_x = ls->cursor_x;
+            ls->display_cursor_y = ls->cursor_y;
+        }
     }
 
     /* if (alloc_slot(ls, &ls->slots[0], format) != 0 || alloc_slot(ls, &ls->slots[1], format) != 0) { */
@@ -96,7 +102,9 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
 
     ls->configured = true;
     ls->dirty = true;
-    layer_surface_render(ls);
+    // layer_surface_render(ls);
+    if (ls->cursor_seeded)
+        layer_surface_render(ls);
 }
 
 static void handle_closed(void *data, struct zwlr_layer_surface_v1 *surface)
@@ -165,6 +173,9 @@ int layer_surface_create(
 
     zwlr_layer_surface_v1_add_listener(ls->layer_surface, &layer_surface_listener, ls);
     wl_surface_commit(ls->surface);
+
+    ls->cursor_seeded = false;
+    ls->cursor_snap_pending = true;
 
     return 0;
 }

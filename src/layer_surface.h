@@ -29,6 +29,8 @@ struct miru_layer_surface {
     bool configured;
     bool closed;
     const struct miru_capture *capture;
+    bool cursor_seeded;
+    bool cursor_snap_pending;
     double cursor_x, cursor_y;
     float zoom;
 
