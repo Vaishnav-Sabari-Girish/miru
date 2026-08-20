@@ -19,6 +19,7 @@ struct miru_input_ctx {
     volatile sig_atomic_t *request_deactivate;
 
     float zoom_increment;
+    float radius_step;
 
     bool shift_held;
     bool ctrl_held;

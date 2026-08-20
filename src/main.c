@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
         .ls = &ls,
         .request_deactivate = &request_deactivate,
         .zoom_increment = (float)config.zoom_increment,
+        .radius_step = (float)config.spotlight_radius_step,
     };
 
     input_setup(&state, &input_ctx);
@@ -225,10 +226,12 @@ int main(int argc, char *argv[])
                     config.spotlight_dim != new_config.spotlight_dim ||
                     config.spotlight_softness != new_config.spotlight_softness ||
                     config.spotlight_animation_speed != new_config.spotlight_animation_speed ||
+                    config.spotlight_radius_step != new_config.spotlight_radius_step ||
                     config.show_cursor != new_config.show_cursor) {
                     fprintf(stderr, "config: change detected reloading\n");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
+                    input_ctx.radius_step = (float)config.spotlight_radius_step;
                     if (active) {
                         struct layer_surface_config ls_config = {
                             .zoom_default = (float)config.zoom_factor,

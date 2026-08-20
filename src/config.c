@@ -71,6 +71,7 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "dim = 0.65\n"
                                          "softness = 20\n"
                                          "animation_speed = 14.0\n"
+                                         "radius_step = 20.0\n"
                                          "\n"
                                          "[general]\n"
                                          "show_cursor = true\n";
@@ -178,6 +179,14 @@ static void sanitize_config(struct miru_config *c)
         fprintf(stderr, "config: spotlight.animation_speed exceeds 60.0. clamping\n");
         c->spotlight_animation_speed = 60.0;
     }
+
+    if (!isfinite(c->spotlight_radius_step) || c->spotlight_radius_step <= 0.0) {
+        fprintf(stderr, "config: invalid spotlight.radius_step (must be positive), falling back to defaults\n");
+        c->spotlight_radius_step = 20.0;
+    } else if (c->spotlight_radius_step > 500.0) {
+        fprintf(stderr, "config: spotlight.radius_step exceeds 500.0, clamping\n");
+        c->spotlight_radius_step = 500.0;
+    }
 }
 
 void config_load(struct miru_config *out)
@@ -196,6 +205,7 @@ void config_load(struct miru_config *out)
     out->spotlight_dim = 0.65;
     out->spotlight_softness = 20;
     out->spotlight_animation_speed = 14.0;
+    out->spotlight_radius_step = 20.0;
 
     out->show_cursor = true;
 
@@ -226,6 +236,7 @@ void config_load(struct miru_config *out)
     out->spotlight_dim = toml_get_double(t, "spotlight", "dim", out->spotlight_dim);
     out->spotlight_softness = toml_get_int(t, "spotlight", "softness", out->spotlight_softness);
     out->spotlight_animation_speed = toml_get_double(t, "spotlight", "animation_speed", out->spotlight_animation_speed);
+    out->spotlight_radius_step = toml_get_double(t, "spotlight", "radius_step", out->spotlight_radius_step);
 
     out->show_cursor = toml_get_bool(t, "general", "show_cursor", out->show_cursor);
 

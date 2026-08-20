@@ -14,7 +14,6 @@
 
 #define PAN_STEP 50.0
 
-#define RADIUS_STEP 20.0f
 #define RADIUS_MIN 10.0f
 #define RADIUS_MAX 2000.0f
 
@@ -42,8 +41,6 @@ static void adjust_spotlight_radius(struct miru_layer_surface *ls, float delta)
 {
     ls->spotlight_radius += delta;
     clamp_radius(ls);
-
-    ls->display_spotlight_radius = ls->spotlight_radius;
 
     if (miru_debug_enabled()) {
         fprintf(stderr, "spotlight radius -> %.1f\n", ls->spotlight_radius);
@@ -182,7 +179,7 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
     double v = wl_fixed_to_double(value);
 
     if (ctx->ctrl_held) {
-        float delta = (v > 0) ? -RADIUS_STEP : RADIUS_STEP;
+        float delta = (v > 0) ? -ctx->radius_step : ctx->radius_step;
         adjust_spotlight_radius(ctx->ls, delta);
         return;
     }
@@ -305,7 +302,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
 
     if (key == KEY_EQUAL || key == KEY_KPPLUS) {
         if (ctx->ctrl_held) {
-            adjust_spotlight_radius(ctx->ls, RADIUS_STEP);
+            adjust_spotlight_radius(ctx->ls, ctx->radius_step);
             return 1;
         }
 
@@ -313,7 +310,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
         clamp_zoom(ctx->ls);
     } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
         if (ctx->ctrl_held) {
-            adjust_spotlight_radius(ctx->ls, -RADIUS_STEP);
+            adjust_spotlight_radius(ctx->ls, -ctx->radius_step);
             return 1;
         }
 
