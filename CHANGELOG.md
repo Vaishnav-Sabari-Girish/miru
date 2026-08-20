@@ -26,6 +26,8 @@
 
 ### :bug: Bug fixes
 
+- **(expf)** Expf not found error fixed
+
 - **(gl_renderer)** Correct color order for screencopy channels
 
 
