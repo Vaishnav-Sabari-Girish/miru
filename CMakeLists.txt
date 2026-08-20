@@ -107,6 +107,7 @@ target_link_libraries(miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES}
   ${EGL_LIBRARIES}
   ${GLESV2_LIBRARIES}
   ${WAYLAND_EGL_LIBRARIES}
+  m
 )
 target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
 
