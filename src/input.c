@@ -14,6 +14,9 @@
 
 #define PAN_STEP 50.0
 
+#define RADIUS_MIN 10.0f
+#define RADIUS_MAX 2000.0f
+
 bool miru_debug_enabled(void)
 {
     static int cached = -1;
@@ -23,6 +26,37 @@ bool miru_debug_enabled(void)
     }
 
     return cached != 0;
+}
+
+static void clamp_radius(struct miru_layer_surface *ls)
+{
+    if (ls->spotlight_radius < RADIUS_MIN)
+        ls->spotlight_radius = RADIUS_MIN;
+
+    if (ls->spotlight_radius > RADIUS_MAX)
+        ls->spotlight_radius = RADIUS_MAX;
+}
+
+static void apply_cursor_visibility(struct miru_input_ctx *ctx)
+{
+    if (!ctx->pointer || !ctx->pointer_enter_serial)
+        return;
+
+    if (!ctx->show_cursor) {
+        wl_pointer_set_cursor(ctx->pointer, ctx->pointer_enter_serial, NULL, 0, 0);
+    }
+}
+
+static void adjust_spotlight_radius(struct miru_layer_surface *ls, float delta)
+{
+    ls->spotlight_radius += delta;
+    clamp_radius(ls);
+
+    if (miru_debug_enabled()) {
+        fprintf(stderr, "spotlight radius -> %.1f\n", ls->spotlight_radius);
+    }
+
+    ls->dirty = true;
 }
 
 static double pan_step(struct miru_layer_surface *ls)
@@ -59,10 +93,13 @@ static void clamp_pan(struct miru_layer_surface *ls)
 
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface)
 {
-    (void)data;
+    // (void)data;
     (void)serial;
     (void)pointer;
     (void)surface;
+
+    struct miru_input_ctx *ctx = data;
+    ctx->has_pointer_enter = false;
 }
 
 static void
@@ -114,13 +151,18 @@ static void pointer_enter(
     wl_fixed_t y
 )
 {
-    (void)pointer;
-    (void)serial;
+    // (void)pointer;
+    // (void)serial;
     (void)surface;
 
     struct miru_input_ctx *ctx = data;
     if (!ctx->ls->configured)
         return;
+
+    ctx->pointer = pointer;
+    ctx->pointer_enter_serial = serial;
+    ctx->has_pointer_enter = true;
+    apply_cursor_visibility(ctx);
 
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
     ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
@@ -153,6 +195,12 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
         return;
 
     double v = wl_fixed_to_double(value);
+
+    if (ctx->ctrl_held) {
+        float delta = (v > 0) ? -ctx->radius_step : ctx->radius_step;
+        adjust_spotlight_radius(ctx->ls, delta);
+        return;
+    }
 
     if (miru_debug_enabled()) {
         fprintf(
@@ -210,6 +258,8 @@ static void keyboard_leave(void *data, struct wl_keyboard *keyboard, uint32_t se
 
     struct miru_input_ctx *ctx = data;
     input_reset_repeat(ctx);
+    ctx->shift_held = false;
+    ctx->ctrl_held = false;
 }
 
 static void keyboard_modifiers(
@@ -269,9 +319,19 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
     }
 
     if (key == KEY_EQUAL || key == KEY_KPPLUS) {
+        if (ctx->ctrl_held) {
+            adjust_spotlight_radius(ctx->ls, ctx->radius_step);
+            return 1;
+        }
+
         ctx->ls->zoom += ctx->zoom_increment;
         clamp_zoom(ctx->ls);
     } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
+        if (ctx->ctrl_held) {
+            adjust_spotlight_radius(ctx->ls, -ctx->radius_step);
+            return 1;
+        }
+
         ctx->ls->zoom -= ctx->zoom_increment;
         clamp_zoom(ctx->ls);
     } else if (key == KEY_LEFT || key == KEY_A) {
@@ -368,6 +428,12 @@ void input_reset_repeat(struct miru_input_ctx *ctx)
     }
 }
 
+void input_set_show_cursor(struct miru_input_ctx *ctx, bool show)
+{
+    ctx->show_cursor = show;
+    apply_cursor_visibility(ctx);
+}
+
 static void
 keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
 {
@@ -378,6 +444,16 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     struct miru_input_ctx *ctx = data;
     if (!ctx->ls->configured)
         return;
+
+    if (key == KEY_LEFTSHIFT || key == KEY_RIGHTSHIFT) {
+        ctx->shift_held = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+        return;
+    }
+
+    if (key == KEY_LEFTCTRL || key == KEY_RIGHTCTRL) {
+        ctx->ctrl_held = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+        return;
+    }
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
         struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 0);
         if (slot) {
