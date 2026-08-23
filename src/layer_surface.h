@@ -14,6 +14,8 @@ struct layer_surface_config {
     float spotlight_dim;
     float spotlight_softness;
     float spotlight_animation_speed;
+    double initial_cursor_x, initial_cursor_y;
+    bool has_initial_cursor;
     bool smooth_enabled;
 };
 

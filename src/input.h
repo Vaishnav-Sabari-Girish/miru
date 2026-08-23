@@ -27,6 +27,8 @@ struct miru_input_ctx {
     uint32_t pointer_enter_serial;
     bool has_pointer_enter;
     struct wl_pointer *pointer;
+    double last_pointer_x, last_pointer_y;
+    bool has_last_pointer;
 
     int repeat_rate;
     int repeat_delay;

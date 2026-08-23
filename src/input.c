@@ -170,6 +170,9 @@ static void pointer_enter(
     ctx->ls->display_cursor_x = ctx->ls->cursor_x;
     ctx->ls->display_cursor_y = ctx->ls->cursor_y;
     ctx->ls->cursor_seeded = true;
+    ctx->last_pointer_x = ctx->ls->cursor_x;
+    ctx->last_pointer_y = ctx->ls->cursor_y;
+    ctx->has_last_pointer = true;
 
     // ctx->ls->dirty = true;
     if (ctx->ls->configured) {
@@ -202,6 +205,10 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
         ctx->ls->cursor_snap_pending = false;
         ctx->ls->cursor_seeded = true;
     }
+
+    ctx->last_pointer_x = nx;
+    ctx->last_pointer_y = ny;
+    ctx->has_last_pointer = true;
 
     ctx->ls->dirty = true;
 }
