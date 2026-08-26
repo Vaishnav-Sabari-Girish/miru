@@ -14,6 +14,8 @@ struct layer_surface_config {
     float spotlight_dim;
     float spotlight_softness;
     float spotlight_animation_speed;
+    double initial_cursor_x, initial_cursor_y;
+    bool has_initial_cursor;
     bool smooth_enabled;
 };
 
@@ -29,6 +31,8 @@ struct miru_layer_surface {
     bool configured;
     bool closed;
     const struct miru_capture *capture;
+    bool cursor_seeded;
+    bool cursor_snap_pending;
     double cursor_x, cursor_y;
     float zoom;
 
