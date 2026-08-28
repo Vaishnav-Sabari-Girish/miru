@@ -119,6 +119,8 @@ int layer_surface_create(
     ls->cursor_seeded = false;
     ls->cursor_snap_pending = true;
 
+    annotation_state_init(&ls->annotations);
+
     if (config->has_initial_cursor) {
         ls->cursor_x = config->initial_cursor_x;
         ls->cursor_y = config->initial_cursor_y;
@@ -218,8 +220,11 @@ void layer_surface_render(struct miru_layer_surface *ls)
 
     float t = ls->smooth_enabled ? (1.0f - expf(-SMOOTH_SPEED * (1.0f / 60.0f))) : 1.0f;
     ls->display_zoom += (ls->zoom - ls->display_zoom) * t;
-    ls->display_cursor_x += (ls->cursor_x - ls->display_cursor_x) * t;
-    ls->display_cursor_y += (ls->cursor_y - ls->display_cursor_y) * t;
+
+    if (!ls->annotations.mode) {
+        ls->display_cursor_x += (ls->cursor_x - ls->display_cursor_x) * t;
+        ls->display_cursor_y += (ls->cursor_y - ls->display_cursor_y) * t;
+    }
 
     float speed = ls->spotlight_animation_speed > 0.0f ? ls->spotlight_animation_speed : 14.0f;
     float st = 1.0f - expf(-speed * (1.0f / 60.0f));
@@ -279,6 +284,11 @@ void layer_surface_render(struct miru_layer_surface *ls)
         ls->spotlight_softness,
         ls->display_spotlight_dim
     );
+
+    gl_renderer_draw_annotations(
+        &ls->gl, &ls->annotations, src_left, src_top, src_w, src_h, ls->buffer_width, ls->buffer_height
+    );
+
     egl_swap_buffers(&ls->egl);
     ls->dirty = false;
 }

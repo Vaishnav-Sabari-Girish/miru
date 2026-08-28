@@ -1,4 +1,6 @@
+#include "annotations.h"
 #include <GLES2/gl2.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,6 +63,17 @@ static const char *fragment_shader_src = "precision mediump float;\n"
                                          "    }\n"
                                          "    gl_FragColor = vec4(color, 1.0);\n"
                                          "}\n";
+
+static const char *line_vs = "attribute vec2 a_position;\n"
+                             "void main() {\n"
+                             "   gl_Position = vec4(a_position, 0.0, 1.0);\n"
+                             "}\n";
+
+static const char *line_fs = "precision mediump float;\n"
+                             "uniform vec4 u_color;\n"
+                             "void main() {\n"
+                             "   gl_FragColor = u_color;\n"
+                             "}\n";
 
 static GLuint compile_shader(GLenum type, const char *src)
 {
@@ -138,6 +151,30 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    GLuint lvs = compile_shader(GL_VERTEX_SHADER, line_vs);
+    GLuint lfs = compile_shader(GL_FRAGMENT_SHADER, line_fs);
+
+    if (!lvs || !lfs) {
+        return -1;
+    }
+
+    r->line_program = glCreateProgram();
+    glAttachShader(r->line_program, lvs);
+    glAttachShader(r->line_program, lfs);
+    glLinkProgram(r->line_program);
+    glDeleteShader(lvs);
+    glDeleteShader(lfs);
+
+    GLint ok = 0;
+    glGetProgramiv(r->line_program, GL_LINK_STATUS, &ok);
+
+    if (!ok)
+        return -1;
+
+    r->line_a_pos = glGetAttribLocation(r->line_program, "a_position");
+    r->line_u_color = glGetUniformLocation(r->line_program, "u_color");
+    glGenBuffers(1, &r->line_vbo);
 
     return 0;
 }
@@ -244,5 +281,241 @@ void gl_renderer_cleanup(struct miru_gl_renderer *r)
         glDeleteBuffers(1, &r->vbo);
     if (r->program)
         glDeleteProgram(r->program);
+    if (r->line_vbo) {
+        glDeleteBuffers(1, &r->line_vbo);
+    }
+    if (r->line_program) {
+        glDeleteProgram(r->line_program);
+    }
     memset(r, 0, sizeof(*r));
+}
+
+static void emit_line(
+    struct miru_gl_renderer *r,
+    float x0,
+    float y0,
+    float x1,
+    float y1,
+    float src_left,
+    float src_top,
+    float src_w,
+    float src_h,
+    float cr,
+    float cg,
+    float cb,
+    float ca,
+    float thickness_px,
+    int viewport_w
+)
+{
+    float nx0, ny0, nx1, ny1;
+
+    annotation_buffer_to_ndc(x0, y0, src_left, src_top, src_w, src_h, &nx0, &ny0);
+    annotation_buffer_to_ndc(x1, y1, src_left, src_top, src_w, src_h, &nx1, &ny1);
+
+    float lw = thickness_px * ((float)viewport_w / (src_w > 1.f ? src_w : 1.f));
+    if (lw < 1.f)
+        lw = 1.f;
+    if (lw > 8.f)
+        lw = 8.f;
+
+    glLineWidth(lw);
+
+    float verts[] = { nx0, ny0, nx1, ny1 };
+    glUniform4f(r->line_u_color, cr, cg, cb, ca);
+    glBindBuffer(GL_ARRAY_BUFFER, r->line_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(r->line_a_pos);
+    glVertexAttribPointer(r->line_a_pos, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glDrawArrays(GL_LINES, 0, 2);
+}
+
+static void emit_arrow(
+    struct miru_gl_renderer *r,
+    float x0,
+    float y0,
+    float x1,
+    float y1,
+    float src_left,
+    float src_top,
+    float src_w,
+    float src_h,
+    float cr,
+    float cg,
+    float cb,
+    float ca,
+    float thickness,
+    int viewport_w
+)
+{
+    emit_line(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, cr, cg, cb, ca, thickness, viewport_w);
+
+    float dx = x1 - x0, dy = y1 - y0;
+    float len = sqrtf(dx * dx + dy * dy);
+    if (len < 1.f)
+        return;
+
+    dx /= len;
+    dy /= len;
+
+    float head = thickness * 4.0f;
+    if (head < 12.f)
+        head = 12.f;
+
+    float px = -dy, py = dx; // Perpendicular
+    float ax = x1 - dx * head + px * head * 0.5f;
+    float ay = y1 - dy * head + py * head * 0.5f;
+    float bx = x1 - dx * head - px * head * 0.5f;
+    float by = y1 - dy * head - py * head * 0.5f;
+
+    emit_line(r, x1, y1, ax, ay, src_left, src_top, src_w, src_h, cr, cg, cb, ca, thickness, viewport_w);
+    emit_line(r, x1, y1, bx, by, src_left, src_top, src_w, src_h, cr, cg, cb, ca, thickness, viewport_w);
+}
+
+void gl_renderer_draw_annotations(
+    struct miru_gl_renderer *r,
+    const struct miru_annotation_state *ann,
+    float src_left,
+    float src_top,
+    float src_w,
+    float src_h,
+    int viewport_w,
+    int viewport_h
+)
+{
+    (void)viewport_h;
+    if (!ann)
+        return;
+
+    if (ann->count == 0 && !ann->dragging && !ann->mode)
+        return;
+
+    glUseProgram(r->line_program);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    if (ann->mode) {
+        float t = 6.f;
+        float L = 0.f;
+        float T = 0.f;
+        float R = src_left + src_w;
+        float B = src_top + src_h;
+
+        emit_line(r, src_left, src_top, R, src_top, src_left, src_top, src_w, src_h, 1.f, 0.5f, 0.f, 1.f, t, viewport_w);
+        emit_line(r, R, src_top, R, B, src_left, src_top, src_w, src_h, 1.f, 0.5f, 0.f, 1.f, t, viewport_w);
+        emit_line(r, R, B, src_left, B, src_left, src_top, src_w, src_h, 1.f, 0.5f, 0.f, 1.f, t, viewport_w);
+        emit_line(
+            r, src_left, B, src_left, src_top, src_left, src_top, src_w, src_h, 1.f, 0.5f, 0.f, 1.f, t, viewport_w
+        );
+    }
+
+    for (int i = 0; i < ann->count; i++) {
+        const struct miru_annotation *a = &ann->items[i];
+
+        if (a->type == MIRU_ANN_ARROW) {
+            emit_arrow(
+                r,
+                a->x0,
+                a->y0,
+                a->x1,
+                a->y1,
+                src_left,
+                src_top,
+                src_w,
+                src_h,
+                a->r,
+                a->g,
+                a->b,
+                a->a,
+                a->thickness,
+                viewport_w
+            );
+        } else if (a->type == MIRU_ANN_RECT) {
+            emit_line(
+                r,
+                a->x0,
+                a->y0,
+                a->x1,
+                a->y0,
+                src_left,
+                src_top,
+                src_w,
+                src_h,
+                a->r,
+                a->g,
+                a->b,
+                a->a,
+                a->thickness,
+                viewport_w
+            );
+            emit_line(
+                r,
+                a->x1,
+                a->y0,
+                a->x1,
+                a->y1,
+                src_left,
+                src_top,
+                src_w,
+                src_h,
+                a->r,
+                a->g,
+                a->b,
+                a->a,
+                a->thickness,
+                viewport_w
+            );
+            emit_line(
+                r,
+                a->x1,
+                a->y1,
+                a->x0,
+                a->y1,
+                src_left,
+                src_top,
+                src_w,
+                src_h,
+                a->r,
+                a->g,
+                a->b,
+                a->a,
+                a->thickness,
+                viewport_w
+            );
+            emit_line(
+                r,
+                a->x0,
+                a->y1,
+                a->x0,
+                a->y0,
+                src_left,
+                src_top,
+                src_w,
+                src_h,
+                a->r,
+                a->g,
+                a->b,
+                a->a,
+                a->thickness,
+                viewport_w
+            );
+        }
+    }
+
+    if (ann->dragging) {
+        float x0 = ann->drag_x0;
+        float y0 = ann->drag_y0;
+        float x1 = ann->drag_x1;
+        float y1 = ann->drag_y1;
+
+        if (ann->tool == MIRU_ANN_ARROW) {
+            emit_arrow(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+        } else {
+            emit_line(r, x0, y0, x1, y0, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+            emit_line(r, x1, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+            emit_line(r, x1, y1, x0, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+            emit_line(r, x0, y1, x0, y0, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+        }
+    }
 }

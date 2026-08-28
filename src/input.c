@@ -109,8 +109,35 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
     (void)pointer;
     (void)serial;
     (void)time;
-    (void)button;
-    (void)state;
+
+    struct miru_input_ctx *ctx = data;
+    if (!ctx->ls || !ctx->ls->configured)
+        return;
+    if (!ctx->ls->annotations.mode)
+        return;
+
+    if (button != BTN_LEFT)
+        return;
+
+    struct miru_annotation_state *ann = &ctx->ls->annotations;
+    if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+        ann->dragging = true;
+        ann->drag_x0 = ann->drag_x1 = (float)ctx->ls->cursor_x;
+        ann->drag_y0 = ann->drag_y1 = (float)ctx->ls->cursor_y;
+        ctx->ls->dirty = true;
+
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate drag start (%0.f, %0.f)\n", ann->drag_x0, ann->drag_y0);
+        }
+
+    } else if (state == WL_POINTER_BUTTON_STATE_RELEASED && ann->dragging) {
+        ann->dragging = false;
+        annotation_add(ann, ann->tool, ann->drag_x0, ann->drag_y0, ann->drag_x1, ann->drag_y1);
+        ctx->ls->dirty = true;
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate commit tool = %d count = %d\n", ann->tool, ann->count);
+        }
+    }
 }
 
 static void pointer_frame(void *data, struct wl_pointer *pointer)
@@ -195,6 +222,15 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
 
     double nx = wl_fixed_to_double(x) * ctx->ls->output_scale;
     double ny = wl_fixed_to_double(y) * ctx->ls->output_scale;
+
+    if (ctx->ls->annotations.mode) {
+        if (ctx->ls->annotations.dragging) {
+            ctx->ls->annotations.drag_x1 = (float)nx;
+            ctx->ls->annotations.drag_y1 = (float)ny;
+        }
+        ctx->ls->dirty = true;
+        return;
+    }
 
     ctx->ls->cursor_x = nx;
     ctx->ls->cursor_y = ny;
@@ -501,6 +537,51 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
 
     if (key == KEY_TAB) {
         ctx->ls->spotlight_enabled = !ctx->ls->spotlight_enabled;
+        ctx->ls->dirty = true;
+        return;
+    }
+
+    if (key == KEY_A && ctx->shift_held) {
+        ctx->ls->annotations.mode = !ctx->ls->annotations.mode;
+        if (!ctx->ls->annotations.mode)
+            ctx->ls->annotations.dragging = false;
+        else {
+            ctx->ls->cursor_x = ctx->ls->display_cursor_x;
+            ctx->ls->cursor_y = ctx->ls->display_cursor_y;
+        }
+
+        if (miru_debug_enabled()) {
+            fprintf(
+                stderr,
+                "annotate mode: %s (tools = %s)\n",
+                ctx->ls->annotations.mode ? "ON" : "OFF",
+                ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
+            );
+        }
+
+        ctx->ls->dirty = true;
+        return;
+    }
+
+    if (key == KEY_R) {
+        ctx->ls->annotations.tool = MIRU_ANN_RECT;
+
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate tool: rect\n");
+        }
+        return;
+    }
+
+    if (key == KEY_W) {
+        ctx->ls->annotations.tool = MIRU_ANN_ARROW;
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate tool: arrow\n");
+        }
+        return;
+    }
+
+    if (key == KEY_C && ctx->ls->annotations.mode) {
+        annotation_clear(&ctx->ls->annotations);
         ctx->ls->dirty = true;
         return;
     }
