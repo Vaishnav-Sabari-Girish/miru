@@ -1,0 +1,70 @@
+name: 'Bug Report'
+about: 'Report a bug or unexpected behavior in miru'
+title: 'Bug: <short description>'
+labels:
+  - 'bug'
+body:
+  - type: 'markdown'
+    id: 'admonition'
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug in **miru**! Please fill out the fields below as completely as possible so it can be reproduced and fixed quickly.
+      visible: ['form']
+  - type: 'input'
+    id: 'miru_version'
+    attributes:
+      label: 'miru version'
+      description: 'Output of `miru-daemon --version` (or the commit hash if built from source)'
+      placeholder: 'v0.x.x'
+    validations:
+      required: true
+  - type: 'input'
+    id: 'os_platform'
+    attributes:
+      label: 'Operating system / Wayland Compositor'
+      description: 'e.g. Arch Linux Hyprland'
+      placeholder: ''
+    validations:
+      required: true
+  - type: 'textarea'
+    id: 'expected_behavior'
+    attributes:
+      label: 'Expected behavior'
+      description: 'What did you expect to happen?'
+      placeholder: ''
+    validations:
+      required: true
+  - type: 'textarea'
+    id: 'actual_behavior'
+    attributes:
+      label: 'Actual behavior'
+      description: 'What actually happened? Include any error messages.'
+      placeholder: ''
+    validations:
+      required: true
+  - type: 'textarea'
+    id: 'steps_to_reproduce'
+    attributes:
+      label: 'Steps to reproduce'
+      description: 'List the exact steps needed to trigger the bug'
+      placeholder: |
+        1. Run `miru ...`
+        2. ...
+        3. See error
+    validations:
+      required: true
+  - type: 'textarea'
+    id: 'logs'
+    attributes:
+      label: 'Relevant logs / output'
+      description: 'Paste any relevant terminal output, stack traces, or logs. This will be rendered as a code block automatically.'
+      render: 'shell'
+    validations:
+      required: false
+  - type: 'textarea'
+    id: 'notes'
+    attributes:
+      label: 'Additional notes'
+      description: 'Anything else that might help (screenshots, config, workarounds tried, etc.)'
+    validations:
+      required: false
