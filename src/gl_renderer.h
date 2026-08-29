@@ -4,6 +4,7 @@
 #include <GLES2/gl2.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "annotations.h"
 
 struct miru_gl_renderer {
     GLuint program, texture, vbo;
@@ -11,6 +12,9 @@ struct miru_gl_renderer {
     GLint u_texture, u_crop_origin, u_crop_scale, u_y_invert;
     GLint u_cursor_px, u_resolution;
     GLint u_spotlight_enabled, u_spotlight_radius, u_spotlight_softness, u_spotlight_dim;
+
+    GLuint line_program, line_vbo;
+    GLint line_a_pos, line_u_color;
 };
 
 int gl_renderer_init(struct miru_gl_renderer *r);
@@ -40,5 +44,16 @@ void gl_renderer_draw(
 );
 
 void gl_renderer_cleanup(struct miru_gl_renderer *r);
+
+void gl_renderer_draw_annotations(
+    struct miru_gl_renderer *r,
+    const struct miru_annotation_state *ann,
+    float src_left,
+    float src_top,
+    float src_w,
+    float src_h,
+    int viewport_w,
+    int viewport_h
+);
 
 #endif

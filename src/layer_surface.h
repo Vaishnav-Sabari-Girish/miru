@@ -6,6 +6,7 @@
 #include "capture.h"
 #include "egl_context.h"
 #include "gl_renderer.h"
+#include "annotations.h"
 
 struct layer_surface_config {
     float zoom_default;
@@ -47,6 +48,7 @@ struct miru_layer_surface {
     float spotlight_animation_speed;
     bool smooth_enabled;
     bool dirty;
+    struct miru_annotation_state annotations;
 };
 
 int layer_surface_create(

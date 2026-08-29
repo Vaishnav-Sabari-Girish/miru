@@ -109,8 +109,35 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
     (void)pointer;
     (void)serial;
     (void)time;
-    (void)button;
-    (void)state;
+
+    struct miru_input_ctx *ctx = data;
+    if (!ctx->ls || !ctx->ls->configured)
+        return;
+    if (!ctx->ls->annotations.mode)
+        return;
+
+    if (button != BTN_LEFT)
+        return;
+
+    struct miru_annotation_state *ann = &ctx->ls->annotations;
+    if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+        ann->dragging = true;
+        ann->drag_x0 = ann->drag_x1 = ann->hover_x;
+        ann->drag_y0 = ann->drag_y1 = ann->hover_y;
+        ctx->ls->dirty = true;
+
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate drag start (%0.f, %0.f)\n", ann->drag_x0, ann->drag_y0);
+        }
+
+    } else if (state == WL_POINTER_BUTTON_STATE_RELEASED && ann->dragging) {
+        ann->dragging = false;
+        annotation_add(ann, ann->tool, ann->drag_x0, ann->drag_y0, ann->drag_x1, ann->drag_y1);
+        ctx->ls->dirty = true;
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate commit tool = %d count = %d\n", ann->tool, ann->count);
+        }
+    }
 }
 
 static void pointer_frame(void *data, struct wl_pointer *pointer)
@@ -181,6 +208,26 @@ static void pointer_enter(
     }
 }
 
+static void
+current_crop(const struct miru_layer_surface *ls, float *src_left, float *src_top, float *src_w, float *src_h)
+{
+    float z = ls->display_zoom < 1.f ? 1.f : ls->display_zoom;
+    float bw = (float)ls->buffer_width;
+    float bh = (float)ls->buffer_height;
+    *src_w = bw / z;
+    *src_h = bh / z;
+    *src_left = (float)ls->display_cursor_x - *src_w / 2.f;
+    *src_top = (float)ls->display_cursor_y - *src_h / 2.f;
+    if (*src_left < 0)
+        *src_left = 0;
+    if (*src_top < 0)
+        *src_top = 0;
+    if (*src_left + *src_w > bw)
+        *src_left = bw - *src_w;
+    if (*src_top + *src_h > bh)
+        *src_top = bh - *src_h;
+}
+
 static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
 {
     (void)pointer;
@@ -195,6 +242,22 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
 
     double nx = wl_fixed_to_double(x) * ctx->ls->output_scale;
     double ny = wl_fixed_to_double(y) * ctx->ls->output_scale;
+
+    if (ctx->ls->annotations.mode) {
+        float sl, st, sw, sh, bx, by;
+        current_crop(ctx->ls, &sl, &st, &sw, &sh);
+        annotation_screen_to_buffer(
+            (float)nx, (float)ny, (float)ctx->ls->buffer_width, (float)ctx->ls->buffer_height, sl, st, sw, sh, &bx, &by
+        );
+        ctx->ls->annotations.hover_x = bx;
+        ctx->ls->annotations.hover_y = by;
+        if (ctx->ls->annotations.dragging) {
+            ctx->ls->annotations.drag_x1 = bx;
+            ctx->ls->annotations.drag_y1 = by;
+        }
+        ctx->ls->dirty = true;
+        return;
+    }
 
     ctx->ls->cursor_x = nx;
     ctx->ls->cursor_y = ny;
@@ -501,6 +564,51 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
 
     if (key == KEY_TAB) {
         ctx->ls->spotlight_enabled = !ctx->ls->spotlight_enabled;
+        ctx->ls->dirty = true;
+        return;
+    }
+
+    if (key == KEY_A && ctx->shift_held) {
+        ctx->ls->annotations.mode = !ctx->ls->annotations.mode;
+        if (!ctx->ls->annotations.mode)
+            ctx->ls->annotations.dragging = false;
+        else {
+            ctx->ls->cursor_x = ctx->ls->display_cursor_x;
+            ctx->ls->cursor_y = ctx->ls->display_cursor_y;
+        }
+
+        if (miru_debug_enabled()) {
+            fprintf(
+                stderr,
+                "annotate mode: %s (tools = %s)\n",
+                ctx->ls->annotations.mode ? "ON" : "OFF",
+                ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
+            );
+        }
+
+        ctx->ls->dirty = true;
+        return;
+    }
+
+    if (key == KEY_R) {
+        ctx->ls->annotations.tool = MIRU_ANN_RECT;
+
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate tool: rect\n");
+        }
+        return;
+    }
+
+    if (key == KEY_W) {
+        ctx->ls->annotations.tool = MIRU_ANN_ARROW;
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate tool: arrow\n");
+        }
+        return;
+    }
+
+    if (key == KEY_C && ctx->ls->annotations.mode) {
+        annotation_clear(&ctx->ls->annotations);
         ctx->ls->dirty = true;
         return;
     }
