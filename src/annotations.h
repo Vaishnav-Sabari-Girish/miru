@@ -28,7 +28,21 @@ struct miru_annotation_state {
     bool dragging;
     float drag_x0, drag_y0;
     float drag_x1, drag_y1;
+    float hover_x, hover_y;
 };
+
+void annotation_screen_to_buffer(
+    float screen_x,
+    float screen_y,
+    float buf_w,
+    float buf_h,
+    float src_left,
+    float src_top,
+    float src_w,
+    float src_h,
+    float *out_bx,
+    float *out_by
+);
 
 void annotation_state_init(struct miru_annotation_state *s);
 void annotation_clear(struct miru_annotation_state *s);

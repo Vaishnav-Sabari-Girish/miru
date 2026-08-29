@@ -33,6 +33,25 @@ bool annotation_add(struct miru_annotation_state *s, enum miru_ann_type type, fl
     return true;
 }
 
+void annotation_screen_to_buffer(
+    float screen_x,
+    float screen_y,
+    float buf_w,
+    float buf_h,
+    float src_left,
+    float src_top,
+    float src_w,
+    float src_h,
+    float *out_bx,
+    float *out_by
+)
+{
+    float u = (buf_w > 1.f) ? (screen_x / buf_w) : 0.f;
+    float v = (buf_h > 1.f) ? (screen_y / buf_h) : 0.f;
+    *out_bx = src_left + u * src_w;
+    *out_by = src_top + v * src_h;
+}
+
 void annotation_buffer_to_ndc(
     float bx,
     float by,

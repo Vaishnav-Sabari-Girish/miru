@@ -122,8 +122,8 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
     struct miru_annotation_state *ann = &ctx->ls->annotations;
     if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
         ann->dragging = true;
-        ann->drag_x0 = ann->drag_x1 = (float)ctx->ls->cursor_x;
-        ann->drag_y0 = ann->drag_y1 = (float)ctx->ls->cursor_y;
+        ann->drag_x0 = ann->drag_x1 = ann->hover_x;
+        ann->drag_y0 = ann->drag_y1 = ann->hover_y;
         ctx->ls->dirty = true;
 
         if (miru_debug_enabled()) {
@@ -208,6 +208,26 @@ static void pointer_enter(
     }
 }
 
+static void
+current_crop(const struct miru_layer_surface *ls, float *src_left, float *src_top, float *src_w, float *src_h)
+{
+    float z = ls->display_zoom < 1.f ? 1.f : ls->display_zoom;
+    float bw = (float)ls->buffer_width;
+    float bh = (float)ls->buffer_height;
+    *src_w = bw / z;
+    *src_h = bh / z;
+    *src_left = (float)ls->display_cursor_x - *src_w / 2.f;
+    *src_top = (float)ls->display_cursor_y - *src_h / 2.f;
+    if (*src_left < 0)
+        *src_left = 0;
+    if (*src_top < 0)
+        *src_top = 0;
+    if (*src_left + *src_w > bw)
+        *src_left = bw - *src_w;
+    if (*src_top + *src_h > bh)
+        *src_top = bh - *src_h;
+}
+
 static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
 {
     (void)pointer;
@@ -224,9 +244,16 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
     double ny = wl_fixed_to_double(y) * ctx->ls->output_scale;
 
     if (ctx->ls->annotations.mode) {
+        float sl, st, sw, sh, bx, by;
+        current_crop(ctx->ls, &sl, &st, &sw, &sh);
+        annotation_screen_to_buffer(
+            (float)nx, (float)ny, (float)ctx->ls->buffer_width, (float)ctx->ls->buffer_height, sl, st, sw, sh, &bx, &by
+        );
+        ctx->ls->annotations.hover_x = bx;
+        ctx->ls->annotations.hover_y = by;
         if (ctx->ls->annotations.dragging) {
-            ctx->ls->annotations.drag_x1 = (float)nx;
-            ctx->ls->annotations.drag_y1 = (float)ny;
+            ctx->ls->annotations.drag_x1 = bx;
+            ctx->ls->annotations.drag_y1 = by;
         }
         ctx->ls->dirty = true;
         return;
