@@ -1,4 +1,47 @@
 
+## v0.7.0 - 2026-08-29
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(annotations)** Rectangle and arrow
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(annotations)** Annotations now work perfectly
+
+- **(input)** Open zoom view at last known pointer position
+
+- **(input)** Seed zoom view at pointer instead of screen center
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## v0.6.0 - 2026-08-20
 
 
