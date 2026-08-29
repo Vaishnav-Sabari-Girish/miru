@@ -61,16 +61,26 @@ similarity (dim + soft-edged circle around the cursor) but are not the same
 feature, and it's worth being clear about which one you're getting:
 
 * **Magnifier mode** — press a key, the screen freezes into a zoomed-in
-  fullscreen view centered on your cursor. Move the mouse to pan, scroll or
-  press +/- to adjust zoom, use arrow keys or WASD to pan by keyboard, press
-  Esc (or the toggle key again) to exit. Like `boomer`, but native Wayland.
-  While active, pressing **Tab** toggles **Cursor Highlight** on top of the
-  zoomed view — darkening everything except a soft-edged circle that follows
-  the real pointer position across the screen (absolute tracking), even when
-  zoomed in. Configurable via `[spotlight]` in the config file. This only
-  works *inside* an active Magnifier session; it isn't a separate mode you
-  can toggle on its own, and the desktop underneath is still frozen/grabbed
-  while it's on. **Built and working now.**
+  fullscreen view centered on your cursor (or the last known pointer position
+  from a previous session in the same daemon run). Move the mouse to pan,
+  scroll or press +/- to adjust zoom, use arrow keys or WASD to pan by
+  keyboard, press Esc (or the toggle key again) to exit. Like `boomer`, but
+  native Wayland.
+
+  While active:
+
+  * **Tab** toggles **Cursor Highlight** — darkening everything except a
+    soft-edged circle that follows the real pointer (absolute tracking), even
+    when zoomed. Configurable via `[spotlight]`. Radius can be adjusted live
+    with **Shift+Plus/Minus** or **Ctrl+scroll**. Entry/exit of the highlight
+    is animated (`spotlight.animation_speed`).
+  * **Shift+A** toggles **Annotate mode** — pan freezes and you can draw
+    presentation shapes on the frozen frame (arrows and rectangles). See
+    controls below.
+
+  Cursor Highlight and annotations only work *inside* an active Magnifier
+  session; the desktop underneath stays frozen/grabbed while the overlay is
+  on. **Built and working now.**
 
 * **Spotlight mode** — a fully independent, click-through overlay that
   darkens the whole screen except a cursor-tracking circle, while you keep
@@ -160,22 +170,68 @@ Substitute your AUR helper of choice — `yay`, `paru`, or a manual
 
 #### Nix / NixOS
 
-Run directly without installing:
+Miru is packaged in
+[nixpkgs](https://search.nixos.org/packages?channel=unstable&query=miru&show=miru)
+(attribute `miru`). Prefer that over the project flake when you want a normal
+channel/package install.
+
+> [!NOTE]
+> The nixpkgs package is maintained by
+> [@yvnth](https://github.com/yvnth) — thank you!
+> Releases in nixpkgs can lag behind upstream (Codeberg/GitHub tags). For the
+> absolute latest commit, build from source or use the development flake below.
+
+**Run without installing** (unstable channel):
+
+```bash
+nix shell nixpkgs/nixos-unstable#miru -c miru-daemon
+# control client from the same package:
+nix shell nixpkgs/nixos-unstable#miru -c miructl toggle
+```
+
+Classic `nix-shell`:
+
+```bash
+nix-shell -p miru -I nixpkgs=channel:nixos-unstable --run miru-daemon
+```
+
+**Install to your user profile:**
+
+```bash
+nix profile install nixpkgs/nixos-unstable#miru
+# or: nix-env -iA nixpkgs.miru -f channel:nixos-unstable
+```
+
+**NixOS** — if your system follows unstable:
+
+```nix
+environment.systemPackages = with pkgs; [
+  miru
+];
+```
+
+On stable, pull only this package from unstable:
+
+```nix
+{ config, pkgs, ... }:
+let
+  unstable = import <nixos-unstable> { config = config.nixpkgs.config; };
+in
+{
+  environment.systemPackages = [ unstable.miru ];
+}
+```
+
+```bash
+sudo nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable
+sudo nix-channel --update
+```
+
+**Development / bleeding edge** (optional project flake):
 
 ```bash
 nix run git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
-```
-
-Or install to your profile:
-
-```bash
-nix profile add git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
-```
-
-For development:
-
-```bash
-nix develop
+nix develop git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
 ```
 
 #### Homebrew (Linuxbrew)
@@ -332,6 +388,8 @@ smooth = false
 radius = 250
 dim = 0.65
 softness = 20
+animation_speed = 14.0
+radius_step = 20.0
 
 [general]
 show_cursor = true
@@ -352,7 +410,13 @@ The currently active options are:
   effect) to `1.0` (fully black).
 * `spotlight.softness` — width, in pixels, of the feathered transition
   between the bright circle and the dimmed area.
-* `general.show_cursor` — currently parsed; runtime effect is still limited.
+* `spotlight.animation_speed` — how quickly Cursor Highlight radius/dim ease
+  in and out when toggling Tab. Higher is faster.
+* `spotlight.radius_step` — step size when adjusting the highlight radius
+  with Shift+Plus/Minus or Ctrl+scroll.
+* `general.show_cursor` — when `false`, hides the hardware cursor while the
+  overlay is active (restoring a themed cursor when turning it back on may
+  be limited depending on the compositor).
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
 non-positive values where applicable, fall back to safe defaults. `zoom.factor`
@@ -418,10 +482,12 @@ wherever it ends up if installed via a package manager).
 On toggle-on, the daemon captures one frame via `wlr-screencopy`, uploads it
 as an OpenGL ES texture, and shows it in a fullscreen `wlr-layer-shell`
 overlay (correctly scaled on HiDPI outputs) at the configured zoom factor,
-centered on your cursor. While active:
+centered on your cursor when possible. While active:
 
 * **Move the mouse** to pan the zoomed view
 * **`+`/`-`** or **scroll wheel** to adjust the zoom level
+* **Shift+Plus / Shift+Minus** or **Ctrl+scroll** to adjust Cursor Highlight
+  radius (while highlight is relevant / available)
 * **Arrow keys or WASD** to pan by keyboard — press and hold for continuous
   panning at your keyboard's repeat rate
 * **Tab** to toggle Cursor Highlight on/off — darkens everything except a
@@ -429,6 +495,13 @@ centered on your cursor. While active:
   screen (absolute tracking), using the `[spotlight]` config values. This
   is separate from the standalone Spotlight mode described above; see
   [What it does](#what-it-does) for the distinction.
+* **Shift+A** to toggle **Annotate mode** (orange frame, pan frozen):
+  * **W** — arrow tool
+  * **R** — rectangle tool
+  * **Left-click drag** — place the current tool on the frozen frame
+  * **C** — clear all annotations
+  * **Shift+A** again — leave annotate mode (shapes remain until overlay exit
+    or clear)
 * **Esc**, or pressing the toggle keybind again, to exit back to your normal
   desktop
 
@@ -437,13 +510,22 @@ the overlay is visible: an earlier version tried that and hit a feedback loop
 where the overlay could end up capturing itself (e.g. during Alt+Tab), so the
 frozen frame is captured once per toggle-on, matching `boomer`'s actual
 freeze-on-demand behavior rather than a live feed. Zooming/panning/Cursor
-Highlight within that one frozen frame is fully live, however.
+Highlight/annotations within that one frozen frame is fully live, however.
 
 The overlay grabs keyboard and pointer input while active (needed for
-pan/zoom/Cursor Highlight to work), so clicks and most keys won't reach
-whatever's underneath until you exit; that's expected for Magnifier mode. A
-future standalone Spotlight mode would behave differently — click-through by
-design, see [What it does](#what-it-does) above.
+pan/zoom/Cursor Highlight/annotate to work), so clicks and most keys won't
+reach whatever's underneath until you exit; that's expected for Magnifier
+mode. A future standalone Spotlight mode would behave differently —
+click-through by design, see [What it does](#what-it-does) above.
+
+> [!NOTE]
+> **Cursor position on open:** Wayland does not expose a global pointer
+> position while Miru is inactive. The view starts at the last pointer
+> position from a previous overlay session in the same daemon process when
+> available; otherwise it may open near the center until the first
+> pointer-enter/motion. Running `miru-daemon` as a long-lived service helps
+> retain that last position across toggles, but does not track the cursor
+> while the overlay is off.
 
 ### Project structure
 
@@ -459,12 +541,13 @@ design, see [What it does](#what-it-does) above.
 │   ├── main.c                        # daemon entrypoint, IPC-driven toggle loop
 │   ├── wayland_state.h/.c            # connection, registry, seat/output tracking, poll-based event loop
 │   ├── layer_surface.h/.c            # wlr-layer-shell overlay, zoom/pan, Cursor Highlight, GL draw
+│   ├── annotations.h/.c              # shape annotation state (arrow/rect), screen↔buffer mapping
 │   ├── capture.h/.c                  # one-shot screen capture via wlr-screencopy
 │   ├── shm_buffer.h/.c               # shared-memory pixel buffer allocation helper
 │   ├── egl_context.h/.c              # EGL display / context / window-surface setup
-│   ├── gl_renderer.h/.c              # OpenGL ES 2 shaders, texture upload, spotlight draw
+│   ├── gl_renderer.h/.c              # OpenGL ES 2 shaders, texture upload, spotlight + annotation draw
 │   ├── ipc_server.h/.c               # Unix socket server, parses toggle/quit commands
-│   ├── input.h/.c                    # pointer/keyboard listeners: pan, zoom, Tab highlight, key-repeat, Esc
+│   ├── input.h/.c                    # pointer/keyboard: pan, zoom, Tab highlight, annotate, key-repeat, Esc
 │   ├── config.h/.c                   # config discovery, defaults, validation and loading
 │   ├── config_watch.h/.c             # inotify-based watch on the config directory, drives hot-reload
 │   ├── toml.h/.c                     # minimal TOML parser used by the config loader
@@ -491,10 +574,14 @@ design, see [What it does](#what-it-does) above.
   zoom/spotlight behavior
 * [x] Cursor Highlight (Tab): darken + feathered cursor cutout that follows
   the real pointer position (absolute tracking) even while zoomed
+* [x] Animated Cursor Highlight entry/exit; live radius adjust (Shift+/- /
+  Ctrl+scroll); `animation_speed` / `radius_step` config
+* [x] Shape annotations on the frozen frame (Shift+A: arrow / rectangle)
 * [x] systemd user service + `cmake --install`/`grim cast install` support
 * [x] Hot-reloading of the config while `miru-daemon` is running
 * [x] `man` pages for `miru-daemon` and `miructl`
 * [x] Optional smooth interpolation for zoom/pan (`zoom.smooth`)
+* [ ] Text annotations (typed labels on the frozen frame)
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
@@ -526,5 +613,7 @@ it.**
 
 * **Micro-improvements:** I have used AI as an advisor to improve some bits of
   code here and there. Big refactors or new features are done by my hand though.
+
 <br>
+
 ![img](https://brainmade.org/white-logo.svg)
