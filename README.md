@@ -35,7 +35,7 @@ See [Roadmap](#roadmap) for the full picture.
 
 ## Demo
 
-https://github.com/user-attachments/assets/be2a4561-ad53-4700-8ddc-b78a5f4eb616
+[![Watch the video](https://img.youtube.com/vi/KJqs3f_xZPg/maxresdefault.jpg)](https://www.youtube.com/watch?v=KJqs3f_xZPg)
 
 ## Table of contents
 
