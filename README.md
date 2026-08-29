@@ -148,6 +148,9 @@ Miru currently requires a compositor that exposes both `wlr-layer-shell` and
   ecosystem Sway is built on
 * **Hyprland** — supported by the required wlroots protocols
 * **Mango** — supported if the required protocols are exposed
+* **Nauka** - supported and tested by
+  [@shadowash8](https://github.com/shadowash8)
+  (<https://github.com/shadowash8/nauka>)
 * **GNOME / Mutter** — not supported
 * **KDE Plasma / KWin** — not supported
 
