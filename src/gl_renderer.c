@@ -9,6 +9,8 @@
 #include "gl_renderer.h"
 #include "debug.h"
 #include <wayland-client-protocol.h>
+#include "help.h"
+#include "font8x8_basic.h"
 
 /* bool miru_debug_enabled(void) */
 /* { */
@@ -517,5 +519,121 @@ void gl_renderer_draw_annotations(
             emit_line(r, x1, y1, x0, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
             emit_line(r, x0, y1, x0, y0, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
         }
+    }
+}
+
+static void emit_solid_quad(
+    struct miru_gl_renderer *r,
+    float x0,
+    float y0,
+    float x1,
+    float y1,
+    float cr,
+    float cg,
+    float cb,
+    float ca
+)
+{
+    float verts[] = {
+        x0, y0, x1, y0, x0, y1, x1, y1,
+    };
+
+    glUniform4f(r->line_u_color, cr, cg, cb, ca);
+    glBindBuffer(GL_ARRAY_BUFFER, r->line_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(r->line_a_pos);
+    glVertexAttribPointer(r->line_a_pos, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+static void draw_glyph(
+    struct miru_gl_renderer *r,
+    int ch,
+    float ndc_x,
+    float ndc_y,
+    float px_w,
+    float px_h,
+    float cr,
+    float cg,
+    float cb,
+    float ca
+)
+{
+    if (ch < 0 || ch > 127)
+        return;
+
+    const unsigned char *g = font8x8_basic[ch];
+    for (int row = 0; row < 8; row++) {
+        unsigned char bits = g[row];
+        for (int col = 0; col < 8; col++) {
+            if (!(bits & (1u << col)))
+                continue;
+
+            float x0 = ndc_x + (float)col * px_w;
+            float y0 = ndc_y - (float)row * px_h;
+            float x1 = x0 + px_w;
+            float y1 = y0 - px_h;
+
+            emit_solid_quad(r, x0, y0, x1, y1, cr, cg, cb, ca);
+        }
+    }
+}
+
+static void draw_text_line(
+    struct miru_gl_renderer *r,
+    const char *s,
+    float ndc_x,
+    float ndc_y,
+    float px_w,
+    float px_h,
+    float cr,
+    float cg,
+    float cb,
+    float ca
+)
+{
+    for (const char *p = s; *p; p++) {
+        draw_glyph(r, (unsigned char)*p, ndc_x, ndc_y, px_w, px_h, cr, cg, cb, ca);
+        ndc_x += px_w * 8.0f;
+    }
+}
+
+void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewport_h)
+{
+    if (viewport_w <= 0 || viewport_h <= 0)
+        return;
+
+    glUseProgram(r->line_program);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    emit_solid_quad(r, -1.f, -1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.55f);
+
+    const float panel_w = 1.35f;
+    const float panel_h = 1.45f;
+    float x0 = -panel_w * 0.5f;
+    float x1 = panel_w * 0.5f;
+    float y0 = -panel_h * 0.5f;
+    float y1 = panel_h * 0.5f;
+
+    emit_solid_quad(r, x0, y0, x1, y1, 0.08f, 0.08f, 0.10f, 0.92f);
+
+    float t = 2.0f / (float)viewport_h;
+    emit_solid_quad(r, x0, y1 - t, x1, y1, 1.f, 0.55f, 0.1f, 1.f);
+    emit_solid_quad(r, x0, y0, x1, y0 + t, 1.f, 0.55f, 0.1f, 1.f);
+    emit_solid_quad(r, x0, y0, x0 + t, y1, 1.f, 0.55f, 0.1f, 1.f);
+    emit_solid_quad(r, x1 - t, y0, x1, y1, 1.f, 0.55f, 0.1f, 1.f);
+
+    float px_w = panel_w / (40.0f * 8.0f);
+    float px_h = px_w * ((float)viewport_w / (float)viewport_h);
+    float line_advance = px_h * 10.0f;
+    float text_x = x0 + px_w * 8.0f;
+    float text_y = y1 - px_h * 12.0f;
+
+    const char *const *lines = help_lines();
+    size_t n = help_line_count();
+    for (size_t i = 0; i < n; i++) {
+        draw_text_line(r, lines[i], text_x, text_y, px_w, px_h, 0.95f, 0.95f, 0.95f, 1.f);
+        text_y -= line_advance;
     }
 }

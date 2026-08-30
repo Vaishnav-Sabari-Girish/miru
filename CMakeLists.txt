@@ -81,6 +81,7 @@ add_executable(miru-daemon
   src/egl_context.c
   src/gl_renderer.c
   src/annotations.c
+  src/help.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}

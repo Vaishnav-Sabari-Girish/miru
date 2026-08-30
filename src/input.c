@@ -613,6 +613,20 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if ((key == KEY_H && ctx->shift_held) || (key == KEY_SLASH && ctx->shift_held)) {
+        ctx->ls->help_visible = !ctx->ls->help_visible;
+        ctx->ls->dirty = true;
+        if (miru_debug_enabled())
+            fprintf(stderr, "help: %s\n", ctx->ls->help_visible ? "ON" : "OFF");
+        return;
+    }
+
+    if (key == KEY_ESC && ctx->ls->help_visible) {
+        ctx->ls->help_visible = false;
+        ctx->ls->dirty = true;
+        return;
+    }
+
     if (handle_key_action(ctx, key) && ctx->repeat_rate > 0) {
         struct miru_repeat_slot *slot = find_repeat_slot(ctx, key, 1);
         if (slot) {

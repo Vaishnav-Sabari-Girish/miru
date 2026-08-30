@@ -119,6 +119,8 @@ int layer_surface_create(
     ls->cursor_seeded = false;
     ls->cursor_snap_pending = true;
 
+    ls->help_visible = false;
+
     annotation_state_init(&ls->annotations);
 
     if (config->has_initial_cursor) {
@@ -289,6 +291,9 @@ void layer_surface_render(struct miru_layer_surface *ls)
         &ls->gl, &ls->annotations, src_left, src_top, src_w, src_h, ls->buffer_width, ls->buffer_height
     );
 
+    if (ls->help_visible) {
+        gl_renderer_draw_help(&ls->gl, ls->buffer_width, ls->buffer_height);
+    }
     egl_swap_buffers(&ls->egl);
     ls->dirty = false;
 }
