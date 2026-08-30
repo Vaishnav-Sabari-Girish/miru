@@ -56,4 +56,6 @@ void gl_renderer_draw_annotations(
     int viewport_h
 );
 
+void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewport_h);
+
 #endif

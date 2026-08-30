@@ -5,59 +5,236 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-08\-07" "miru\-daemon Manual" "Miru"
+.TH "MIRU\-DAEMON" "1" "2026\-08\-30" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
-\fImiru\-daemon\fR \- Wayland\-native zooming daemon
+miru\-daemon \- Wayland\-native screen magnifier and cursor spotlight daemon
 .PP
-.SH USAGE
+.SH SYNOPSIS
 .PP
-To use \fImiru\-daemon\fR, you need to use \fImiructl\fR(1).\& 
+\fBmiru\-daemon\fR [options]
 .PP
-miructl exposes the toggle/quit commands which toggle the daemon to take a screenshot of the current screen state and overlay it over the current screen and quit to quit the zoom mode.\&
+.SH DESCRIPTION
 .PP
-You can also put the daemon in you systemctl service files to make it run on startup.\&
+\fBmiru\-daemon\fR is a long\-running Wayland client.\& It connects to the compositor,
+listens on a Unix socket, and stays idle until \fBmiructl\fR(1) sends a command.\&
 .PP
+On \fBtoggle\fR, it captures one frame via \fBwlr\-screencopy\fR, shows it in a
+fullscreen \fBwlr\-layer\-shell\fR overlay, and lets you zoom, pan, highlight the
+cursor, draw simple annotations, and open an on\-screen help panel.\& A second
+\fBtoggle\fR (or \fBEsc\fR when help is closed) tears the overlay down.\& The underlying
+desktop is not continuously re\-captured while the overlay is visible.\&
 .PP
-.SH Environment Variables 
+Control is only through \fBmiructl\fR(1) (\fBtoggle\fR / \fBquit\fR).\& Global hotkeys must
+be bound in the compositor to run \fBmiructl toggle\fR.\&
 .PP
-\fImiru\-daemon\fR allows the usage of one environment variable \fBMIRU_DEBUG\fR which is to be set 0 or 1 to use \fImiru\-daemon\fR in debug mode or in normal mode.\& 
+.SH OPTIONS
 .PP
-\fBMIRU_DEBUG=1\fR gives more detailed and verbose logs and \fBMIRU_DEBUG=0\fR gives the normal logs.\&
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print usage and exit.\&
 .PP
+.RE
+\fB\-v\fR, \fB\-\-version\fR
+.RS 4
+Print version and ASCII logo, then exit.\&
 .PP
-.SH Config file
+.RE
+.SH COMMANDS (via miructl)
 .PP
-\fImiru\-daemon\fR has a config file to configure \fImiru\-daemon\fR as you see fit.\& 
+See \fBmiructl\fR(1).\& Typical usage:
 .PP
-The config file is present at $XDG_CONFIG_HOME/miru/config.\&toml.\& 
+.RS 4
+miructl toggle
+miructl quit
 .PP
-In case $XDG_CONFIG_HOME is not set, it is present at $HOME/.\&config/miru/config.\&toml
+.RE
+.SH ENVIRONMENT
 .PP
-See:
+\fBMIRU_DEBUG\fR
+.RS 4
+If set to a non\-zero value (e.\&g.\& \fB1\fR), print verbose diagnostics (input,
+zoom, texture upload, annotate/help toggles, and similar).\& Unset or \fB0\fR
+for normal logging.\&
+.PP
+.RE
+\fBWAYLAND_DISPLAY\fR, \fBXDG_RUNTIME_DIR\fR
+.RS 4
+Standard Wayland / runtime directory variables.\& The control socket is
+\fB$XDG_RUNTIME_DIR/miru.\&sock\fR.\&
+.PP
+.RE
+\fBXDG_CONFIG_HOME\fR
+.RS 4
+If set, config is read from \fB$XDG_CONFIG_HOME/miru/config.\&toml\fR;
+otherwise \fB$HOME/.\&config/miru/config.\&toml\fR.\&
+.PP
+.RE
+.SH CONFIGURATION
+.PP
+Config path:
+.PP
+.RS 4
+$XDG_CONFIG_HOME/miru/config.\&toml
+# or
+$HOME/.\&config/miru/config.\&toml
+.PP
+.RE
+The directory and a default file are created on first launch.\& The file is
+watched; most options hot\-reload without restarting the daemon.\&
+.PP
+Default:
+.PP
+.nf
+.RS 4
+[zoom]
+factor = 2\&.0
+increment = 0\&.25
+max_factor = 10\&.0
+smooth = false
+
+[spotlight]
+radius = 250
+dim = 0\&.65
+softness = 20
+animation_speed = 14\&.0
+radius_step = 20\&.0
+
+[general]
+show_cursor = true
+.fi
+.RE
+.PP
+\fB[zoom]\fR
+.RS 4
+\fBfactor\fR — initial zoom on each toggle\-on (min 1.\&0).\&  
+\fBincrement\fR — zoom step for keys/scroll.\&  
+\fBmax_factor\fR — maximum zoom.\&  
+\fBsmooth\fR — interpolate zoom/pan when true.\&
+.PP
+.RE
+\fB[spotlight]\fR (Cursor Highlight while magnifier is active, toggled with Tab)
+.RS 4
+\fBradius\fR, \fBdim\fR, \fBsoftness\fR — circle size, outside darkness, edge feather.\&  
+\fBanimation_speed\fR — ease in/out speed for Tab.\&  
+\fBradius_step\fR — step for Shift+Plus/Minus and Ctrl+scroll.\&
+.PP
+.RE
+\fB[general]\fR
+.RS 4
+\fBshow_cursor\fR — hide the hardware cursor while the overlay is active when
+false (compositor\-dependent).\&
+.PP
+.RE
+Full detail:
 https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru#configuration
 .PP
+.SH CONTROLS (while overlay is active)
 .PP
-.SH Setting up a keybind
+\fBMouse move\fR
+.RS 4
+Pan.\&
 .PP
-\fImiru\-daemon\fR can be toggled using a compositor\-level keybind (Niri, Hyprland, MangoWM etc) and pressing that keybind should rum miructl toggle
+.RE
+\fBScroll\fR or \fB+\fR / \fB\-\fR
+.RS 4
+Zoom.\&
+.PP
+.RE
+\fBWASD\fR / \fBarrow keys\fR
+.RS 4
+Pan (key repeat supported).\&
+.PP
+.RE
+\fBTab\fR
+.RS 4
+Toggle Cursor Highlight.\&
+.PP
+.RE
+\fBShift+Plus\fR / \fBShift+Minus\fR or \fBCtrl+scroll\fR
+.RS 4
+Adjust highlight radius.\&
+.PP
+.RE
+\fBShift+A\fR
+.RS 4
+Toggle annotate mode (pan frozen; orange frame).\&  
+\fBW\fR — arrow tool; \fBR\fR — rectangle; drag LMB — place; \fBC\fR — clear.\&
+.PP
+.RE
+\fBShift+H\fR or \fB?\&\fR
+.RS 4
+Toggle help panel.\& \fBEsc\fR closes help first if open.\&
+.PP
+.RE
+\fBEsc\fR or compositor toggle keybind (\fBmiructl toggle\fR)
+.RS 4
+Exit magnifier (after closing help if needed).\&
+.PP
+.RE
+.SH SYSTEMD
+.PP
+Example user unit \fB\(ti/.\&config/systemd/user/miru.\&service\fR:
+.PP
+.nf
+.RS 4
+[Unit]
+Description=Miru Zooming Daemon
+PartOf=graphical\-session\&.target
+After=graphical\-session\&.target
+ConditionEnvironment=WAYLAND_DISPLAY
+ConditionPathExists=%h/\&.local/bin/miru\-daemon
+
+[Service]
+ExecStart=%h/\&.local/bin/miru\-daemon
+Restart=on\-failure
+RestartSec=1
+
+[Install]
+WantedBy=graphical\-session\&.target
+.fi
+.RE
+.PP
+.RS 4
+systemctl \-\-user enable \-\-now miru.\&service
+.PP
+.RE
+Adjust paths if binaries are installed elsewhere.\&
+.PP
+.SH KEYBINDS (compositor)
+.PP
+Bind a key to \fBmiructl toggle\fR in your compositor (Niri, Hyprland, Sway,
+Mango, etc.\&).\& The daemon must already be running.\&
 .PP
 See:
 https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru#setting\-up\-a\-keybind
 .PP
-.SH See also 
+.SH NOTES
 .PP
-\fImiructl\fR(1)
+Wayland does not expose a global pointer position while the overlay is
+inactive.\& The zoom view prefers the last pointer position from a previous
+session in the same daemon process when available.\&
 .PP
-.SH AUTHORS 
+Requires \fBwlr\-layer\-shell\-unstable\-v1\fR and \fBwlr\-screencopy\-unstable\-v1\fR.\&
+GNOME (Mutter) and KDE Plasma (KWin) are not supported.\&
 .PP
-Maintained by Vaishnav\-Sabari\-Girish <vaishnav.\&sabari.\&girish@gmail.\&com>.\& Up\-to\-date sources can be found at:
+.SH SEE ALSO
+.PP
+\fBmiructl\fR(1)
+.PP
+.SH AUTHORS
+.PP
+Maintained by Vaishnav Sabari Girish <vaishnav.\&sabari.\&girish@gmail.\&com>.\&
+.PP
+Sources:
+.PP
 .PD 0
 .IP \(bu 4
 https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru
 .IP \(bu 4
-https://github.\&com/Vaishnav\-Sabari\-Girish/miru.\& 
+https://github.\&com/Vaishnav\-Sabari\-Girish/miru
 .PD
-Please submit any issues and PR'\&s to 
-https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru.\&
+.PP
+Issues and pull requests:
+https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru

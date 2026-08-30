@@ -49,6 +49,7 @@ struct miru_layer_surface {
     bool smooth_enabled;
     bool dirty;
     struct miru_annotation_state annotations;
+    bool help_visible;
 };
 
 int layer_surface_create(
