@@ -482,6 +482,12 @@ bindsym $mod+z exec /path/to/miru/build/miructl toggle
 bind=SUPER,Z,spawn,/path/to/miru/build/miructl toggle
 ```
 
+**Nauka** — `~/.config/nauka/nauka.con`:
+
+```conf
+keybind super z run "/path/to/miru/build/miructl toggle"
+```
+
 Substitute the actual path to your built `miructl` binary in each case (or
 wherever it ends up if installed via a package manager).
 
