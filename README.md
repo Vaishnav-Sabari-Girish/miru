@@ -77,10 +77,12 @@ feature, and it's worth being clear about which one you're getting:
   * **Shift+A** toggles **Annotate mode** — pan freezes and you can draw
     presentation shapes on the frozen frame (arrows and rectangles). See
     controls below.
+  * **Shift+H** or **?** toggles an on-screen **help panel** listing the
+    current keybinds (Esc closes help first, then exits the magnifier).
 
-  Cursor Highlight and annotations only work *inside* an active Magnifier
-  session; the desktop underneath stays frozen/grabbed while the overlay is
-  on. **Built and working now.**
+  Cursor Highlight, annotations, and help only work *inside* an active
+  Magnifier session; the desktop underneath stays frozen/grabbed while the
+  overlay is on. **Built and working now.**
 
 * **Spotlight mode** — a fully independent, click-through overlay that
   darkens the whole screen except a cursor-tracking circle, while you keep
@@ -148,7 +150,7 @@ Miru currently requires a compositor that exposes both `wlr-layer-shell` and
   ecosystem Sway is built on
 * **Hyprland** — supported by the required wlroots protocols
 * **Mango** — supported if the required protocols are exposed
-* **Nauka** - supported and tested by
+* **Nauka** — supported and tested by
   [@shadowash8](https://github.com/shadowash8)
   (<https://github.com/shadowash8/nauka>)
 * **GNOME / Mutter** — not supported
@@ -166,6 +168,7 @@ alternative capture and overlay mechanisms.
 paru -S miru-zoom
 # or track the latest commit on main
 paru -S miru-zoom-git
+
 ```
 
 Substitute your AUR helper of choice — `yay`, `paru`, or a manual
@@ -303,7 +306,7 @@ grim cast run-daemon
 
 Create `~/.config/systemd/user/miru.service`:
 
-```ini
+```systemd
 [Unit]
 Description=Miru Zooming Daemon
 PartOf=graphical-session.target
@@ -357,8 +360,8 @@ them depends on how you installed Miru:
   page directly from the repo root:
 
 ```bash
-  man ./miru-daemon.1
-  man ./miructl.1
+man ./miru-daemon.1
+man ./miructl.1
 ```
 
 ### Configuration
@@ -505,6 +508,8 @@ centered on your cursor when possible. While active:
   * **C** — clear all annotations
   * **Shift+A** again — leave annotate mode (shapes remain until overlay exit
     or clear)
+* **Shift+H** or **?** — toggle the **help panel** (keybind cheat sheet).
+  **Esc** closes help if it is open; otherwise Esc exits the magnifier.
 * **Esc**, or pressing the toggle keybind again, to exit back to your normal
   desktop
 
@@ -545,12 +550,14 @@ click-through by design, see [What it does](#what-it-does) above.
 │   ├── wayland_state.h/.c            # connection, registry, seat/output tracking, poll-based event loop
 │   ├── layer_surface.h/.c            # wlr-layer-shell overlay, zoom/pan, Cursor Highlight, GL draw
 │   ├── annotations.h/.c              # shape annotation state (arrow/rect), screen↔buffer mapping
+│   ├── help.h/.c                     # help panel copy (keybind list)
+│   ├── font8x8_basic.h               # public-domain 8x8 bitmap font for the help panel
 │   ├── capture.h/.c                  # one-shot screen capture via wlr-screencopy
 │   ├── shm_buffer.h/.c               # shared-memory pixel buffer allocation helper
 │   ├── egl_context.h/.c              # EGL display / context / window-surface setup
-│   ├── gl_renderer.h/.c              # OpenGL ES 2 shaders, texture upload, spotlight + annotation draw
+│   ├── gl_renderer.h/.c              # OpenGL ES 2 shaders, texture upload, spotlight, annotations, help
 │   ├── ipc_server.h/.c               # Unix socket server, parses toggle/quit commands
-│   ├── input.h/.c                    # pointer/keyboard: pan, zoom, Tab highlight, annotate, key-repeat, Esc
+│   ├── input.h/.c                    # pointer/keyboard: pan, zoom, Tab, annotate, help, key-repeat, Esc
 │   ├── config.h/.c                   # config discovery, defaults, validation and loading
 │   ├── config_watch.h/.c             # inotify-based watch on the config directory, drives hot-reload
 │   ├── toml.h/.c                     # minimal TOML parser used by the config loader
@@ -580,6 +587,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Animated Cursor Highlight entry/exit; live radius adjust (Shift+/- /
   Ctrl+scroll); `animation_speed` / `radius_step` config
 * [x] Shape annotations on the frozen frame (Shift+A: arrow / rectangle)
+* [x] In-overlay help panel (Shift+H / ?)
 * [x] systemd user service + `cmake --install`/`grim cast install` support
 * [x] Hot-reloading of the config while `miru-daemon` is running
 * [x] `man` pages for `miru-daemon` and `miructl`

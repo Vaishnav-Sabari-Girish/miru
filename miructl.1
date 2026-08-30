@@ -5,43 +5,90 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRUCTL" "1" "2026\-08\-07" "miructl Manual" "Miru"
+.TH "MIRUCTL" "1" "2026\-08\-30" "Miru" "miructl Manual"
 .PP
-.SH NAME 
+.SH NAME
 .PP
-miructl \- Control utility for \fImiru\-daemon\fR(1)
+miructl \- control utility for miru\-daemon(1)
 .PP
-.SH USAGE 
+.SH SYNOPSIS
 .PP
-\fImiructl\fR provides 2 commands:
-.PD 0
-.IP \(bu 4
-\fItoggle\fR : Toggles the zoom overlay
-.IP \(bu 4
-\fIquit\fR : Quits \fImiru\-daemon\fR
-.PD
+\fBmiructl\fR <command>
 .PP
+.SH DESCRIPTION
 .PP
-.SH Setting up a keybind
+\fBmiructl\fR is a small, Wayland\-independent client.\& It connects to the Unix
+socket created by \fBmiru\-daemon\fR(1) (\fB$XDG_RUNTIME_DIR/miru.\&sock\fR) and sends a
+single command.\&
 .PP
-\fImiructl\fR can be used in  a compositor\-level keybind (Niri, Hyprland, MangoWM etc) and pressing that keybind should run \fImiructl toggle\fR.\&
+The daemon must already be running; otherwise \fBmiructl\fR fails with a
+connection error.\&
 .PP
-See:
+.SH COMMANDS
+.PP
+\fBtoggle\fR
+.RS 4
+Show or hide the magnifier overlay.\& On first toggle the daemon captures
+one frame and displays the zoomed view; a second toggle tears it down
+(same as exiting with \fBEsc\fR when the in\-overlay help panel is closed).\&
+.PP
+.RE
+\fBquit\fR
+.RS 4
+Ask \fBmiru\-daemon\fR to shut down.\&
+.PP
+.RE
+.SH OPTIONS
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print usage and exit.\&
+.PP
+.RE
+\fB\-v\fR, \fB\-\-version\fR
+.RS 4
+Print version information and exit (if supported by your build).\&
+.PP
+.RE
+.SH ENVIRONMENT
+.PP
+\fBXDG_RUNTIME_DIR\fR
+.RS 4
+Directory containing \fBmiru.\&sock\fR (required for a normal session).\&
+.PP
+.RE
+.SH EXAMPLES
+.PP
+.RS 4
+# start the daemon (once per session), then:
+miructl toggle
+miructl quit
+.PP
+.RE
+.SH SETTING UP A KEYBIND
+.PP
+Bind a compositor key to \fBmiructl toggle\fR (Niri, Hyprland, Sway, Mango, etc.\&).\&
+Ensure \fBmiru\-daemon\fR is already running (e.\&g.\& as a systemd user service).\&
+.PP
+Examples and paths:
 https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru#setting\-up\-a\-keybind
 .PP
-.SH See Also
+.SH SEE ALSO
 .PP
-\fImiru\-daemon\fR(1)
+\fBmiru\-daemon\fR(1)
 .PP
+.SH AUTHORS
 .PP
-.SH AUTHORS 
+Maintained by Vaishnav Sabari Girish <vaishnav.\&sabari.\&girish@gmail.\&com>.\&
 .PP
-Maintained by Vaishnav\-Sabari\-Girish <vaishnav.\&sabari.\&girish@gmail.\&com>.\& Up\-to\-date sources can be found at:
+Sources:
+.PP
 .PD 0
 .IP \(bu 4
 https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru
 .IP \(bu 4
-https://github.\&com/Vaishnav\-Sabari\-Girish/miru.\& 
+https://github.\&com/Vaishnav\-Sabari\-Girish/miru
 .PD
-Please submit any issues and PR'\&s to 
-https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru.\&
+.PP
+Issues and pull requests:
+https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru
