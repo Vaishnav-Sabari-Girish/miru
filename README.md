@@ -464,7 +464,7 @@ compositor has its own way to bind a command to a key:
 Mod+Z hotkey-overlay-title="toggle miru" { spawn-sh "/path/to/miru/build/miructl toggle"; }
 ```
 
-**Hyprland** — `~/.config/hypr/hyprland.conf`:
+**Hyprland** — `~/.config/hypr/hyprland.lua`:
 
 ```lua
 hl.bind("SUPER + Z", hl.dsp.exec_cmd("/path/to/miru/build/miructl toggle"))
