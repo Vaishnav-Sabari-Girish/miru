@@ -467,7 +467,7 @@ Mod+Z hotkey-overlay-title="toggle miru" { spawn-sh "/path/to/miru/build/miructl
 **Hyprland** — `~/.config/hypr/hyprland.conf`:
 
 ```config
-bind = SUPER, Z, exec, /path/to/miru/build/miructl toggle
+hl.bind("SUPER + Z", hl.dsp.exec_cmd("/path/to/miru/build/miructl toggle"))
 ```
 
 **Sway** — `~/.config/sway/config`:
