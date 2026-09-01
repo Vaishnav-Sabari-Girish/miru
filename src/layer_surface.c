@@ -76,8 +76,17 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     }
 
     ls->configured = true;
-    /* Always render so the surface maps and can receive pointer_enter */
     ls->dirty = true;
+
+    if (ls->compositor && ls->surface && ls->width > 0 && ls->height > 0) {
+        struct wl_region *opaque = wl_compositor_create_region(ls->compositor);
+        if (opaque) {
+            wl_region_add(opaque, 0, 0, ls->width, ls->height);
+            wl_surface_set_opaque_region(ls->surface, opaque);
+            wl_region_destroy(opaque);
+        }
+    }
+
     layer_surface_render(ls);
 }
 
@@ -137,6 +146,7 @@ int layer_surface_create(
         return -1;
     }
 
+    ls->compositor = state->compositor;
     ls->surface = wl_compositor_create_surface(state->compositor);
     if (!ls->surface)
         return -1;
@@ -213,6 +223,9 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls)
 
 void layer_surface_render(struct miru_layer_surface *ls)
 {
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     if (!ls->configured || !ls->egl.egl_window)
         return;
 
