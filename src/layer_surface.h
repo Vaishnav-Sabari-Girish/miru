@@ -23,6 +23,7 @@ struct layer_surface_config {
 struct miru_layer_surface {
     struct wl_surface *surface;
     struct zwlr_layer_surface_v1 *layer_surface;
+    struct wl_compositor *compositor;
     struct miru_egl egl;
     struct miru_gl_renderer gl;
 
