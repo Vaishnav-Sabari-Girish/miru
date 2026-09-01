@@ -607,33 +607,40 @@ void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewp
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    emit_solid_quad(r, -1.f, -1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.55f);
+    emit_solid_quad(r, -1.f, -1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.35f);
 
-    const float panel_w = 1.35f;
-    const float panel_h = 1.45f;
+    const float panel_w = 0.72f;
+    const float panel_h = 0.78f;
     float x0 = -panel_w * 0.5f;
     float x1 = panel_w * 0.5f;
     float y0 = -panel_h * 0.5f;
     float y1 = panel_h * 0.5f;
 
-    emit_solid_quad(r, x0, y0, x1, y1, 0.08f, 0.08f, 0.10f, 0.92f);
+    emit_solid_quad(r, x0, y0, x1, y1, 0.10f, 0.10f, 0.12f, 0.94f);
 
-    float t = 2.0f / (float)viewport_h;
+    float t = 1.5f / (float)viewport_h;
     emit_solid_quad(r, x0, y1 - t, x1, y1, 1.f, 0.55f, 0.1f, 1.f);
     emit_solid_quad(r, x0, y0, x1, y0 + t, 1.f, 0.55f, 0.1f, 1.f);
     emit_solid_quad(r, x0, y0, x0 + t, y1, 1.f, 0.55f, 0.1f, 1.f);
     emit_solid_quad(r, x1 - t, y0, x1, y1, 1.f, 0.55f, 0.1f, 1.f);
 
-    float px_w = panel_w / (40.0f * 8.0f);
+    float margin = panel_w * 0.05f;
+    float inner_w = panel_w - 2.f * margin;
+    float px_w = inner_w / (42.0f * 8.0f);
+
     float px_h = px_w * ((float)viewport_w / (float)viewport_h);
-    float line_advance = px_h * 10.0f;
-    float text_x = x0 + px_w * 8.0f;
-    float text_y = y1 - px_h * 12.0f;
+    float line_advance = px_h * 9.5f;
+    float text_x = x0 + margin;
+    float text_y = y1 - margin - px_h * 8.0f;
 
     const char *const *lines = help_lines();
     size_t n = help_line_count();
     for (size_t i = 0; i < n; i++) {
-        draw_text_line(r, lines[i], text_x, text_y, px_w, px_h, 0.95f, 0.95f, 0.95f, 1.f);
+        if (i == 0) {
+            draw_text_line(r, lines[i], text_x, text_y, px_w, px_h, 1.0f, 0.85f, 0.55f, 1.f);
+        } else {
+            draw_text_line(r, lines[i], text_x, text_y, px_w, px_h, 0.90f, 0.90f, 0.92f, 1.f);
+        }
         text_y -= line_advance;
     }
 }
