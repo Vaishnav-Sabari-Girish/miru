@@ -11,6 +11,7 @@
 struct layer_surface_config {
     float zoom_default;
     float zoom_max;
+    float zoom_animation_speed;
     float spotlight_radius;
     float spotlight_dim;
     float spotlight_softness;
@@ -40,6 +41,7 @@ struct miru_layer_surface {
 
     double display_cursor_x, display_cursor_y;
     float display_zoom;
+    float zoom_animation_speed;
 
     float zoom_default, zoom_max;
     float spotlight_radius, spotlight_dim, spotlight_softness;

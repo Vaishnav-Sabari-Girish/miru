@@ -10,6 +10,7 @@ struct miru_config {
     double zoom_increment;
     double zoom_max_factor;
     bool zoom_smooth;
+    double zoom_animation_speed;
 
     // Spotlight
     long spotlight_radius;
