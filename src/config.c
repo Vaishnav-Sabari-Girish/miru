@@ -187,6 +187,9 @@ static void sanitize_config(struct miru_config *c)
         fprintf(stderr, "config: spotlight.radius_step exceeds 500.0, clamping\n");
         c->spotlight_radius_step = 500.0;
     }
+
+    if (!isfinite(c->zoom_animation_speed) || c->zoom_animation_speed <= 0)
+        c->zoom_animation_speed = 14.0;
 }
 
 void config_load(struct miru_config *out)
@@ -195,7 +198,8 @@ void config_load(struct miru_config *out)
     out->zoom_factor = 2.0;
     out->zoom_increment = 0.25;
     out->zoom_max_factor = 10.0;
-    out->zoom_smooth = false;
+    out->zoom_smooth = true;
+    out->zoom_animation_speed = 14.0;
 
     // [spotlight]/[general] below are parsed and stored but not yet
     // consumed anywhere — Spotlight mode and cursor rendering aren't built
@@ -231,6 +235,7 @@ void config_load(struct miru_config *out)
     out->zoom_increment = toml_get_double(t, "zoom", "increment", out->zoom_increment);
     out->zoom_max_factor = toml_get_double(t, "zoom", "max_factor", out->zoom_max_factor);
     out->zoom_smooth = toml_get_bool(t, "zoom", "smooth", out->zoom_smooth);
+    out->zoom_animation_speed = toml_get_double(t, "zoom", "animation_speed", out->zoom_animation_speed);
 
     out->spotlight_radius = toml_get_int(t, "spotlight", "radius", out->spotlight_radius);
     out->spotlight_dim = toml_get_double(t, "spotlight", "dim", out->spotlight_dim);

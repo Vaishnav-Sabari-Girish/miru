@@ -65,6 +65,8 @@ static int activate(
     struct layer_surface_config ls_config = {
         .zoom_default = (float)config->zoom_factor,
         .zoom_max = (float)config->zoom_max_factor,
+        .zoom_animation_speed = (float)config->zoom_animation_speed,
+        .smooth_enabled = config->zoom_smooth,
         .spotlight_radius = (float)config->spotlight_radius,
         .spotlight_dim = (float)(config->spotlight_dim < 0.0 ? 0.0 :
                                  config->spotlight_dim > 1.0 ? 1.0 :
@@ -78,6 +80,8 @@ static int activate(
         capture_frame_destroy(capture);
         return -1;
     }
+
+    fprintf(stderr, "zoom: smooth=%d speed=%.1f\n", ls->smooth_enabled, ls->zoom_animation_speed);
     fprintf(stderr, "toggle: activated\n");
     return 0;
 }
@@ -223,6 +227,7 @@ int main(int argc, char *argv[])
                     config.zoom_increment != new_config.zoom_increment ||
                     config.zoom_max_factor != new_config.zoom_max_factor ||
                     config.zoom_smooth != new_config.zoom_smooth ||
+                    config.zoom_animation_speed != new_config.zoom_animation_speed ||
                     config.spotlight_radius != new_config.spotlight_radius ||
                     config.spotlight_dim != new_config.spotlight_dim ||
                     config.spotlight_softness != new_config.spotlight_softness ||
@@ -238,6 +243,8 @@ int main(int argc, char *argv[])
                         struct layer_surface_config ls_config = {
                             .zoom_default = (float)config.zoom_factor,
                             .zoom_max = (float)config.zoom_max_factor,
+                            .zoom_animation_speed = (float)config.zoom_animation_speed,
+                            .smooth_enabled = config.zoom_smooth,
                             .spotlight_radius = (float)config.spotlight_radius,
                             .spotlight_dim = (float)config.spotlight_dim,
                             .spotlight_softness = (float)config.spotlight_softness,

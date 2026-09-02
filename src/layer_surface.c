@@ -115,6 +115,7 @@ int layer_surface_create(
     ls->output_scale = state->output_scale;
     ls->zoom_default = config->zoom_default;
     ls->zoom_max = config->zoom_max;
+    ls->zoom_animation_speed = config->zoom_animation_speed > 0.f ? config->zoom_animation_speed : 14.0f;
     ls->spotlight_radius = config->spotlight_radius;
     ls->spotlight_dim = config->spotlight_dim;
     ls->spotlight_softness = config->spotlight_softness;
@@ -183,6 +184,8 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
     if (config->spotlight_animation_speed > 0.0f)
         ls->spotlight_animation_speed = config->spotlight_animation_speed;
     ls->smooth_enabled = config->smooth_enabled;
+    if (config->zoom_animation_speed > 0.0f)
+        ls->zoom_animation_speed = config->zoom_animation_speed;
     if (ls->zoom > ls->zoom_max)
         ls->zoom = ls->zoom_max;
     ls->dirty = true;
@@ -233,7 +236,9 @@ void layer_surface_render(struct miru_layer_surface *ls)
     if (!animating && !ls->dirty)
         return;
 
-    float t = ls->smooth_enabled ? (1.0f - expf(-SMOOTH_SPEED * (1.0f / 60.0f))) : 1.0f;
+    float zoom_speed = ls->zoom_animation_speed > 0.0f ? ls->zoom_animation_speed : 14.0f;
+    float t = ls->smooth_enabled ? (1.0f - expf(-zoom_speed * (1.0f / 60.0f))) : 1.0f;
+
     ls->display_zoom += (ls->zoom - ls->display_zoom) * t;
 
     if (!ls->annotations.mode) {
