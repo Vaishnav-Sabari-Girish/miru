@@ -132,5 +132,49 @@ char annotation_keycode_to_char(uint32_t key, bool shift)
     if (key == 53)
         return shift ? '?' : '/';
 
+    if (key == 41)
+        return shift ? '~' : '`';
+    if (key == 39)
+        return shift ? ':' : ';';
+    if (key == 40)
+        return shift ? '"' : '\'';
+    if (key == 43)
+        return shift ? '|' : '\\';
+    if (key == 26)
+        return shift ? '{' : '[';
+    if (key == 27)
+        return shift ? '}' : ']';
+
+    if (key == 82)
+        return '0';
+    if (key == 79)
+        return '1';
+    if (key == 80)
+        return '2';
+    if (key == 81)
+        return '3';
+    if (key == 75)
+        return '4';
+    if (key == 76)
+        return '5';
+    if (key == 77)
+        return '6';
+    if (key == 71)
+        return '7';
+    if (key == 72)
+        return '8';
+    if (key == 73)
+        return '9';
+    if (key == 83)
+        return '.';
+    if (key == 74)
+        return '-';
+    if (key == 78)
+        return '+';
+    if (key == 55)
+        return '*';
+    if (key == 98)
+        return '/';
+
     return 0;
 }
