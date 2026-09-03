@@ -1,13 +1,17 @@
 #ifndef ANNOTATIONS_H
 #define ANNOTATIONS_H
 
+#define MIRU_ANN_TEXT_MAX 128
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #define MIRU_MAX_ANNOTATIONS 64
 
 enum miru_ann_type {
     MIRU_ANN_ARROW = 0,
     MIRU_ANN_RECT = 1,
+    MIRU_ANN_TEXT = 2,
 };
 
 struct miru_annotation {
@@ -16,6 +20,7 @@ struct miru_annotation {
     float x1, y1; // buffer-space end   (drag release)
     float r, g, b, a;
     float thickness;
+    char text[MIRU_ANN_TEXT_MAX];
 };
 
 struct miru_annotation_state {
@@ -29,6 +34,11 @@ struct miru_annotation_state {
     float drag_x0, drag_y0;
     float drag_x1, drag_y1;
     float hover_x, hover_y;
+
+    bool typing;
+    float text_x, text_y;
+    char text_buf[MIRU_ANN_TEXT_MAX];
+    int text_len;
 };
 
 void annotation_screen_to_buffer(
@@ -58,5 +68,8 @@ void annotation_buffer_to_ndc(
     float *out_nx,
     float *out_ny
 );
+
+bool annotation_add_text(struct miru_annotation_state *s, float x, float y, const char *text);
+char annotation_keycode_to_char(uint32_t key, bool shift);
 
 #endif // !ANNOTATIONS_H
