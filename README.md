@@ -511,6 +511,9 @@ centered on your cursor when possible. While active:
   * **W** — arrow tool
   * **R** — rectangle tool
   * **Left-click drag** — place the current tool on the frozen frame
+  * **T** - text tool
+  * **Click + type** - start typing text from the clicked location (indicated by
+    a `_`)
   * **C** — clear all annotations
   * **Shift+A** again — leave annotate mode (shapes remain until overlay exit
     or clear)
@@ -598,7 +601,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Hot-reloading of the config while `miru-daemon` is running
 * [x] `man` pages for `miru-daemon` and `miructl`
 * [x] Optional smooth interpolation for zoom/pan (`zoom.smooth`)
-* [ ] Text annotations (typed labels on the frozen frame)
+* [x] Text annotations (typed labels on the frozen frame)
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
