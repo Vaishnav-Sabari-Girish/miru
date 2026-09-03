@@ -1,3 +1,4 @@
+#include "annotations.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -121,6 +122,20 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
 
     struct miru_annotation_state *ann = &ctx->ls->annotations;
     if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+        if (ann->tool == MIRU_ANN_TEXT) {
+            ann->typing = true;
+            ann->text_x = ann->hover_x;
+            ann->text_y = ann->hover_y;
+            ann->text_len = 0;
+            ann->text_buf[0] = '\0';
+            ann->dragging = false;
+            ctx->ls->dirty = true;
+            if (miru_debug_enabled()) {
+                fprintf(stderr, "annotate text: place at (%.0f, %.0f)\n", ann->text_x, ann->text_y);
+            }
+            return;
+        }
+
         ann->dragging = true;
         ann->drag_x0 = ann->drag_x1 = ann->hover_x;
         ann->drag_y0 = ann->drag_y1 = ann->hover_y;
@@ -568,11 +583,66 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (ctx->ls->annotations.mode && ctx->ls->annotations.typing && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        struct miru_annotation_state *ann = &ctx->ls->annotations;
+
+        if (key == KEY_ENTER || key == KEY_KPENTER) {
+            annotation_add_text(ann, ann->text_x, ann->text_y, ann->text_buf);
+            ann->typing = false;
+            ann->text_len = 0;
+            ann->text_buf[0] = '\0';
+            ctx->ls->dirty = true;
+            if (miru_debug_enabled()) {
+                fprintf(stderr, "annotate text: commit count = %d\n", ann->count);
+            }
+            return;
+        }
+        if (key == KEY_ESC) {
+            ann->typing = false;
+            ann->text_len = 0;
+            ann->text_buf[0] = '\0';
+            ctx->ls->dirty = true;
+            return;
+        }
+
+        if (key == KEY_BACKSPACE) {
+            if (ann->text_len > 0) {
+                ann->text_buf[--ann->text_len] = '\0';
+                ctx->ls->dirty = true;
+            }
+
+            return;
+        }
+
+        char ch = annotation_keycode_to_char(key, ctx->shift_held);
+        if (ch && ann->text_len + 1 < MIRU_ANN_TEXT_MAX) {
+            ann->text_buf[ann->text_len++] = ch;
+            ann->text_buf[ann->text_len] = '\0';
+            ctx->ls->dirty = true;
+        }
+
+        return;
+    }
+
+    if (key == KEY_T && ctx->ls->annotations.mode) {
+        ctx->ls->annotations.tool = MIRU_ANN_TEXT;
+        ctx->ls->annotations.dragging = false;
+        if (miru_debug_enabled()) {
+            fprintf(stderr, "annotate tool: text\n");
+        }
+
+        return;
+    }
     if (key == KEY_A && ctx->shift_held) {
         ctx->ls->annotations.mode = !ctx->ls->annotations.mode;
         if (!ctx->ls->annotations.mode)
             ctx->ls->annotations.dragging = false;
-        else {
+
+        if (!ctx->ls->annotations.mode) {
+            ctx->ls->annotations.typing = false;
+            ctx->ls->annotations.text_len = 0;
+            ctx->ls->annotations.text_buf[0] = '\0';
+        } else {
             ctx->ls->cursor_x = ctx->ls->display_cursor_x;
             ctx->ls->cursor_y = ctx->ls->display_cursor_y;
         }
