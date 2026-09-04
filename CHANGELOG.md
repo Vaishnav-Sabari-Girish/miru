@@ -1,4 +1,51 @@
 
+## v0.8.0 - 2026-09-03
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(numpad)** Add numpad key support for text annotation
+
+- **(text)** Text annotations in annotation mode
+
+- **(smooth_zoom)** Made zoom smooth like butter
+
+- **(help)** Add help overlay (SHIFT+H / ?)
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(shadowing)** Fix text overlay shadow in help section
+
+- **(help_text_size)** Made help popup smaller
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## v0.7.0 - 2026-08-29
 
 
