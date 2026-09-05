@@ -41,6 +41,8 @@ struct miru_layer_surface {
 
     double display_cursor_x, display_cursor_y;
     float display_zoom;
+    float zoom_velocity;
+    float zoom_momentum_friction;
     float zoom_animation_speed;
 
     float zoom_default, zoom_max;
@@ -72,5 +74,7 @@ void layer_surface_render(struct miru_layer_surface *ls);
 
 // true while display_zoom/display_cursor haven't caught up to their targets
 bool layer_surface_is_animating(const struct miru_layer_surface *ls);
+
+void layer_surface_add_zoom_impulse(struct miru_layer_surface *ls, float delta);
 
 #endif

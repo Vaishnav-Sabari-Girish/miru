@@ -38,6 +38,8 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     if (!ls->configured) {
         ls->zoom = ls->zoom_default;
         ls->display_zoom = ls->zoom_default;
+        ls->zoom_velocity = 0.0f;
+        ls->zoom_momentum_friction = 8.0f;
 
         /* Prefer position seeded in layer_surface_create (last pointer).
            Fall back to center only when we have nothing better. */
@@ -129,6 +131,9 @@ int layer_surface_create(
     ls->cursor_seeded = false;
     ls->cursor_snap_pending = true;
 
+    ls->zoom_velocity = 0.0f;
+    ls->zoom_momentum_friction = 8.0f;
+
     ls->help_visible = false;
 
     annotation_state_init(&ls->annotations);
@@ -206,6 +211,8 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls)
     if (!ls->configured)
         return false;
 
+    if (fabsf(ls->zoom_velocity) > 0.01f)
+        return true;
     if (fabsf(ls->display_zoom - ls->zoom) > ZOOM_EPSILON)
         return true;
     if (fabs(ls->display_cursor_x - ls->cursor_x) > CURSOR_EPSILON)
@@ -235,6 +242,22 @@ void layer_surface_render(struct miru_layer_surface *ls)
     bool animating = layer_surface_is_animating(ls);
     if (!animating && !ls->dirty)
         return;
+
+    {
+        const float dt = 1.0f / 60.0f;
+        if (ls->zoom_velocity != 0.0f) {
+            ls->zoom += ls->zoom_velocity * dt;
+            if (ls->zoom < 1.0f)
+                ls->zoom = 1.0f;
+            if (ls->zoom > ls->zoom_max)
+                ls->zoom = ls->zoom_max;
+
+            float friction = ls->zoom_momentum_friction > 0.0f ? ls->zoom_momentum_friction : 8.0f;
+            ls->zoom_velocity *= expf(-friction * dt);
+            if (fabsf(ls->zoom_velocity) < 0.01f)
+                ls->zoom_velocity = 0.0f;
+        }
+    }
 
     float zoom_speed = ls->zoom_animation_speed > 0.0f ? ls->zoom_animation_speed : 14.0f;
     float t = ls->smooth_enabled ? (1.0f - expf(-zoom_speed * (1.0f / 60.0f))) : 1.0f;
@@ -314,4 +337,14 @@ void layer_surface_render(struct miru_layer_surface *ls)
     }
     egl_swap_buffers(&ls->egl);
     ls->dirty = false;
+}
+
+void layer_surface_add_zoom_impulse(struct miru_layer_surface *ls, float delta)
+{
+    if (!ls) {
+        return;
+    }
+
+    ls->zoom_velocity += delta;
+    ls->dirty = true;
 }
