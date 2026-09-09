@@ -56,10 +56,6 @@ See [Roadmap](#roadmap) for the full picture.
 
 ### What it does
 
-Two distinct features — one built, one planned. They share a visual
-similarity (dim + soft-edged circle around the cursor) but are not the same
-feature, and it's worth being clear about which one you're getting:
-
 * **Magnifier mode** — press a key, the screen freezes into a zoomed-in
   fullscreen view centered on your cursor (or the last known pointer position
   from a previous session in the same daemon run). Move the mouse to pan,
@@ -83,6 +79,13 @@ feature, and it's worth being clear about which one you're getting:
   Cursor Highlight, annotations, and help only work *inside* an active
   Magnifier session; the desktop underneath stays frozen/grabbed while the
   overlay is on. **Built and working now.**
+
+* **Loupe Mode**: `miructl loupe` freezes the screen the same way as
+  `miructl toggle`, then lets you drag a rectangle over an area. After release,
+  only the selected region is zoomed in a fixed-size window that follows the
+  cursor; the rest of the frame stays at 1x. Scroll to change loupe zoom. Toggle
+  again (or quit) to exit. Separate from the above **Magnifier Mode**.
+  **Requires a separate compositor keybind**.
 
 * **Spotlight mode** — a fully independent, click-through overlay that
   darkens the whole screen except a cursor-tracking circle, while you keep
@@ -344,6 +347,7 @@ Toggle the overlay on/off:
 ```bash
 ./build/miru-daemon --version # prints version info + an ASCII logo, exits immediately
 ./build/miructl toggle        # freezes + zooms the screen / returns it to normal
+./build/miructl loupe         # region loupe: drag a rectangle, then zoom that region only
 ./build/miructl quit          # tells the daemon to shut down
 ```
 
@@ -462,30 +466,35 @@ compositor has its own way to bind a command to a key:
 
 ```kdl
 Mod+Z hotkey-overlay-title="toggle miru" { spawn-sh "/path/to/miru/build/miructl toggle"; }
+Mod+Alt+Z hotkey-overlay-title="toggle miru loupe" { spawn-sh "/path/to/miru/build/miructl loupe"; }
 ```
 
 **Hyprland** — `~/.config/hypr/hyprland.lua`:
 
 ```lua
 hl.bind("SUPER + Z", hl.dsp.exec_cmd("/path/to/miru/build/miructl toggle"))
+hl.bind("SUPER + ALT + Z", hl.dsp.exec_cmd("/path/to/miru/build/miructl loupe"))
 ```
 
 **Sway** — `~/.config/sway/config`:
 
 ```config
 bindsym $mod+z exec /path/to/miru/build/miructl toggle
+bindsym $mod+alt+z exec /path/to/miru/build/miructl loupe
 ```
 
 **Mango** — `~/.config/mango/config.conf`:
 
 ```conf
 bind=SUPER,Z,spawn,/path/to/miru/build/miructl toggle
+bind=SUPER,ALT,Z,spawn,/path/to/miru/build/miructl loupe
 ```
 
 **Nauka** — `~/.config/nauka/nauka.con`:
 
 ```conf
 keybind super z run "/path/to/miru/build/miructl toggle"
+keybind super alt z run "/path/to/miru/build/miructl loupe"
 ```
 
 Substitute the actual path to your built `miructl` binary in each case (or
@@ -565,7 +574,7 @@ click-through by design, see [What it does](#what-it-does) above.
 │   ├── shm_buffer.h/.c               # shared-memory pixel buffer allocation helper
 │   ├── egl_context.h/.c              # EGL display / context / window-surface setup
 │   ├── gl_renderer.h/.c              # OpenGL ES 2 shaders, texture upload, spotlight, annotations, help
-│   ├── ipc_server.h/.c               # Unix socket server, parses toggle/quit commands
+│   ├── ipc_server.h/.c               # Unix socket server, parses toggle/loupe/quit commands
 │   ├── input.h/.c                    # pointer/keyboard: pan, zoom, Tab, annotate, help, key-repeat, Esc
 │   ├── config.h/.c                   # config discovery, defaults, validation and loading
 │   ├── config_watch.h/.c             # inotify-based watch on the config directory, drives hot-reload
@@ -602,6 +611,8 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] `man` pages for `miru-daemon` and `miructl`
 * [x] Optional smooth interpolation for zoom/pan (`zoom.smooth`)
 * [x] Text annotations (typed labels on the frozen frame)
+* [x] Rectangle loupe mode (`miructl loupe`): region select, fixed-size window,
+      cursor follow, content zoom inside the selection
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
