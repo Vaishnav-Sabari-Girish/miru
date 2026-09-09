@@ -661,3 +661,85 @@ void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewp
         text_y -= line_advance;
     }
 }
+
+void gl_renderer_draw_loupe(
+    struct miru_gl_renderer *r,
+    float src_x0,
+    float src_y0,
+    float src_x1,
+    float src_y1,
+    float dst_x0,
+    float dst_y0,
+    float dst_x1,
+    float dst_y1,
+    int buf_w,
+    int buf_h,
+    int y_invert
+)
+{
+    float bw = (float)buf_w;
+    float bh = (float)buf_h;
+    if (bw < 1.f || bh < 1.f)
+        return;
+
+    float u0 = src_x0 / bw, v0 = src_y0 / bh;
+    float u1 = src_x1 / bw, v1 = src_y1 / bh;
+
+    float x0 = (dst_x0 / bw) * 2.f - 1.f;
+    float x1 = (dst_x1 / bw) * 2.f - 1.f;
+    float y0 = 1.f - (dst_y0 / bh) * 2.f;
+    float y1 = 1.f - (dst_y1 / bh) * 2.f;
+
+    float verts[] = {
+        x0, y0, u0, v0, x1, y0, u1, v0, x0, y1, u0, v1, x1, y1, u1, v1,
+    };
+
+    glViewport(0, 0, buf_w, buf_h);
+    glUseProgram(r->program);
+    glBindBuffer(GL_ARRAY_BUFFER, r->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(r->a_position);
+    glVertexAttribPointer(r->a_position, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(r->a_texcoord);
+    glVertexAttribPointer(r->a_texcoord, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, r->texture);
+    glUniform1i(r->u_texture, 0);
+    glUniform2f(r->u_crop_origin, 0.0f, 0.0f);
+    glUniform2f(r->u_crop_scale, 1.0f, 1.0f);
+    glUniform1f(r->u_y_invert, y_invert ? 1.0f : 0.0f);
+    glUniform2f(r->u_cursor_px, 0.0f, 0.0f);
+    glUniform2f(r->u_resolution, bw, bh);
+    glUniform1f(r->u_spotlight_enabled, 0.0f);
+    glUniform1f(r->u_spotlight_radius, 0.0f);
+    glUniform1f(r->u_spotlight_softness, 0.0f);
+    glUniform1f(r->u_spotlight_dim, 0.0f);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    float full[] = {
+        -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+    };
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(full), full, GL_STATIC_DRAW);
+}
+
+void gl_renderer_draw_loupe_outline(
+    struct miru_gl_renderer *r,
+    float x0,
+    float y0,
+    float x1,
+    float y1,
+    int buf_w,
+    int buf_h
+)
+{
+    float L = 0.f, T = 0.f, W = (float)buf_w, H = (float)buf_h;
+    float t = 3.f;
+
+    emit_line(r, x0, y0, x1, y0, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
+    emit_line(r, x1, y0, x1, y1, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
+    emit_line(r, x1, y1, x0, y1, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
+    emit_line(r, x0, y1, x0, y0, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
+}

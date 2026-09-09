@@ -32,7 +32,9 @@ void print_help()
     printf("    until toggled\n\n");
 
     printf("Control: \n");
-    printf("    Use \"miructl toggle\" to toggle the overlay and \"miructl quit\" to exit the running daemon\n");
+    printf("    Use \"miructl toggle\" for fullscreen magnifier,\n");
+    printf("    Use \"miructl loupe\" for rectangle region magnifie,\n ");
+    printf("    Use \"miructl quit\" to exit the running daemon\n");
 }
 
 void print_version()
@@ -205,6 +207,23 @@ int main(int argc, char *argv[])
             if (cmd == MIRU_IPC_TOGGLE) {
                 if (!active) {
                     active = (activate(&state, &ls, &capture, &config) == 0);
+                } else {
+                    deactivate(&ls, &capture);
+                    input_reset_repeat(&input_ctx);
+                    active = 0;
+                }
+            } else if (cmd == MIRU_IPC_LOUPE) {
+                if (!active) {
+                    active = (activate(&state, &ls, &capture, &config) == 0);
+                    if (active) {
+                        ls.loupe.active = true;
+                        ls.loupe.selecting = true;
+                        ls.loupe.dragging = false;
+                        ls.loupe.committed = false;
+                        ls.loupe.zoom = (float)config.zoom_factor;
+                        ls.loupe.display_zoom = ls.loupe.zoom;
+                        fprintf(stderr, "loupe: selecting rectangle\n");
+                    }
                 } else {
                     deactivate(&ls, &capture);
                     input_reset_repeat(&input_ctx);

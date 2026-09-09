@@ -114,6 +114,54 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
     struct miru_input_ctx *ctx = data;
     if (!ctx->ls || !ctx->ls->configured)
         return;
+
+    if (ctx->ls->loupe.active && ctx->ls->loupe.selecting) {
+        if (button != BTN_LEFT)
+            return;
+
+        struct miru_loupe *L = &ctx->ls->loupe;
+        if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+            L->dragging = true;
+            L->x0 = L->x1 = (float)ctx->ls->cursor_x;
+            L->y0 = L->y1 = (float)ctx->ls->cursor_y;
+            ctx->ls->dirty = true;
+            return;
+        }
+
+        if (state == WL_POINTER_BUTTON_STATE_RELEASED && L->dragging) {
+            L->dragging = false;
+            L->x1 = (float)ctx->ls->cursor_x;
+            L->y1 = (float)ctx->ls->cursor_y;
+            float x0 = L->x0, y0 = L->y0, x1 = L->x1, y1 = L->y1;
+            if (x0 > x1) {
+                float t = x0;
+                x0 = x1;
+                x1 = t;
+            }
+            if (y0 > y1) {
+                float t = y0;
+                y0 = y1;
+                y1 = t;
+            }
+            L->x0 = x0;
+            L->x1 = x1;
+            L->y0 = y0;
+            L->y1 = y1;
+
+            if ((x1 - x0) > 8.f && (y1 - y0) > 8.f) {
+                L->selecting = false;
+                L->committed = true;
+                L->sel_w = x1 - x0;
+                L->sel_h = y1 - y0;
+                L->center_x = 0.5f * (x0 + x1);
+                L->center_y = 0.5f * (y0 + y1);
+            }
+
+            ctx->ls->dirty = true;
+            return;
+        }
+        return;
+    }
     if (!ctx->ls->annotations.mode)
         return;
 
@@ -251,12 +299,29 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
     if (!ctx->ls->configured)
         return;
 
-    // ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
-    // ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
-    // ctx->ls->dirty = true;
-
     double nx = wl_fixed_to_double(x) * ctx->ls->output_scale;
     double ny = wl_fixed_to_double(y) * ctx->ls->output_scale;
+
+    if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
+        ctx->ls->cursor_x = nx;
+        ctx->ls->cursor_y = ny;
+        ctx->ls->loupe.center_x = (float)nx;
+        ctx->ls->loupe.center_y = (float)ny;
+        ctx->ls->dirty = true;
+        return;
+    }
+
+    if (ctx->ls->loupe.active && ctx->ls->loupe.selecting) {
+        ctx->ls->cursor_x = nx;
+        ctx->ls->cursor_y = ny;
+        if (ctx->ls->loupe.dragging) {
+            ctx->ls->loupe.x1 = (float)nx;
+            ctx->ls->loupe.y1 = (float)ny;
+        }
+
+        ctx->ls->dirty = true;
+        return;
+    }
 
     if (ctx->ls->annotations.mode) {
         float sl, st, sw, sh, bx, by;
@@ -303,6 +368,21 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
         return;
 
     double v = wl_fixed_to_double(value);
+
+    if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
+        if (v > 0)
+            ctx->ls->loupe.zoom -= ctx->zoom_increment;
+        else
+            ctx->ls->loupe.zoom += ctx->zoom_increment;
+
+        if (ctx->ls->loupe.zoom < 1.0f)
+            ctx->ls->loupe.zoom = 1.0f;
+        if (ctx->ls->loupe.zoom > ctx->ls->zoom_max)
+            ctx->ls->loupe.zoom = ctx->ls->zoom_max;
+
+        ctx->ls->dirty = true;
+        return;
+    }
 
     if (ctx->ctrl_held) {
         float delta = (v > 0) ? -ctx->radius_step : ctx->radius_step;

@@ -4,6 +4,7 @@
 enum miru_ipc_command {
     MIRU_IPC_NONE, // nothing to report
     MIRU_IPC_TOGGLE,
+    MIRU_IPC_LOUPE,
     MIRU_IPC_QUIT,
     MIRU_IPC_UNKNOWN, // client connected, but sent something unrecognizable
 };
