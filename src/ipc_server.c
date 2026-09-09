@@ -252,6 +252,10 @@ enum miru_ipc_command ipc_server_accept_command(struct miru_ipc_server *srv)
         return MIRU_IPC_TOGGLE;
     }
 
+    if (strcmp(buf, "loupe") == 0) {
+        return MIRU_IPC_LOUPE;
+    }
+
     if (strcmp(buf, "quit") == 0) {
         return MIRU_IPC_QUIT;
     }

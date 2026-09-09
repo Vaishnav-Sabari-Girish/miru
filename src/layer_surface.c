@@ -138,6 +138,15 @@ int layer_surface_create(
 
     annotation_state_init(&ls->annotations);
 
+    ls->loupe = (struct miru_loupe){
+        .active = false,
+        .selecting = false,
+        .dragging = false,
+        .committed = false,
+        .zoom = config->zoom_default > 1.0f ? config->zoom_default : 2.0f,
+        .display_zoom = config->zoom_default > 1.0f ? config->zoom_default : 2.0f,
+    };
+
     if (config->has_initial_cursor) {
         ls->cursor_x = config->initial_cursor_x;
         ls->cursor_y = config->initial_cursor_y;
@@ -213,6 +222,8 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls)
 
     if (fabsf(ls->zoom_velocity) > 0.01f)
         return true;
+    if (ls->loupe.active && ls->loupe.committed && fabsf(ls->loupe.display_zoom - ls->loupe.zoom) > ZOOM_EPSILON)
+        return true;
     if (fabsf(ls->display_zoom - ls->zoom) > ZOOM_EPSILON)
         return true;
     if (fabs(ls->display_cursor_x - ls->cursor_x) > CURSOR_EPSILON)
@@ -242,6 +253,108 @@ void layer_surface_render(struct miru_layer_surface *ls)
     bool animating = layer_surface_is_animating(ls);
     if (!animating && !ls->dirty)
         return;
+
+    if (ls->loupe.active) {
+        glViewport(0, 0, ls->buffer_width, ls->buffer_height);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        int y_invert = ls->capture ? ls->capture->y_invert : 0;
+
+        gl_renderer_draw(
+            &ls->gl,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            y_invert,
+            0.0f,
+            0.0f,
+            ls->buffer_width,
+            ls->buffer_height,
+            false,
+            0.0f,
+            0.0f,
+            0.0f
+        );
+
+        float x0 = ls->loupe.x0, y0 = ls->loupe.y0;
+        float x1 = ls->loupe.x1, y1 = ls->loupe.y1;
+        if (x0 > x1) {
+            float t = x0;
+            x0 = x1;
+            x1 = t;
+        }
+        if (y0 > y1) {
+            float t = y0;
+            y0 = y1;
+            y1 = t;
+        }
+
+        if (ls->loupe.committed) {
+            float zt = ls->smooth_enabled ? (1.0f - expf(-ls->zoom_animation_speed * (1.0f / 60.0f))) : 1.0f;
+
+            if (ls->zoom_animation_speed <= 0.0f) {
+                zt = ls->smooth_enabled ? (1.0f - expf(-14.0f * (1.0f / 60.0f))) : 1.0f;
+            }
+
+            ls->loupe.display_zoom += (ls->loupe.zoom - ls->loupe.display_zoom) * zt;
+
+            float z = ls->loupe.display_zoom < 1.0f ? 1.0f : ls->loupe.display_zoom;
+            float cx = ls->loupe.center_x;
+            float cy = ls->loupe.center_y;
+            float sel_w = ls->loupe.sel_w > 1.f ? ls->loupe.sel_w : (x1 - x0);
+            float sel_h = ls->loupe.sel_h > 1.f ? ls->loupe.sel_h : (y1 - y0);
+
+            float dx0 = cx - sel_w * 0.5f;
+            float dy0 = cy - sel_h * 0.5f;
+            float dx1 = cx + sel_w * 0.5f;
+            float dy1 = cy + sel_h * 0.5f;
+
+            float src_w = sel_w / z;
+            float src_h = sel_h / z;
+            float sx0 = cx - src_w * 0.5f;
+            float sy0 = cy - src_h * 0.5f;
+            float sx1 = cx + src_w * 0.5f;
+            float sy1 = cy + src_h * 0.5f;
+
+            float bw = (float)ls->buffer_width;
+            float bh = (float)ls->buffer_height;
+            if (sx0 < 0) {
+                sx1 -= sx0;
+                sx0 = 0;
+            }
+            if (sy0 < 0) {
+                sy1 -= sy0;
+                sy0 = 0;
+            }
+            if (sx1 > bw) {
+                sx0 -= (sx1 - bw);
+                sx1 = bw;
+            }
+            if (sy1 > bh) {
+                sy0 -= (sy1 - bh);
+                sy1 = bh;
+            }
+            if (sx0 < 0)
+                sx0 = 0;
+            if (sy0 < 0)
+                sy0 = 0;
+
+            gl_renderer_draw_loupe(
+                &ls->gl, sx0, sy0, sx1, sy1, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, y_invert
+            );
+
+            gl_renderer_draw_loupe_outline(&ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height);
+
+        } else if (ls->loupe.selecting || ls->loupe.dragging) {
+            gl_renderer_draw_loupe_outline(&ls->gl, x0, y0, x1, y1, ls->buffer_width, ls->buffer_height);
+        }
+
+        egl_swap_buffers(&ls->egl);
+        ls->dirty = false;
+        return;
+    }
 
     {
         const float dt = 1.0f / 60.0f;

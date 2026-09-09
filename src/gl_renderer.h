@@ -58,4 +58,29 @@ void gl_renderer_draw_annotations(
 
 void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewport_h);
 
+void gl_renderer_draw_loupe(
+    struct miru_gl_renderer *r,
+    float src_x0,
+    float src_y0,
+    float src_x1,
+    float src_y1,
+    float dst_x0,
+    float dst_y0,
+    float dst_x1,
+    float dst_y1,
+    int buf_w,
+    int buf_h,
+    int y_invert
+);
+
+void gl_renderer_draw_loupe_outline(
+    struct miru_gl_renderer *r,
+    float x0,
+    float y0,
+    float x1,
+    float y1,
+    int buf_w,
+    int buf_h
+);
+
 #endif

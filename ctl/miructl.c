@@ -8,19 +8,13 @@
 
 void print_help()
 {
-    // printf("\n");
-    // for (unsigned int i = 0; i < miru_ans_len; i++) {
-    //     putchar(miru_ans[i]);
-    // }
-    // // Color reset and newline
-    // printf("\x1b[0m\n");
-    //
     miru_print_logo();
 
     printf("Usage: miructl <command>\n\n");
 
     printf("Commands: \n");
     printf("    toggle      Toggle the overlay\n");
+    printf("    loupe       Zoom a specific region instead of whole screen\n");
     printf("    quit        Shut down the running miru-daemon\n\n");
     printf("Options: \n");
     printf("    -h, --help      Show this help message\n");
@@ -40,7 +34,7 @@ int main(int argc, char *argv[])
     }
 
     if (argc != 2) {
-        fprintf(stderr, "usage: %s <toggle|quit>\n", argv[0]);
+        fprintf(stderr, "usage: %s <toggle|loupe|quit>\n", argv[0]);
         return 1;
     }
 

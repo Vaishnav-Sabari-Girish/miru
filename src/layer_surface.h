@@ -21,6 +21,18 @@ struct layer_surface_config {
     bool smooth_enabled;
 };
 
+struct miru_loupe {
+    bool active;
+    bool selecting;
+    bool dragging;
+    bool committed;
+    float x0, y0, x1, y1;
+    float sel_w, sel_h;
+    float center_x, center_y;
+    float zoom;
+    float display_zoom;
+};
+
 struct miru_layer_surface {
     struct wl_surface *surface;
     struct zwlr_layer_surface_v1 *layer_surface;
@@ -55,6 +67,7 @@ struct miru_layer_surface {
     bool dirty;
     struct miru_annotation_state annotations;
     bool help_visible;
+    struct miru_loupe loupe;
 };
 
 int layer_surface_create(
