@@ -461,3 +461,21 @@ void layer_surface_add_zoom_impulse(struct miru_layer_surface *ls, float delta)
     ls->zoom_velocity += delta;
     ls->dirty = true;
 }
+
+int layer_surface_refresh_texture(struct miru_layer_surface *ls)
+{
+    if (!ls || !ls->capture || !ls->capture->shm_data)
+        return -1;
+
+    gl_renderer_upload_texture(
+        &ls->gl,
+        (const uint8_t *)ls->capture->shm_data,
+        (int)ls->capture->width,
+        (int)ls->capture->height,
+        (int)ls->capture->stride,
+        ls->capture->format
+    );
+
+    ls->dirty = true;
+    return 0;
+}

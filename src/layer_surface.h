@@ -90,4 +90,6 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls);
 
 void layer_surface_add_zoom_impulse(struct miru_layer_surface *ls, float delta);
 
+int layer_surface_refresh_texture(struct miru_layer_surface *ls);
+
 #endif
