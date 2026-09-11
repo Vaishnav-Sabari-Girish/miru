@@ -1,4 +1,42 @@
 
+## v0.9.0 - 2026-09-11
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(refresh)** Refresh overlay
+
+- **(loupe)** Add rectangle loupe mode
+
+- **(momentum)** Add zoom momentum
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## v0.8.0 - 2026-09-03
 
 
