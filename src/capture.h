@@ -31,4 +31,11 @@ int capture_output_frame(
 
 void capture_frame_destroy(struct miru_capture *capture);
 
+int capture_refresh(
+    struct miru_state *state,
+    struct wl_output *output,
+    volatile sig_atomic_t *cancel,
+    struct miru_capture *c
+);
+
 #endif

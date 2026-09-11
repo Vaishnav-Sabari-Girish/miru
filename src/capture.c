@@ -306,3 +306,17 @@ void capture_frame_destroy(struct miru_capture *capture)
         capture->buffer = NULL;
     }
 }
+
+int capture_refresh(
+    struct miru_state *state,
+    struct wl_output *output,
+    volatile sig_atomic_t *cancel,
+    struct miru_capture *c
+)
+{
+    if (!state || !c)
+        return -1;
+
+    capture_frame_destroy(c);
+    return capture_output_frame(state, output, cancel, c);
+}

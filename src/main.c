@@ -96,6 +96,58 @@ static void deactivate(struct miru_layer_surface *ls, struct miru_capture *captu
     fprintf(stderr, "toggle: deactivated\n");
 }
 
+static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls, struct miru_capture *capture)
+{
+    if (!state || !ls || !capture || !ls->surface || !state->compositor)
+        return -1;
+
+    if (!state || !ls || !capture || !ls->surface || !state->compositor)
+        return -1;
+
+    {
+        struct wl_region *empty = wl_compositor_create_region(state->compositor);
+        if (empty) {
+            wl_surface_set_opaque_region(ls->surface, empty);
+            wl_region_destroy(empty);
+        }
+    }
+
+    glViewport(0, 0, ls->buffer_width, ls->buffer_height);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    egl_swap_buffers(&ls->egl);
+
+    if (wl_display_roundtrip(state->display) == -1) {
+        fprintf(stderr, "refresh: roundtrip after transparent swap failed\n");
+        return -1;
+    }
+
+    if (wl_display_roundtrip(state->display) == -1) {
+        fprintf(stderr, "refresh: second roundtrip failed\n");
+        return -1;
+    }
+
+    if (capture_refresh(state, state->output, &should_exit, capture) != 0) {
+        fprintf(stderr, "refresh: capture failed\n");
+        ls->dirty = true;
+        layer_surface_render(ls);
+        return -1;
+    }
+
+    if (layer_surface_refresh_texture(ls) != 0) {
+        fprintf(stderr, "refresh: texture upload failed\n");
+        ls->dirty = true;
+        layer_surface_render(ls);
+        return -1;
+    }
+
+    ls->dirty = true;
+    layer_surface_render(ls);
+
+    fprintf(stderr, "refresh: ok\n");
+    return 0;
+}
+
 int main(int argc, char *argv[])
 
 {
@@ -117,6 +169,7 @@ int main(int argc, char *argv[])
     struct miru_config_watch config_watch = { 0 };
     config_watch_init(&config_watch);
     volatile sig_atomic_t request_deactivate = 0;
+    volatile sig_atomic_t request_refresh = 0;
     int active = 0;
     bool wayland_connection_lost = false;
 
@@ -133,6 +186,7 @@ int main(int argc, char *argv[])
     struct miru_input_ctx input_ctx = {
         .ls = &ls,
         .request_deactivate = &request_deactivate,
+        .request_refresh = &request_refresh,
         .zoom_increment = (float)config.zoom_increment,
         .radius_step = (float)config.spotlight_radius_step,
         .show_cursor = config.show_cursor,
@@ -295,6 +349,11 @@ int main(int argc, char *argv[])
             input_reset_repeat(&input_ctx);
             active = 0;
             request_deactivate = 0;
+        }
+
+        if (active && request_refresh) {
+            request_refresh = 0;
+            refresh_frame(&state, &ls, &capture);
         }
     }
 

@@ -738,7 +738,17 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
-    if (key == KEY_R) {
+    if (key == KEY_R && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        if (ctx->ls && ctx->ls->configured && ctx->request_refresh)
+            *ctx->request_refresh = 1;
+
+        if (miru_debug_enabled())
+            fprintf(stderr, "refresh: requested\n");
+
+        return;
+    }
+
+    if (key == KEY_R && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_RECT;
 
         if (miru_debug_enabled()) {

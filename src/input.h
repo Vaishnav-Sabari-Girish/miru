@@ -17,6 +17,7 @@ struct miru_repeat_slot {
 struct miru_input_ctx {
     struct miru_layer_surface *ls;
     volatile sig_atomic_t *request_deactivate;
+    volatile sig_atomic_t *request_refresh;
 
     float zoom_increment;
     float radius_step;
