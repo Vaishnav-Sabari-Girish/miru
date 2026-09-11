@@ -613,6 +613,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Text annotations (typed labels on the frozen frame)
 * [x] Rectangle loupe mode (`miructl loupe`): region select, fixed-size window,
       cursor follow, content zoom inside the selection
+* [x] Frame refresh
 * [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
