@@ -28,6 +28,8 @@ struct miru_input_ctx {
     uint32_t pointer_enter_serial;
     bool has_pointer_enter;
     struct wl_pointer *pointer;
+    struct wp_cursor_shape_manager_v1 *cursor_shape_manager;
+    struct wp_cursor_shape_device_v1 *cursor_shape_device;
     double last_pointer_x, last_pointer_y;
     bool has_last_pointer;
 

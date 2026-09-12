@@ -4,6 +4,7 @@
 #include <wayland-client.h>
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "wlr-screencopy-unstable-v1-client-protocol.h"
+#include "cursor-shape-v1-client-protocol.h"
 
 struct miru_state {
     struct wl_display *display;
@@ -15,6 +16,7 @@ struct miru_state {
     struct wl_output *output;
     struct zwlr_layer_shell_v1 *layer_shell;
     struct zwlr_screencopy_manager_v1 *screencopy_manager;
+    struct wp_cursor_shape_manager_v1 *cursor_shape_manager;
 
     int output_scale;
     struct wl_pointer *pointer;

@@ -12,6 +12,7 @@ static const char *const lines[] = {
     "SHIFT+/-          Highlight radius",
     "CTRL+Scroll       Highlight radius",
     "SHIFT + R         refresh freeze",
+    "SHIFT + C         Toggle cursor",
     "SHIFT + A         Annotation Mode",
     " W                Arrow",
     " R                Rectangle",

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(miru VERSION 0.9.0 LANGUAGES C)
+project(miru VERSION 0.10.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -44,6 +44,20 @@ if(NOT EXISTS ${XDG_SHELL_XML})
   message(FATAL_ERROR "xdg-shell.xml not found at ${XDG_SHELL_XML}")
 endif()
 
+set(CURSOR_SHAPE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/cursor-shape/cursor-shape-v1.xml")
+if(NOT EXISTS ${CURSOR_SHAPE_XML})
+  message(FATAL_ERROR "cursor-shape-v1.xml not found at ${CURSOR_SHAPE_XML}")
+endif()
+
+set(TABLET_XML "${WAYLAND_PROTOCOLS_DIR}/stable/tablet/tablet-v2.xml")
+if(NOT EXISTS ${TABLET_XML})
+  set(TABLET_XML "${WAYLAND_PROTOCOLS_DIR}/unstable/tablet/tablet-unstable-v2.xml")
+endif()
+
+if(NOT EXISTS ${TABLET_XML})
+  message(FATAL_ERROR "tablet-v2.xml not found under wayland-protocols")
+endif()
+
 # ext-image-copy-capture-v1 references ext_image_capture_source_v1, defined here
 set(EXT_CAPTURE_SOURCE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/ext-image-capture-source/ext-image-capture-source-v1.xml")
 if(NOT EXISTS ${EXT_CAPTURE_SOURCE_XML})
@@ -59,6 +73,8 @@ endif()
 wayland_generate_protocol(${SCREENCOPY_XML} wlr-screencopy-unstable-v1)
 wayland_generate_protocol(${LAYER_SHELL_XML} wlr-layer-shell-unstable-v1)
 wayland_generate_protocol(${XDG_SHELL_XML} xdg-shell)
+wayland_generate_protocol(${CURSOR_SHAPE_XML} cursor-shape-v1)
+wayland_generate_protocol(${TABLET_XML} tablet-v2)
 wayland_generate_protocol(${EXT_CAPTURE_SOURCE_XML} ext-image-capture-source-v1)
 wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-v1)
 
@@ -88,6 +104,10 @@ add_executable(miru-daemon
   ${xdg-shell_HEADER}
   ${wlr-screencopy-unstable-v1_SOURCE}
   ${wlr-screencopy-unstable-v1_HEADER}
+  ${cursor-shape-v1_SOURCE}
+  ${cursor-shape-v1_HEADER}
+  ${tablet-v2_SOURCE}
+  ${tablet-v2_HEADER}
 )
 
 add_executable(miructl 
