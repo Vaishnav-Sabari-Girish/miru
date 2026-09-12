@@ -13,7 +13,7 @@
 
         miru = pkgs.stdenv.mkDerivation {
           pname = "miru";
-          version = "0.8.0";
+          version = "0.9.0";
           src = ./.;
 
           nativeBuildInputs = with pkgs; [
