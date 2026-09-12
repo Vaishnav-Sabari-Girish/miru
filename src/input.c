@@ -40,12 +40,23 @@ static void clamp_radius(struct miru_layer_surface *ls)
 
 static void apply_cursor_visibility(struct miru_input_ctx *ctx)
 {
-    if (!ctx->pointer || !ctx->pointer_enter_serial)
+    if (!ctx->pointer || !ctx->has_pointer_enter)
         return;
 
     if (!ctx->show_cursor) {
         wl_pointer_set_cursor(ctx->pointer, ctx->pointer_enter_serial, NULL, 0, 0);
+        return;
     }
+
+    if (ctx->cursor_shape_device) {
+        wp_cursor_shape_device_v1_set_shape(
+            ctx->cursor_shape_device, ctx->pointer_enter_serial, WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT
+        );
+        return;
+    }
+
+    if (miru_debug_enabled())
+        fprintf(stderr, "cursor: show required but wp_cursor_shape_manager_v1 missing\n");
 }
 
 static void adjust_spotlight_radius(struct miru_layer_surface *ls, float delta)
@@ -252,6 +263,11 @@ static void pointer_enter(
     ctx->pointer = pointer;
     ctx->pointer_enter_serial = serial;
     ctx->has_pointer_enter = true;
+
+    if (!ctx->cursor_shape_device && ctx->cursor_shape_manager && pointer) {
+        ctx->cursor_shape_device = wp_cursor_shape_manager_v1_get_pointer(ctx->cursor_shape_manager, pointer);
+    }
+
     apply_cursor_visibility(ctx);
 
     ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
@@ -765,6 +781,14 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (key == KEY_C && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        input_set_show_cursor(ctx, !ctx->show_cursor);
+        if (miru_debug_enabled())
+            fprintf(stderr, "cursor: %s\n", ctx->show_cursor ? "shown" : "hidden");
+
+        return;
+    }
+
     if (key == KEY_C && ctx->ls->annotations.mode) {
         annotation_clear(&ctx->ls->annotations);
         ctx->ls->dirty = true;
@@ -821,6 +845,7 @@ void input_attach_keyboard_listener(struct wl_keyboard *keyboard, void *ctx)
 void input_setup(struct miru_state *state, struct miru_input_ctx *ctx)
 {
     state->input_ctx = ctx;
+    ctx->cursor_shape_manager = state->cursor_shape_manager;
     if (state->pointer) {
         wl_pointer_add_listener(state->pointer, &pointer_listener, ctx);
     }

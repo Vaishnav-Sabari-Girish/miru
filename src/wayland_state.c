@@ -144,6 +144,9 @@ registry_global(void *data, struct wl_registry *registry, uint32_t name, const c
     } else if (strcmp(interface, zwlr_screencopy_manager_v1_interface.name) == 0) {
         state->screencopy_manager =
             wl_registry_bind(registry, name, &zwlr_screencopy_manager_v1_interface, WAYLAND_MIN(version, 1));
+    } else if (strcmp(interface, wp_cursor_shape_manager_v1_interface.name) == 0) {
+        state->cursor_shape_manager =
+            wl_registry_bind(registry, name, &wp_cursor_shape_manager_v1_interface, WAYLAND_MIN(version, 1));
     }
 }
 
