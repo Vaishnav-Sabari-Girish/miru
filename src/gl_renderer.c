@@ -581,9 +581,10 @@ void gl_renderer_draw_annotations(
         } else if (a->type == MIRU_ANN_TEXT && a->text[0]) {
             float nx, ny;
             annotation_buffer_to_ndc(a->x0, a->y0, src_left, src_top, src_w, src_h, &nx, &ny);
-            const float glyph_px = 40.0f;
-            float px_w = (glyph_px / 8.0f) * 2.0f / (float)viewport_w;
-            float px_h = (glyph_px / 8.0f) * 2.0f / (float)viewport_h;
+            const float glyph_buf = 40.0f;
+            float cell = glyph_buf / 8.0f;
+            float px_w = (src_w > 1.f) ? (cell / src_w) * 2.0f : 0.f;
+            float px_h = (src_h > 1.f) ? (cell / src_h) * 2.0f : 0.f;
             draw_text_line(r, a->text, nx, ny, px_w, px_h, a->r, a->g, a->b, a->a);
         }
     }
@@ -607,9 +608,10 @@ void gl_renderer_draw_annotations(
     if (ann->typing) {
         float nx, ny;
         annotation_buffer_to_ndc(ann->text_x, ann->text_y, src_left, src_top, src_w, src_h, &nx, &ny);
-        const float glyph_px = 40.0f;
-        float px_w = (glyph_px / 8.0f) * 2.0f / (float)viewport_w;
-        float px_h = (glyph_px / 8.0f) * 2.0f / (float)viewport_h;
+        const float glyph_buf = 40.0f;
+        float cell = glyph_buf / 8.0f;
+        float px_w = (src_w > 1.f) ? (cell / src_w) * 2.0f : 0.f;
+        float px_h = (src_h > 1.f) ? (cell / src_h) * 2.0f : 0.f;
         const char *preview = ann->text_len > 0 ? ann->text_buf : "_";
         draw_text_line(r, preview, nx, ny, px_w, px_h, 1.f, 0.85f, 0.2f, 1.f);
     }
