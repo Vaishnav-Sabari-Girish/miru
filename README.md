@@ -53,6 +53,7 @@ See [Roadmap](#roadmap) for the full picture.
 * [Roadmap](#roadmap)
 * [Similar tools](#similar-tools)
 * [License](#license)
+* [Contributing](#contributing)
 
 ### What it does
 
@@ -637,6 +638,10 @@ click-through by design, see [What it does](#what-it-does) above.
 ### License
 
 See [LICENSE](./LICENSE).
+
+### Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## 🧠 (mostly) Brain made
 
