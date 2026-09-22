@@ -1,4 +1,55 @@
 
+## v0.10.0 - 2026-09-22
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(cursor)** Toggle cursor
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(text_size)** Text size now changes with zoom
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### :art: Styling
+
+- **(hook)** Added to pre-commit hook
+
+- **(cmake-format)** Add format file for CMake
+
+
+
+
+
+
+### :hammer: Build
+
+- **(c23)** Prefer c23 over c11, but with fallback to c11
+
+
+
 ## v0.9.0 - 2026-09-11
 
 
