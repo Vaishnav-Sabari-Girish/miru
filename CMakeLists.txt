@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
-project(miru VERSION 0.10.0 LANGUAGES C)
+project(
+  miru
+  VERSION 0.10.0
+  LANGUAGES C
+)
 
 # set(CMAKE_C_STANDARD 11)
 if("c_std_23" IN_LIST CMAKE_C_COMPILE_FEATURES)
@@ -9,9 +13,9 @@ elseif("c_std_11" IN_LIST CMAKE_C_COMPILE_FEATURES)
   set(CMAKE_C_STANDARD 11)
   message(STATUS "C standard: C11 (C23 not available; falling back)")
 else()
-  message(FATAL_ERROR 
-      "Compiler does not report C11 or C23 support "
-      "(CMAKE_C_COMPILER=${CMAKE_C_COMPILER}). Need at least C11")
+  message(FATAL_ERROR "Compiler does not report C11 or C23 support "
+                      "(CMAKE_C_COMPILER=${CMAKE_C_COMPILER}). Need at least C11"
+  )
 endif()
 
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -20,16 +24,12 @@ set(CMAKE_C_EXTENSIONS OFF)
 # ISO C11/C23 does not expose POSIX/BSD by default. Miru requires sigaction, timeval etc.
 add_compile_definitions(_DEFAULT_SOURCE)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # so clangd/your LSP can find flags and generated headers
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # so clangd/your LSP can find flags and generated headers
 
 set(MIRU_VERSION "${PROJECT_VERSION}")
 message(STATUS "miru version: ${MIRU_VERSION}")
 
-configure_file(
-  ${CMAKE_SOURCE_DIR}/src/version.h.in
-  ${CMAKE_BINARY_DIR}/generated/version.h
-  @ONLY
-)
+configure_file(${CMAKE_SOURCE_DIR}/src/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h @ONLY)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
@@ -47,7 +47,6 @@ set(SCREENCOPY_XML "${CMAKE_SOURCE_DIR}/protocol/wlr-screencopy-unstable-v1.xml"
 if(NOT EXISTS ${SCREENCOPY_XML})
   message(FATAL_ERROR "protocol/wlr-screencopy-unstable-v1.xml missing, see README for the fetch command")
 endif()
-
 
 # wlr-layer-shell-unstable-v1 is vendored ourselves, see protocol/ dir
 set(LAYER_SHELL_XML "${CMAKE_SOURCE_DIR}/protocol/wlr-layer-shell-unstable-v1.xml")
@@ -82,7 +81,9 @@ if(NOT EXISTS ${EXT_CAPTURE_SOURCE_XML})
 endif()
 
 # ext-image-capture-source-v1's toplevel variant references ext_foreign_toplevel_handle_v1, defined here
-set(EXT_FOREIGN_TOPLEVEL_XML "${WAYLAND_PROTOCOLS_DIR}/staging/ext-foreign-toplevel-list/ext-foreign-toplevel-list-v1.xml")
+set(EXT_FOREIGN_TOPLEVEL_XML
+    "${WAYLAND_PROTOCOLS_DIR}/staging/ext-foreign-toplevel-list/ext-foreign-toplevel-list-v1.xml"
+)
 if(NOT EXISTS ${EXT_FOREIGN_TOPLEVEL_XML})
   message(FATAL_ERROR "ext-foreign-toplevel-list-v1.xml not found at ${EXT_FOREIGN_TOPLEVEL_XML}")
 endif()
@@ -99,7 +100,8 @@ pkg_check_modules(EGL REQUIRED egl)
 pkg_check_modules(GLESV2 REQUIRED glesv2)
 pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
 
-add_executable(miru-daemon
+add_executable(
+  miru-daemon
   src/main.c
   src/logo.c
   src/wayland_state.c
@@ -127,39 +129,29 @@ add_executable(miru-daemon
   ${tablet-v2_HEADER}
 )
 
-add_executable(miructl 
-  ctl/miructl.c
-  src/logo.c
+add_executable(miructl ctl/miructl.c src/logo.c)
+
+target_include_directories(
+  miru-daemon
+  PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS}
+          ${EGL_INCLUDE_DIRS}
+          ${GLESV2_INCLUDE_DIRS}
+          ${WAYLAND_EGL_INCLUDE_DIRS}
+          ${CMAKE_BINARY_DIR}/protocol # so #include "*-client-protocol.h" in main.c resolves
+          ${CMAKE_SOURCE_DIR}/src
+          ${CMAKE_BINARY_DIR}/generated
 )
 
-target_include_directories(miru-daemon PRIVATE
-  ${WAYLAND_CLIENT_INCLUDE_DIRS}
-  ${EGL_INCLUDE_DIRS}
-  ${GLESV2_INCLUDE_DIRS}
-  ${WAYLAND_EGL_INCLUDE_DIRS}
-  ${CMAKE_BINARY_DIR}/protocol       # so #include "*-client-protocol.h" in main.c resolves
-  ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_BINARY_DIR}/generated
-)
-
-target_link_libraries(miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES}
-  ${EGL_LIBRARIES}
-  ${GLESV2_LIBRARIES}
-  ${WAYLAND_EGL_LIBRARIES}
-  m
+target_link_libraries(
+  miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES} ${EGL_LIBRARIES} ${GLESV2_LIBRARIES} ${WAYLAND_EGL_LIBRARIES} m
 )
 target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
 
 include(GNUInstallDirs)
 
-install(TARGETS miru-daemon miructl
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+install(TARGETS miru-daemon miructl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-set(MAN_PAGES 
-  "${CMAKE_SOURCE_DIR}/miru-daemon.1"
-  "${CMAKE_SOURCE_DIR}/miructl.1"
-)
+set(MAN_PAGES "${CMAKE_SOURCE_DIR}/miru-daemon.1" "${CMAKE_SOURCE_DIR}/miructl.1")
 
 foreach(MAN_PAGE ${MAN_PAGES})
   if(EXISTS "${MAN_PAGE}")
@@ -167,12 +159,9 @@ foreach(MAN_PAGE ${MAN_PAGES})
     get_filename_component(MAN_EXT ${MAN_PAGE} EXT)
     string(SUBSTRING "${MAN_EXT}" 1 -1 SECTION_NUM)
 
-    install(
-      FILES "${MAN_PAGE}"
-      DESTINATION "${CMAKE_INSTALL_MANDIR}/man${SECTION_NUM}"
-    )
+    install(FILES "${MAN_PAGE}" DESTINATION "${CMAKE_INSTALL_MANDIR}/man${SECTION_NUM}")
 
-    else()
-      message(WARNING "Pre-compiled man page not found ${MAN_PAGE}")
+  else()
+    message(WARNING "Pre-compiled man page not found ${MAN_PAGE}")
   endif()
 endforeach()
