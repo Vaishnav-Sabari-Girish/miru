@@ -1,0 +1,35 @@
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+
+steps:
+  format-check:
+    image: debian:bookworm-slim
+    commands:
+      - apt-get update -qq
+      - apt-get install -y -qq wget gnupg lsb-release software-properties-common
+      - wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh
+      - chmod +x /tmp/llvm.sh
+      - /tmp/llvm.sh 22
+      - apt-get install -y -qq clang-format-22
+      - echo "Checking C and Header files in src/..."
+      - find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format-22 --dry-run -Werror {} +
+      - echo "All C/H files are formatted correctly!"
+
+  cmake-format-check:
+    image: python:3.12-slim
+    commands:
+      - pip install -q 'cmakelang[YAML]'
+      - echo "Checking CMake files..."
+      - |
+        set -e
+        files="CMakeLists.txt"
+        if [ -d cmake ]; then
+          for f in cmake/*.cmake; do
+            [ -f "$f" ] && files="$files $f"
+          done
+        fi
+        # shellcheck disable=SC2086
+        cmake-format --check $files
+      - echo "All CMake files are formatted correctly!"
