@@ -1,8 +1,25 @@
 cmake_minimum_required(VERSION 3.20)
 project(miru VERSION 0.10.0 LANGUAGES C)
 
-set(CMAKE_C_STANDARD 11)
+# set(CMAKE_C_STANDARD 11)
+if("c_std_23" IN_LIST CMAKE_C_COMPILE_FEATURES)
+  set(CMAKE_C_STANDARD 23)
+  message(STATUS "C standard: C23 (compiler supports c_std_23)")
+elseif("c_std_11" IN_LIST CMAKE_C_COMPILE_FEATURES)
+  set(CMAKE_C_STANDARD 11)
+  message(STATUS "C standard: C11 (C23 not available; falling back)")
+else()
+  message(FATAL_ERROR 
+      "Compiler does not report C11 or C23 support "
+      "(CMAKE_C_COMPILER=${CMAKE_C_COMPILER}). Need at least C11")
+endif()
+
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+# ISO C11/C23 does not expose POSIX/BSD by default. Miru requires sigaction, timeval etc.
+add_compile_definitions(_DEFAULT_SOURCE)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # so clangd/your LSP can find flags and generated headers
 
 set(MIRU_VERSION "${PROJECT_VERSION}")
