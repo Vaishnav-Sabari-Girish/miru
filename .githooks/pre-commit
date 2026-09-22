@@ -1,6 +1,5 @@
 #!/bin/sh
 set -e
-
 # Ensure the script runs from the repository root
 cd "$(git rev-parse --show-toplevel)"
 
@@ -11,6 +10,19 @@ echo "Formatting C code..."
 find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
 find src -type f \( -name "*.c" -o -name "*.h" \) -exec git add {} +
 
+echo "Formatting CMake files..."
+# CMakeLists.txt at root + any cmake/*.cmake modules
+CMAKE_FILES="CMakeLists.txt"
+if [ -d cmake ]; then
+  for f in cmake/*.cmake; do
+    [ -f "$f" ] && CMAKE_FILES="$CMAKE_FILES $f"
+  done
+fi
+# shellcheck disable=SC2086
+cmake-format -i $CMAKE_FILES
+# shellcheck disable=SC2086
+git add $CMAKE_FILES
+
 echo "Fixing all markdown files..."
 find . -type d \( -name target -o -name .git \) -prune -o \
   -type f -name "*.md" \
@@ -18,7 +30,6 @@ find . -type d \( -name target -o -name .git \) -prune -o \
   ! -name "plan.md" \
   ! -name "next_thing.md" \
   -exec rumdl check --fix {} +
-
 find . -type d \( -name target -o -name .git \) -prune -o \
   -type f -name "*.md" \
   ! -name "CHANGELOG.md" \

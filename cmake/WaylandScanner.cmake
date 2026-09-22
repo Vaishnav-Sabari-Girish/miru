@@ -27,6 +27,12 @@ function(wayland_generate_protocol xml_path protocol_name)
     VERBATIM
   )
 
-  set(${protocol_name}_HEADER "${out_header}" PARENT_SCOPE)
-  set(${protocol_name}_SOURCE "${out_source}" PARENT_SCOPE)
+  set(${protocol_name}_HEADER
+      "${out_header}"
+      PARENT_SCOPE
+  )
+  set(${protocol_name}_SOURCE
+      "${out_source}"
+      PARENT_SCOPE
+  )
 endfunction()
