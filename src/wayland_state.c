@@ -93,7 +93,7 @@ static void handle_output_scale(void *data, struct wl_output *wl_output, int32_t
     (void)wl_output;
     struct miru_state *state = data;
     state->output_scale = factor;
-    fprintf(stderr, "output scale: %d\n", factor);
+    fprintf(stderr, "output scale (wl_output integer): %d\n", factor);
 }
 
 static void handle_output_done(void *data, struct wl_output *wl_output)

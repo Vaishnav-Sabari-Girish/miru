@@ -29,7 +29,7 @@ static void fractional_scale_preferred(void *data, struct wp_fractional_scale_v1
         ls->scale = s;
         ls->dirty = true;
         if (miru_debug_enabled())
-            fprintf(stderr, "fractional_scale: preferred=%.3f\n", ls->scale);
+            fprintf(stderr, "scale = %.3f (from fractional-scale, scale_120=%u)\n", ls->scale, scale_120);
     }
 }
 
@@ -60,10 +60,24 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     if (have_capture) {
         ls->buffer_width = (int)ls->capture->width;
         ls->buffer_height = (int)ls->capture->height;
+        if (ls->width > 0)
+            ls->scale = (float)ls->buffer_width / (float)ls->width;
     } else {
         float s = ls->scale >= 1.0f ? ls->scale : 1.0f;
         ls->buffer_width = (int)lroundf((float)ls->width * s);
         ls->buffer_height = (int)lroundf((float)ls->height * s);
+    }
+
+    if (miru_debug_enabled()) {
+        fprintf(
+            stderr,
+            "surface: logical=%dx%d buffer=%dx%d scale=%.3f\n",
+            ls->width,
+            ls->height,
+            ls->buffer_width,
+            ls->buffer_width,
+            ls->scale
+        );
     }
 
     if (!ls->configured) {
