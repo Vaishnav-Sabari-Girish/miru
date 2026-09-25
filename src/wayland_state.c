@@ -1,3 +1,5 @@
+#include "fractional-scale-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -91,7 +93,7 @@ static void handle_output_scale(void *data, struct wl_output *wl_output, int32_t
     (void)wl_output;
     struct miru_state *state = data;
     state->output_scale = factor;
-    fprintf(stderr, "output scale: %d\n", factor);
+    fprintf(stderr, "output scale (wl_output integer): %d\n", factor);
 }
 
 static void handle_output_done(void *data, struct wl_output *wl_output)
@@ -147,6 +149,11 @@ registry_global(void *data, struct wl_registry *registry, uint32_t name, const c
     } else if (strcmp(interface, wp_cursor_shape_manager_v1_interface.name) == 0) {
         state->cursor_shape_manager =
             wl_registry_bind(registry, name, &wp_cursor_shape_manager_v1_interface, WAYLAND_MIN(version, 1));
+    } else if (strcmp(interface, wp_viewporter_interface.name) == 0) {
+        state->viewporter = wl_registry_bind(registry, name, &wp_viewporter_interface, 1);
+    } else if (strcmp(interface, wp_fractional_scale_manager_v1_interface.name) == 0) {
+        state->fractional_scale_manager =
+            wl_registry_bind(registry, name, &wp_fractional_scale_manager_v1_interface, 1);
     }
 }
 

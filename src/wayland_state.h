@@ -5,6 +5,8 @@
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "wlr-screencopy-unstable-v1-client-protocol.h"
 #include "cursor-shape-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
+#include "fractional-scale-v1-client-protocol.h"
 
 struct miru_state {
     struct wl_display *display;
@@ -17,6 +19,8 @@ struct miru_state {
     struct zwlr_layer_shell_v1 *layer_shell;
     struct zwlr_screencopy_manager_v1 *screencopy_manager;
     struct wp_cursor_shape_manager_v1 *cursor_shape_manager;
+    struct wp_viewporter *viewporter;
+    struct wp_fractional_scale_manager_v1 *fractional_scale_manager;
 
     int output_scale;
     struct wl_pointer *pointer;

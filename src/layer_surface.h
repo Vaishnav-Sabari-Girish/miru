@@ -1,5 +1,7 @@
 #ifndef LAYER_SURFACE_H
 #define LAYER_SURFACE_H
+#include "fractional-scale-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
 #include <stddef.h>
 #include <stdbool.h>
 #include "wayland_state.h"
@@ -37,12 +39,15 @@ struct miru_layer_surface {
     struct wl_surface *surface;
     struct zwlr_layer_surface_v1 *layer_surface;
     struct wl_compositor *compositor;
+    struct wp_viewport *viewport;
+    struct wp_fractional_scale_v1 *fractional_scale;
     struct miru_egl egl;
     struct miru_gl_renderer gl;
 
     int width, height;
     int buffer_width, buffer_height;
     int output_scale;
+    float scale;
     bool configured;
     bool closed;
     const struct miru_capture *capture;

@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "egl_context.h"
 #include "gl_renderer.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
@@ -7,12 +8,34 @@
 #include <math.h>
 #include <wayland-client-protocol.h>
 #include "layer_surface.h"
+#include "viewporter-client-protocol.h"
+#include "fractional-scale-v1-client-protocol.h"
 
 #define SMOOTH_SPEED 12.0f
 #define ZOOM_EPSILON 0.01f
 #define CURSOR_EPSILON 0.5
 #define SPOTLIGHT_RADIUS_EPSILON 0.5f
 #define SPOTLIGHT_DIM_EPSILON 0.01f
+
+static void fractional_scale_preferred(void *data, struct wp_fractional_scale_v1 *fs, uint32_t scale_120)
+{
+    (void)fs;
+    struct miru_layer_surface *ls = data;
+    float s = (float)scale_120 / 120.0f;
+    if (s < 1.0f)
+        s = 1.0f;
+
+    if (fabsf(s - ls->scale) > 0.001f) {
+        ls->scale = s;
+        ls->dirty = true;
+        if (miru_debug_enabled())
+            fprintf(stderr, "scale = %.3f (from fractional-scale, scale_120=%u)\n", ls->scale, scale_120);
+    }
+}
+
+static const struct wp_fractional_scale_v1_listener fractional_scale_listener = {
+    .preferred_scale = fractional_scale_preferred,
+};
 
 static void
 handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial, uint32_t width, uint32_t height)
@@ -32,8 +55,30 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     uint32_t format = have_capture ? ls->capture->format : WL_SHM_FORMAT_ARGB8888;
     (void)format;
 
-    ls->buffer_width = have_capture ? (int)ls->capture->width : ls->width;
-    ls->buffer_height = have_capture ? (int)ls->capture->height : ls->height;
+    // ls->buffer_width = have_capture ? (int)ls->capture->width : ls->width;
+    // ls->buffer_height = have_capture ? (int)ls->capture->height : ls->height;
+    if (have_capture) {
+        ls->buffer_width = (int)ls->capture->width;
+        ls->buffer_height = (int)ls->capture->height;
+        if (ls->width > 0)
+            ls->scale = (float)ls->buffer_width / (float)ls->width;
+    } else {
+        float s = ls->scale >= 1.0f ? ls->scale : 1.0f;
+        ls->buffer_width = (int)lroundf((float)ls->width * s);
+        ls->buffer_height = (int)lroundf((float)ls->height * s);
+    }
+
+    if (miru_debug_enabled()) {
+        fprintf(
+            stderr,
+            "surface: logical=%dx%d buffer=%dx%d scale=%.3f\n",
+            ls->width,
+            ls->height,
+            ls->buffer_width,
+            ls->buffer_width,
+            ls->scale
+        );
+    }
 
     if (!ls->configured) {
         ls->zoom = ls->zoom_default;
@@ -51,7 +96,10 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
         }
     }
 
-    wl_surface_set_buffer_scale(ls->surface, ls->output_scale);
+    // wl_surface_set_buffer_scale(ls->surface, ls->output_scale);
+    wl_surface_set_buffer_scale(ls->surface, 1);
+    if (ls->viewport)
+        wp_viewport_set_destination(ls->viewport, ls->width, ls->height);
 
     if (!ls->egl.egl_window) {
         if (egl_create_surface(&ls->egl, ls->surface, ls->buffer_width, ls->buffer_height) != 0) {
@@ -115,6 +163,9 @@ int layer_surface_create(
 {
     ls->capture = capture;
     ls->output_scale = state->output_scale;
+    ls->scale = state->output_scale > 0 ? (float)state->output_scale : 1.0f;
+    ls->viewport = NULL;
+    ls->fractional_scale = NULL;
     ls->zoom_default = config->zoom_default;
     ls->zoom_max = config->zoom_max;
     ls->zoom_animation_speed = config->zoom_animation_speed > 0.f ? config->zoom_animation_speed : 14.0f;
@@ -166,6 +217,18 @@ int layer_surface_create(
     if (!ls->surface)
         return -1;
 
+    if (state->viewporter) {
+        ls->viewport = wp_viewporter_get_viewport(state->viewporter, ls->surface);
+    }
+
+    if (state->fractional_scale_manager) {
+        ls->fractional_scale =
+            wp_fractional_scale_manager_v1_get_fractional_scale(state->fractional_scale_manager, ls->surface);
+
+        if (ls->fractional_scale)
+            wp_fractional_scale_v1_add_listener(ls->fractional_scale, &fractional_scale_listener, ls);
+    }
+
     ls->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
         state->layer_shell, ls->surface, state->output, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "miru"
     );
@@ -209,6 +272,16 @@ void layer_surface_destroy(struct miru_layer_surface *ls)
 {
     gl_renderer_cleanup(&ls->gl);
     egl_cleanup(&ls->egl);
+    if (ls->fractional_scale) {
+        wp_fractional_scale_v1_destroy(ls->fractional_scale);
+        ls->fractional_scale = NULL;
+    }
+
+    if (ls->viewport) {
+        wp_viewport_destroy(ls->viewport);
+        ls->viewport = NULL;
+    }
+
     if (ls->layer_surface)
         zwlr_layer_surface_v1_destroy(ls->layer_surface);
     if (ls->surface)

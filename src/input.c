@@ -18,6 +18,24 @@
 #define RADIUS_MIN 10.0f
 #define RADIUS_MAX 2000.0f
 
+static double surface_to_buffer_x(const struct miru_layer_surface *ls, double sx)
+{
+    if (ls->width > 0 && ls->buffer_width > 0)
+        return sx * ((double)ls->buffer_width / (double)ls->width);
+
+    float s = ls->scale >= 1.0f ? ls->scale : 1.0f;
+    return sx * (double)s;
+}
+
+static double surface_to_buffer_y(const struct miru_layer_surface *ls, double sy)
+{
+    if (ls->height > 0 && ls->buffer_height > 0)
+        return sy * ((double)ls->buffer_height / (double)ls->height);
+
+    float s = ls->scale >= 1.0f ? ls->scale : 1.0f;
+    return sy * (double)s;
+}
+
 bool miru_debug_enabled(void)
 {
     static int cached = -1;
@@ -270,8 +288,8 @@ static void pointer_enter(
 
     apply_cursor_visibility(ctx);
 
-    ctx->ls->cursor_x = wl_fixed_to_double(x) * ctx->ls->output_scale;
-    ctx->ls->cursor_y = wl_fixed_to_double(y) * ctx->ls->output_scale;
+    ctx->ls->cursor_x = surface_to_buffer_x(ctx->ls, wl_fixed_to_double(x));
+    ctx->ls->cursor_y = surface_to_buffer_y(ctx->ls, wl_fixed_to_double(y));
 
     ctx->ls->display_cursor_x = ctx->ls->cursor_x;
     ctx->ls->display_cursor_y = ctx->ls->cursor_y;
@@ -315,8 +333,8 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
     if (!ctx->ls->configured)
         return;
 
-    double nx = wl_fixed_to_double(x) * ctx->ls->output_scale;
-    double ny = wl_fixed_to_double(y) * ctx->ls->output_scale;
+    double nx = surface_to_buffer_x(ctx->ls, wl_fixed_to_double(x));
+    double ny = surface_to_buffer_y(ctx->ls, wl_fixed_to_double(y));
 
     if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
         ctx->ls->cursor_x = nx;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(
   miru
-  VERSION 0.10.0
+  VERSION 0.11.0
   LANGUAGES C
 )
 
@@ -74,6 +74,16 @@ if(NOT EXISTS ${TABLET_XML})
   message(FATAL_ERROR "tablet-v2.xml not found under wayland-protocols")
 endif()
 
+set(VIEWPORTER_XML "${WAYLAND_PROTOCOLS_DIR}/stable/viewporter/viewporter.xml")
+if(NOT EXISTS ${VIEWPORTER_XML})
+  message(FATAL_ERROR "viewporter.xml not found at ${VIEWPORTER_XML}")
+endif()
+
+set(FRACTIONAL_SCALE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/fractional-scale/fractional-scale-v1.xml")
+if(NOT EXISTS ${FRACTIONAL_SCALE_XML})
+  message(FATAL_ERROR "fractional-scale-v1.xml not found at ${FRACTIONAL_SCALE_XML}")
+endif()
+
 # ext-image-copy-capture-v1 references ext_image_capture_source_v1, defined here
 set(EXT_CAPTURE_SOURCE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/ext-image-capture-source/ext-image-capture-source-v1.xml")
 if(NOT EXISTS ${EXT_CAPTURE_SOURCE_XML})
@@ -93,6 +103,8 @@ wayland_generate_protocol(${LAYER_SHELL_XML} wlr-layer-shell-unstable-v1)
 wayland_generate_protocol(${XDG_SHELL_XML} xdg-shell)
 wayland_generate_protocol(${CURSOR_SHAPE_XML} cursor-shape-v1)
 wayland_generate_protocol(${TABLET_XML} tablet-v2)
+wayland_generate_protocol(${VIEWPORTER_XML} viewporter)
+wayland_generate_protocol(${FRACTIONAL_SCALE_XML} fractional-scale-v1)
 wayland_generate_protocol(${EXT_CAPTURE_SOURCE_XML} ext-image-capture-source-v1)
 wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-v1)
 
@@ -127,6 +139,10 @@ add_executable(
   ${cursor-shape-v1_HEADER}
   ${tablet-v2_SOURCE}
   ${tablet-v2_HEADER}
+  ${viewporter_SOURCE}
+  ${viewporter_HEADER}
+  ${fractional-scale-v1_SOURCE}
+  ${fractional-scale-v1_HEADER}
 )
 
 add_executable(miructl ctl/miructl.c src/logo.c)
