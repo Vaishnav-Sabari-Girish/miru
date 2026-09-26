@@ -4,7 +4,6 @@ project(
   VERSION 0.11.0
   LANGUAGES C
 )
-
 # set(CMAKE_C_STANDARD 11)
 if("c_std_23" IN_LIST CMAKE_C_COMPILE_FEATURES)
   set(CMAKE_C_STANDARD 23)
@@ -17,79 +16,64 @@ else()
                       "(CMAKE_C_COMPILER=${CMAKE_C_COMPILER}). Need at least C11"
   )
 endif()
-
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
-
 # ISO C11/C23 does not expose POSIX/BSD by default. Miru requires sigaction, timeval etc.
 add_compile_definitions(_DEFAULT_SOURCE)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # so clangd/your LSP can find flags and generated headers
-
 set(MIRU_VERSION "${PROJECT_VERSION}")
 message(STATUS "miru version: ${MIRU_VERSION}")
-
 configure_file(${CMAKE_SOURCE_DIR}/src/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h @ONLY)
-
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
-
-# ask pkg-config where the system wayland-protocols xml files live
-pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
+# Prefer -DWAYLAND_PROTOCOLS_DIR=... (CI / custom trees); else pkg-config
+if(NOT WAYLAND_PROTOCOLS_DIR)
+  pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
+endif()
 if(NOT WAYLAND_PROTOCOLS_DIR)
   message(FATAL_ERROR "wayland-protocols not found, install with: pacman -S wayland-protocols")
 endif()
-
+message(STATUS "wayland-protocols dir: ${WAYLAND_PROTOCOLS_DIR}")
 include(cmake/WaylandScanner.cmake)
-
 # wlr-screencopy-unstable-v1 is vendored, Niri doesn't advertise ext-image-copy-capture-v1 yet
 set(SCREENCOPY_XML "${CMAKE_SOURCE_DIR}/protocol/wlr-screencopy-unstable-v1.xml")
 if(NOT EXISTS ${SCREENCOPY_XML})
   message(FATAL_ERROR "protocol/wlr-screencopy-unstable-v1.xml missing, see README for the fetch command")
 endif()
-
 # wlr-layer-shell-unstable-v1 is vendored ourselves, see protocol/ dir
 set(LAYER_SHELL_XML "${CMAKE_SOURCE_DIR}/protocol/wlr-layer-shell-unstable-v1.xml")
 if(NOT EXISTS ${LAYER_SHELL_XML})
   message(FATAL_ERROR "protocol/wlr-layer-shell-unstable-v1.xml missing, see README for the fetch command")
 endif()
-
 # layer-shell references xdg_popup, so xdg-shell has to be linked in too
 set(XDG_SHELL_XML "${WAYLAND_PROTOCOLS_DIR}/stable/xdg-shell/xdg-shell.xml")
 if(NOT EXISTS ${XDG_SHELL_XML})
   message(FATAL_ERROR "xdg-shell.xml not found at ${XDG_SHELL_XML}")
 endif()
-
 set(CURSOR_SHAPE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/cursor-shape/cursor-shape-v1.xml")
 if(NOT EXISTS ${CURSOR_SHAPE_XML})
   message(FATAL_ERROR "cursor-shape-v1.xml not found at ${CURSOR_SHAPE_XML}")
 endif()
-
 set(TABLET_XML "${WAYLAND_PROTOCOLS_DIR}/stable/tablet/tablet-v2.xml")
 if(NOT EXISTS ${TABLET_XML})
   set(TABLET_XML "${WAYLAND_PROTOCOLS_DIR}/unstable/tablet/tablet-unstable-v2.xml")
 endif()
-
 if(NOT EXISTS ${TABLET_XML})
   message(FATAL_ERROR "tablet-v2.xml not found under wayland-protocols")
 endif()
-
 set(VIEWPORTER_XML "${WAYLAND_PROTOCOLS_DIR}/stable/viewporter/viewporter.xml")
 if(NOT EXISTS ${VIEWPORTER_XML})
   message(FATAL_ERROR "viewporter.xml not found at ${VIEWPORTER_XML}")
 endif()
-
 set(FRACTIONAL_SCALE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/fractional-scale/fractional-scale-v1.xml")
 if(NOT EXISTS ${FRACTIONAL_SCALE_XML})
   message(FATAL_ERROR "fractional-scale-v1.xml not found at ${FRACTIONAL_SCALE_XML}")
 endif()
-
 # ext-image-copy-capture-v1 references ext_image_capture_source_v1, defined here
 set(EXT_CAPTURE_SOURCE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/ext-image-capture-source/ext-image-capture-source-v1.xml")
 if(NOT EXISTS ${EXT_CAPTURE_SOURCE_XML})
   message(FATAL_ERROR "ext-image-capture-source-v1.xml not found at ${EXT_CAPTURE_SOURCE_XML}")
 endif()
-
 # ext-image-capture-source-v1's toplevel variant references ext_foreign_toplevel_handle_v1, defined here
 set(EXT_FOREIGN_TOPLEVEL_XML
     "${WAYLAND_PROTOCOLS_DIR}/staging/ext-foreign-toplevel-list/ext-foreign-toplevel-list-v1.xml"
@@ -97,7 +81,6 @@ set(EXT_FOREIGN_TOPLEVEL_XML
 if(NOT EXISTS ${EXT_FOREIGN_TOPLEVEL_XML})
   message(FATAL_ERROR "ext-foreign-toplevel-list-v1.xml not found at ${EXT_FOREIGN_TOPLEVEL_XML}")
 endif()
-
 wayland_generate_protocol(${SCREENCOPY_XML} wlr-screencopy-unstable-v1)
 wayland_generate_protocol(${LAYER_SHELL_XML} wlr-layer-shell-unstable-v1)
 wayland_generate_protocol(${XDG_SHELL_XML} xdg-shell)
@@ -107,11 +90,9 @@ wayland_generate_protocol(${VIEWPORTER_XML} viewporter)
 wayland_generate_protocol(${FRACTIONAL_SCALE_XML} fractional-scale-v1)
 wayland_generate_protocol(${EXT_CAPTURE_SOURCE_XML} ext-image-capture-source-v1)
 wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-v1)
-
 pkg_check_modules(EGL REQUIRED egl)
 pkg_check_modules(GLESV2 REQUIRED glesv2)
 pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
-
 add_executable(
   miru-daemon
   src/main.c
@@ -144,9 +125,7 @@ add_executable(
   ${fractional-scale-v1_SOURCE}
   ${fractional-scale-v1_HEADER}
 )
-
 add_executable(miructl ctl/miructl.c src/logo.c)
-
 target_include_directories(
   miru-daemon
   PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS}
@@ -157,26 +136,19 @@ target_include_directories(
           ${CMAKE_SOURCE_DIR}/src
           ${CMAKE_BINARY_DIR}/generated
 )
-
 target_link_libraries(
   miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES} ${EGL_LIBRARIES} ${GLESV2_LIBRARIES} ${WAYLAND_EGL_LIBRARIES} m
 )
 target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
-
 include(GNUInstallDirs)
-
 install(TARGETS miru-daemon miructl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
 set(MAN_PAGES "${CMAKE_SOURCE_DIR}/miru-daemon.1" "${CMAKE_SOURCE_DIR}/miructl.1")
-
 foreach(MAN_PAGE ${MAN_PAGES})
   if(EXISTS "${MAN_PAGE}")
     get_filename_component(MAN_NAME ${MAN_PAGE} NAME)
     get_filename_component(MAN_EXT ${MAN_PAGE} EXT)
     string(SUBSTRING "${MAN_EXT}" 1 -1 SECTION_NUM)
-
     install(FILES "${MAN_PAGE}" DESTINATION "${CMAKE_INSTALL_MANDIR}/man${SECTION_NUM}")
-
   else()
     message(WARNING "Pre-compiled man page not found ${MAN_PAGE}")
   endif()

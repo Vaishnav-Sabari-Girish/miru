@@ -12,6 +12,7 @@ steps:
           build-essential
           cmake
           pkg-config
+          git
           libwayland-dev
           wayland-protocols
           libegl-dev
@@ -21,17 +22,28 @@ steps:
           gnupg
           lsb-release
           software-properties-common
+      - |
+        set -e
+        git clone --depth 1 --branch 1.41 \
+          https://gitlab.freedesktop.org/wayland/wayland-protocols.git \
+          /opt/wayland-protocols
+        test -f /opt/wayland-protocols/staging/cursor-shape/cursor-shape-v1.xml
+        test -f /opt/wayland-protocols/staging/fractional-scale/fractional-scale-v1.xml
       - wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh
       - chmod +x /tmp/llvm.sh
       - /tmp/llvm.sh 22
       - apt-get install -y -qq clang-tidy-22
       - echo "Configuring build (compile_commands.json)..."
-      - cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - cmake -S . -B build -G "Unix Makefiles"
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          -DWAYLAND_PROTOCOLS_DIR=/opt/wayland-protocols
+      # Generate protocol headers + compile so tidy can parse TUs
+      - echo "Building (generates protocol/*.h)..."
+      - cmake --build build -j"$(nproc)"
       - echo "Running clang-tidy on src/..."
       - |
         set -e
         files=$(find src -type f -name '*.c' | sort)
-        # Fail the step on any clang-tidy warning
         # shellcheck disable=SC2086
         clang-tidy-22 -p build --quiet --warnings-as-errors='*' $files
       - echo "clang-tidy passed!"
