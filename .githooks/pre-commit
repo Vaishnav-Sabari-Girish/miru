@@ -11,7 +11,6 @@ find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
 find src -type f \( -name "*.c" -o -name "*.h" \) -exec git add {} +
 
 echo "Formatting CMake files..."
-# CMakeLists.txt at root + any cmake/*.cmake modules
 CMAKE_FILES="CMakeLists.txt"
 if [ -d cmake ]; then
   for f in cmake/*.cmake; do
@@ -22,6 +21,15 @@ fi
 cmake-format -i $CMAKE_FILES
 # shellcheck disable=SC2086
 git add $CMAKE_FILES
+
+echo "Running clang-tidy..."
+if [ ! -f build/compile_commands.json ]; then
+  echo "error: build/compile_commands.json missing."
+  echo "Run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+  exit 1
+fi
+# shellcheck disable=SC2046
+clang-tidy -p build --quiet $(find src -type f -name '*.c' | sort)
 
 echo "Fixing all markdown files..."
 find . -type d \( -name target -o -name .git \) -prune -o \

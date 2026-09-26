@@ -1,0 +1,37 @@
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+
+steps:
+  clang-tidy:
+    image: debian:bookworm-slim
+    commands:
+      - apt-get update -qq
+      - apt-get install -y -qq
+          build-essential
+          cmake
+          pkg-config
+          libwayland-dev
+          wayland-protocols
+          libegl-dev
+          libgles-dev
+          libwayland-egl1
+          wget
+          gnupg
+          lsb-release
+          software-properties-common
+      - wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh
+      - chmod +x /tmp/llvm.sh
+      - /tmp/llvm.sh 22
+      - apt-get install -y -qq clang-tidy-22
+      - echo "Configuring build (compile_commands.json)..."
+      - cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - echo "Running clang-tidy on src/..."
+      - |
+        set -e
+        files=$(find src -type f -name '*.c' | sort)
+        # Fail the step on any clang-tidy warning
+        # shellcheck disable=SC2086
+        clang-tidy-22 -p build --quiet --warnings-as-errors='*' $files
+      - echo "clang-tidy passed!"
