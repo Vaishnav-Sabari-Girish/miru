@@ -764,14 +764,19 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
             ctx->ls->cursor_y = ctx->ls->display_cursor_y;
         }
 
-        if (miru_debug_enabled()) {
-            fprintf(
-                stderr,
-                "annotate mode: %s (tools = %s)\n",
-                ctx->ls->annotations.mode ? "ON" : "OFF",
-                ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
-            );
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(
+        //         stderr,
+        //         "annotate mode: %s (tools = %s)\n",
+        //         ctx->ls->annotations.mode ? "ON" : "OFF",
+        //         ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
+        //     );
+        // }
+        MIRU_DBG(
+            "annotate mode: %s (tools = %s)",
+            ctx->ls->annotations.mode ? "ON" : "OFF",
+            ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
+        );
 
         ctx->ls->dirty = true;
         return;
@@ -781,8 +786,9 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         if (ctx->ls && ctx->ls->configured && ctx->request_refresh)
             *ctx->request_refresh = 1;
 
-        if (miru_debug_enabled())
-            fprintf(stderr, "refresh: requested\n");
+        // if (miru_debug_enabled())
+        //     fprintf(stderr, "refresh: requested\n");
+        MIRU_DBG("refresh: requested");
 
         return;
     }
@@ -790,24 +796,27 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (key == KEY_R && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_RECT;
 
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "annotate tool: rect\n");
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "annotate tool: rect\n");
+        // }
+        MIRU_DBG("annotate tool: rect");
         return;
     }
 
     if (key == KEY_W) {
         ctx->ls->annotations.tool = MIRU_ANN_ARROW;
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "annotate tool: arrow\n");
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "annotate tool: arrow\n");
+        // }
+        MIRU_DBG("annotate tool: arrow");
         return;
     }
 
     if (key == KEY_C && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         input_set_show_cursor(ctx, !ctx->show_cursor);
-        if (miru_debug_enabled())
-            fprintf(stderr, "cursor: %s\n", ctx->show_cursor ? "shown" : "hidden");
+        // if (miru_debug_enabled())
+        //     fprintf(stderr, "cursor: %s\n", ctx->show_cursor ? "shown" : "hidden");
+        MIRU_DBG("cursor: %s", ctx->show_cursor ? "shown" : "hidden");
 
         return;
     }
@@ -821,8 +830,9 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if ((key == KEY_H && ctx->shift_held) || (key == KEY_SLASH && ctx->shift_held)) {
         ctx->ls->help_visible = !ctx->ls->help_visible;
         ctx->ls->dirty = true;
-        if (miru_debug_enabled())
-            fprintf(stderr, "help: %s\n", ctx->ls->help_visible ? "ON" : "OFF");
+        // if (miru_debug_enabled())
+        //     fprintf(stderr, "help: %s\n", ctx->ls->help_visible ? "ON" : "OFF");
+        MIRU_DBG("help: %s", ctx->ls->help_visible ? "ON" : "OFF");
         return;
     }
 
