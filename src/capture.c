@@ -6,6 +6,7 @@
 #include "shm_buffer.h"
 #include "wlr-screencopy-unstable-v1-client-protocol.h"
 #include <wayland-client-protocol.h>
+#include "debug.h"
 
 #define DRM_FORMAT_ARGB8888 0x34325241u // AR24
 #define DRM_FORMAT_XRGB8888 0x34325258u // XR24
@@ -81,14 +82,6 @@ static void handle_buffer(
 {
     struct capture_ctx *ctx = data;
 
-    // only handling 4-bytes-per-pixel formats for now, everything else needs
-    // different pixel math downstream that doesn't exist yet
-    // if (format != WL_SHM_FORMAT_ARGB8888 && format != WL_SHM_FORMAT_XRGB8888) {
-    //     fprintf(stderr, "capture: unsupported pixel format %u, only ARGB8888/XRGB8888 handled\n", format);
-    //     ctx->done = 1;
-    //     ctx->ok = 0;
-    //     return;
-    // }
     switch (format) {
     case WL_SHM_FORMAT_ARGB8888:
     case WL_SHM_FORMAT_XRGB8888:
@@ -97,14 +90,13 @@ static void handle_buffer(
     case DRM_FORMAT_ARGB8888:
     case DRM_FORMAT_XRGB8888:
         break;
-        // case DRM_FORMAT_ABGR8888:
-        // case DRM_FORMAT_XBGR8888:
     case DRM_FORMAT_BGR888:
         ctx->needs_conversion = true;
         break;
 
     default:
-        fprintf(stderr, "capture: unsupported pixel format %u (%s)\n", format, shm_format_name(format));
+        // fprintf(stderr, "capture: unsupported pixel format %u (%s)\n", format, shm_format_name(format));
+        MIRU_LOG("capture: unsupported pixel format %u (%s)", format, shm_format_name(format));
         ctx->done = true;
         ctx->ok = false;
         return;
@@ -118,7 +110,8 @@ static void handle_buffer(
         );
 
         if (!ctx->raw_buffer) {
-            fprintf(stderr, "capture: failed to allocate raw 24bpp buffer for frame\n");
+            // fprintf(stderr, "capture: failed to allocate raw 24bpp buffer for frame\n");
+            MIRU_LOG("capture: failed to allocate raw 24bpp buffer for frame");
             ctx->done = true;
             ctx->ok = false;
             return;
@@ -148,7 +141,8 @@ static void handle_buffer(
     ctx->out->buffer =
         shm_buffer_create_stride(ctx->state->shm, (int)width, (int)height, (int)stride, format, &pixels, &size);
     if (!ctx->out->buffer) {
-        fprintf(stderr, "capture: failed to allocate shm buffer for frame\n");
+        // fprintf(stderr, "capture: failed to allocate shm buffer for frame\n");
+        MIRU_LOG("capture: failed to allocate shm buffer for frame");
         ctx->done = true;
         ctx->ok = false;
         return;
@@ -190,7 +184,8 @@ static void handle_ready(
         );
 
         if (!conv_buffer) {
-            fprintf(stderr, "capture: failed to allocate conversion buffer\n");
+            // fprintf(stderr, "capture: failed to allocate conversion buffer\n");
+            MIRU_LOG("capture: failed to allocate conversion buffer");
             free_raw(ctx);
             ctx->done = true;
             ctx->ok = false;
@@ -229,7 +224,8 @@ static void handle_failed(void *data, struct zwlr_screencopy_frame_v1 *frame)
 {
     (void)frame;
     struct capture_ctx *ctx = data;
-    fprintf(stderr, "capture: compositor reported capture failed\n");
+    // fprintf(stderr, "capture: compositor reported capture failed\n");
+    MIRU_LOG("capture: compositor reported capture failed");
     free_raw(ctx);
     ctx->done = true;
     ctx->ok = false;
@@ -252,7 +248,8 @@ int capture_output_frame(
     memset(out, 0, sizeof(*out)); // safe for callers to pass an uninitialized struct
 
     if (!output) {
-        fprintf(stderr, "capture: no output bound, compositor may be headless or output binding failed\n");
+        // fprintf(stderr, "capture: no output bound, compositor may be headless or output binding failed\n");
+        MIRU_LOG("capture: no output bound, compositor may be headless or output binding failed");
         return -1;
     }
 
@@ -261,7 +258,8 @@ int capture_output_frame(
     struct zwlr_screencopy_frame_v1 *frame =
         zwlr_screencopy_manager_v1_capture_output(state->screencopy_manager, 0, output);
     if (!frame) {
-        fprintf(stderr, "capture: failed to create screencopy frame\n");
+        // fprintf(stderr, "capture: failed to create screencopy frame\n");
+        MIRU_LOG("capture: failed to create screencopy frame");
         return -1;
     }
 
@@ -269,7 +267,8 @@ int capture_output_frame(
 
     while (!ctx.done) {
         if (cancel && *cancel) {
-            fprintf(stderr, "capture: cancelled before frame was ready\n");
+            // fprintf(stderr, "capture: cancelled before frame was ready\n");
+            MIRU_LOG("capture: cancelled before frame was ready");
             free_raw(&ctx);
             zwlr_screencopy_frame_v1_destroy(frame);
             return -1;
@@ -278,7 +277,8 @@ int capture_output_frame(
             if (errno == EINTR) {
                 continue; // loop back, cancel gets rechecked above next iteration
             }
-            fprintf(stderr, "capture: display dispatch failed while waiting for frame\n");
+            // fprintf(stderr, "capture: display dispatch failed while waiting for frame\n");
+            MIRU_LOG("capture: display dispatch failed while waiting for frame");
             free_raw(&ctx);
             zwlr_screencopy_frame_v1_destroy(frame);
             return -1;
