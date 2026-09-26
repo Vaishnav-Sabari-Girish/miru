@@ -5,6 +5,7 @@
 #include <wayland-egl-core.h>
 #include <wayland-util.h>
 #include "egl_context.h"
+#include "debug.h"
 
 int egl_init(struct miru_egl *egl, struct wl_display *wl_display)
 {
@@ -12,20 +13,24 @@ int egl_init(struct miru_egl *egl, struct wl_display *wl_display)
 
     egl->display = eglGetDisplay((EGLNativeDisplayType)wl_display);
     if (egl->display == EGL_NO_DISPLAY) {
-        fprintf(stderr, "egl: eglGetDisplay failed\n");
+        // fprintf(stderr, "egl: eglGetDisplay failed\n");
+        MIRU_LOG("egl: eglGetDisplay failed");
         return -1;
     }
 
     EGLint major, minor;
     if (!eglInitialize(egl->display, &major, &minor)) {
-        fprintf(stderr, "egl: eglInitialize failed\n");
+        // fprintf(stderr, "egl: eglInitialize failed\n");
+        MIRU_LOG("egl: eglInitialize failed");
         return -1;
     }
 
-    fprintf(stderr, "egl: Initialized , version %d.%d\n", major, minor);
+    // fprintf(stderr, "egl: Initialized , version %d.%d\n", major, minor);
+    MIRU_LOG("egl: Initialized , version %d.%d", major, minor);
 
     if (!eglBindAPI(EGL_OPENGL_ES_API)) {
-        fprintf(stderr, "egl: eglBindAPI failed\n");
+        // fprintf(stderr, "egl: eglBindAPI failed\n");
+        MIRU_LOG("egl: eglBindAPI failed");
         return -1;
     }
 
@@ -47,14 +52,16 @@ int egl_init(struct miru_egl *egl, struct wl_display *wl_display)
 
     EGLint num_configs = 0;
     if (!eglChooseConfig(egl->display, config_attribs, &egl->config, 1, &num_configs) || num_configs < 1) {
-        fprintf(stderr, "egl: eglChooseConfig failed, no matching config\n");
+        // fprintf(stderr, "egl: eglChooseConfig failed, no matching config\n");
+        MIRU_LOG("egl: eglChooseConfig failed, no matching config");
         return -1;
     }
 
     EGLint context_attribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
     egl->context = eglCreateContext(egl->display, egl->config, EGL_NO_CONTEXT, context_attribs);
     if (egl->context == EGL_NO_CONTEXT) {
-        fprintf(stderr, "egl: eglCreateContext failed\n");
+        // fprintf(stderr, "egl: eglCreateContext failed\n");
+        MIRU_LOG("egl: eglCreateContext failed");
         return -1;
     }
 
@@ -65,20 +72,23 @@ int egl_create_surface(struct miru_egl *egl, struct wl_surface *wl_surface, int 
 {
     egl->egl_window = wl_egl_window_create(wl_surface, width, height);
     if (!egl->egl_window) {
-        fprintf(stderr, "egl: wl_egl_window_create failed\n");
+        // fprintf(stderr, "egl: wl_egl_window_create failed\n");
+        MIRU_LOG("egl: wl_egl_window_create failed");
         return -1;
     }
 
     egl->surface = eglCreateWindowSurface(egl->display, egl->config, (EGLNativeWindowType)egl->egl_window, NULL);
     if (egl->surface == EGL_NO_SURFACE) {
-        fprintf(stderr, "egl: eglCreateWindowSurface failed\n");
+        // fprintf(stderr, "egl: eglCreateWindowSurface failed\n");
+        MIRU_LOG("egl: eglCreateWindowSurface failed");
         wl_egl_window_destroy(egl->egl_window);
         egl->egl_window = NULL;
         return -1;
     }
 
     if (!eglMakeCurrent(egl->display, egl->surface, egl->surface, egl->context)) {
-        fprintf(stderr, "egl: eglMakeCurrent failed\n");
+        // fprintf(stderr, "egl: eglMakeCurrent failed\n");
+        MIRU_LOG("egl: eglMakeCurrent failed");
         return -1;
     }
 
