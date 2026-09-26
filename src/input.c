@@ -1,13 +1,11 @@
 #include "annotations.h"
+#include "debug.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <unistd.h>
 #include <time.h>
 #include <linux/input-event-codes.h>
 #include "input.h"
-#include "debug.h"
 #include "layer_surface.h"
 #include <wayland-client-protocol.h>
 
@@ -36,17 +34,6 @@ static double surface_to_buffer_y(const struct miru_layer_surface *ls, double sy
     return sy * (double)s;
 }
 
-bool miru_debug_enabled(void)
-{
-    static int cached = -1;
-    if (cached == -1) {
-        const char *v = getenv("MIRU_DEBUG");
-        cached = (v && *v && strcmp(v, "0") != 0) ? 1 : 0;
-    }
-
-    return cached != 0;
-}
-
 static void clamp_radius(struct miru_layer_surface *ls)
 {
     if (ls->spotlight_radius < RADIUS_MIN)
@@ -73,8 +60,9 @@ static void apply_cursor_visibility(struct miru_input_ctx *ctx)
         return;
     }
 
-    if (miru_debug_enabled())
-        fprintf(stderr, "cursor: show required but wp_cursor_shape_manager_v1 missing\n");
+    // if (miru_debug_enabled())
+    //     fprintf(stderr, "cursor: show required but wp_cursor_shape_manager_v1 missing\n");
+    MIRU_DBG("cursor: show required but wp_cursor_shape_manager_v1 missing");
 }
 
 static void adjust_spotlight_radius(struct miru_layer_surface *ls, float delta)
@@ -82,9 +70,10 @@ static void adjust_spotlight_radius(struct miru_layer_surface *ls, float delta)
     ls->spotlight_radius += delta;
     clamp_radius(ls);
 
-    if (miru_debug_enabled()) {
-        fprintf(stderr, "spotlight radius -> %.1f\n", ls->spotlight_radius);
-    }
+    // if (miru_debug_enabled()) {
+    //     fprintf(stderr, "spotlight radius -> %.1f\n", ls->spotlight_radius);
+    // }
+    MIRU_DBG("spotlight radius -> %.1f", ls->spotlight_radius);
 
     ls->dirty = true;
 }
@@ -99,9 +88,10 @@ static void clamp_zoom(struct miru_layer_surface *ls)
     if (ls->zoom < ZOOM_MIN)
         ls->zoom = ZOOM_MIN;
     if (ls->zoom > ls->zoom_max) {
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "clamp_zoom: clamping %.3f down to zoom_max = %.3f\n", ls->zoom, ls->zoom_max);
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "clamp_zoom: clamping %.3f down to zoom_max = %.3f\n", ls->zoom, ls->zoom_max);
+        // }
+        MIRU_DBG("clamp_zoom: clamping %.3f down to zoom_max = %.3f\n", ls->zoom, ls->zoom_max);
         ls->zoom = ls->zoom_max;
     }
 }
@@ -207,9 +197,10 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
             ann->text_buf[0] = '\0';
             ann->dragging = false;
             ctx->ls->dirty = true;
-            if (miru_debug_enabled()) {
-                fprintf(stderr, "annotate text: place at (%.0f, %.0f)\n", ann->text_x, ann->text_y);
-            }
+            // if (miru_debug_enabled()) {
+            //     fprintf(stderr, "annotate text: place at (%.0f, %.0f)\n", ann->text_x, ann->text_y);
+            // }
+            MIRU_DBG("annotate text: place at (%.0f, %.0f)", ann->text_x, ann->text_y);
             return;
         }
 
@@ -218,17 +209,19 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
         ann->drag_y0 = ann->drag_y1 = ann->hover_y;
         ctx->ls->dirty = true;
 
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "annotate drag start (%0.f, %0.f)\n", ann->drag_x0, ann->drag_y0);
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "annotate drag start (%0.f, %0.f)\n", ann->drag_x0, ann->drag_y0);
+        // }
+        MIRU_DBG("annotate drag start (%0.f, %0.f)", ann->drag_x0, ann->drag_y0);
 
     } else if (state == WL_POINTER_BUTTON_STATE_RELEASED && ann->dragging) {
         ann->dragging = false;
         annotation_add(ann, ann->tool, ann->drag_x0, ann->drag_y0, ann->drag_x1, ann->drag_y1);
         ctx->ls->dirty = true;
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "annotate commit tool = %d count = %d\n", ann->tool, ann->count);
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "annotate commit tool = %d count = %d\n", ann->tool, ann->count);
+        // }
+        MIRU_DBG("annotate commit tool = %d count = %d", ann->tool, ann->count);
     }
 }
 
@@ -424,11 +417,12 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
         return;
     }
 
-    if (miru_debug_enabled()) {
-        fprintf(
-            stderr, "pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f\n", v, ctx->zoom_increment, ctx->ls->zoom
-        );
-    }
+    // if (miru_debug_enabled()) {
+    //     fprintf(
+    //         stderr, "pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f\n", v, ctx->zoom_increment, ctx->ls->zoom
+    //     );
+    // }
+    MIRU_DBG("pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f", v, ctx->zoom_increment, ctx->ls->zoom);
 
     {
         float impulse = 6.0f * ctx->zoom_increment;
@@ -438,9 +432,10 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
             layer_surface_add_zoom_impulse(ctx->ls, impulse);
     }
 
-    if (miru_debug_enabled()) {
-        fprintf(stderr, "pointer_axis: zoom = %.3f, velocity = %.3f\n", ctx->ls->zoom, ctx->ls->zoom_velocity);
-    }
+    // if (miru_debug_enabled()) {
+    //     fprintf(stderr, "pointer_axis: zoom = %.3f, velocity = %.3f\n", ctx->ls->zoom, ctx->ls->zoom_velocity);
+    // }
+    MIRU_DBG("pointer_axis: zoom = %.3f, velocity = %.3f\n", ctx->ls->zoom, ctx->ls->zoom_velocity);
 }
 
 static const struct wl_pointer_listener pointer_listener = {
@@ -527,16 +522,23 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
 
 static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
 {
-    if (miru_debug_enabled()) {
-        fprintf(
-            stderr,
-            "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f\n",
-            key,
-            ctx->zoom_increment,
-            ctx->ls->zoom,
-            ctx->ls->zoom_max
-        );
-    }
+    // if (miru_debug_enabled()) {
+    //     fprintf(
+    //         stderr,
+    //         "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f\n",
+    //         key,
+    //         ctx->zoom_increment,
+    //         ctx->ls->zoom,
+    //         ctx->ls->zoom_max
+    //     );
+    // }
+    MIRU_DBG(
+        "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f",
+        key,
+        ctx->zoom_increment,
+        ctx->ls->zoom,
+        ctx->ls->zoom_max
+    );
 
     if (key == KEY_EQUAL || key == KEY_KPPLUS) {
         if (ctx->ctrl_held) {
@@ -570,9 +572,10 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
         return 0;
     }
 
-    if (miru_debug_enabled()) {
-        fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
-    }
+    // if (miru_debug_enabled()) {
+    //     fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
+    // }
+    MIRU_DBG("handle_key_action: zoom_after=%.3f", ctx->ls->zoom);
 
     ctx->ls->dirty = true;
     return 1;
@@ -704,9 +707,10 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
             ann->text_len = 0;
             ann->text_buf[0] = '\0';
             ctx->ls->dirty = true;
-            if (miru_debug_enabled()) {
-                fprintf(stderr, "annotate text: commit count = %d\n", ann->count);
-            }
+            // if (miru_debug_enabled()) {
+            //     fprintf(stderr, "annotate text: commit count = %d\n", ann->count);
+            // }
+            MIRU_DBG("annotate text: commit count = %d", ann->count);
             return;
         }
         if (key == KEY_ESC) {
@@ -739,9 +743,10 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (key == KEY_T && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_TEXT;
         ctx->ls->annotations.dragging = false;
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "annotate tool: text\n");
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "annotate tool: text\n");
+        // }
+        MIRU_DBG("annotate tool: text");
 
         return;
     }
@@ -759,14 +764,19 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
             ctx->ls->cursor_y = ctx->ls->display_cursor_y;
         }
 
-        if (miru_debug_enabled()) {
-            fprintf(
-                stderr,
-                "annotate mode: %s (tools = %s)\n",
-                ctx->ls->annotations.mode ? "ON" : "OFF",
-                ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
-            );
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(
+        //         stderr,
+        //         "annotate mode: %s (tools = %s)\n",
+        //         ctx->ls->annotations.mode ? "ON" : "OFF",
+        //         ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
+        //     );
+        // }
+        MIRU_DBG(
+            "annotate mode: %s (tools = %s)",
+            ctx->ls->annotations.mode ? "ON" : "OFF",
+            ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
+        );
 
         ctx->ls->dirty = true;
         return;
@@ -776,8 +786,9 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         if (ctx->ls && ctx->ls->configured && ctx->request_refresh)
             *ctx->request_refresh = 1;
 
-        if (miru_debug_enabled())
-            fprintf(stderr, "refresh: requested\n");
+        // if (miru_debug_enabled())
+        //     fprintf(stderr, "refresh: requested\n");
+        MIRU_DBG("refresh: requested");
 
         return;
     }
@@ -785,24 +796,27 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (key == KEY_R && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_RECT;
 
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "annotate tool: rect\n");
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "annotate tool: rect\n");
+        // }
+        MIRU_DBG("annotate tool: rect");
         return;
     }
 
     if (key == KEY_W) {
         ctx->ls->annotations.tool = MIRU_ANN_ARROW;
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "annotate tool: arrow\n");
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "annotate tool: arrow\n");
+        // }
+        MIRU_DBG("annotate tool: arrow");
         return;
     }
 
     if (key == KEY_C && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         input_set_show_cursor(ctx, !ctx->show_cursor);
-        if (miru_debug_enabled())
-            fprintf(stderr, "cursor: %s\n", ctx->show_cursor ? "shown" : "hidden");
+        // if (miru_debug_enabled())
+        //     fprintf(stderr, "cursor: %s\n", ctx->show_cursor ? "shown" : "hidden");
+        MIRU_DBG("cursor: %s", ctx->show_cursor ? "shown" : "hidden");
 
         return;
     }
@@ -816,8 +830,9 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if ((key == KEY_H && ctx->shift_held) || (key == KEY_SLASH && ctx->shift_held)) {
         ctx->ls->help_visible = !ctx->ls->help_visible;
         ctx->ls->dirty = true;
-        if (miru_debug_enabled())
-            fprintf(stderr, "help: %s\n", ctx->ls->help_visible ? "ON" : "OFF");
+        // if (miru_debug_enabled())
+        //     fprintf(stderr, "help: %s\n", ctx->ls->help_visible ? "ON" : "OFF");
+        MIRU_DBG("help: %s", ctx->ls->help_visible ? "ON" : "OFF");
         return;
     }
 

@@ -5,6 +5,7 @@
 #include <sys/inotify.h>
 #include "config_watch.h"
 #include "config.h"
+#include "debug.h"
 
 int config_watch_init(struct miru_config_watch *watch)
 {
@@ -14,7 +15,8 @@ int config_watch_init(struct miru_config_watch *watch)
     if (config_get_watch_paths(
             watch->config_dir, sizeof(watch->config_dir), watch->config_filename, sizeof(watch->config_filename)
         ) != 0) {
-        fprintf(stderr, "config_watch: unable to determine config directory, hot-reload disabled\n");
+        // fprintf(stderr, "config_watch: unable to determine config directory, hot-reload disabled\n");
+        MIRU_LOG("config_watch: unable to determine config directory, hot-reload disabled");
         return -1;
     }
 
@@ -29,16 +31,18 @@ int config_watch_init(struct miru_config_watch *watch)
     watch->watch_wd = inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO);
 
     if (watch->watch_wd < 0) {
-        fprintf(
-            stderr, "config_watch: unable to watch %s, hot-reload disabled: %s\n", watch->config_dir, strerror(errno)
-        );
+        // fprintf(
+        //     stderr, "config_watch: unable to watch %s, hot-reload disabled: %s\n", watch->config_dir, strerror(errno)
+        // );
+        MIRU_LOG("config_watch: unable to watch %s, hot-reload disabled: %s", watch->config_dir, strerror(errno));
 
         close(watch->inotify_fd);
         watch->inotify_fd = -1;
         return -1;
     }
 
-    fprintf(stderr, "config_watch: watching %s for changes to %s\n", watch->config_dir, watch->config_filename);
+    // fprintf(stderr, "config_watch: watching %s for changes to %s\n", watch->config_dir, watch->config_filename);
+    MIRU_LOG("config_watch: watching %s for changes to %s", watch->config_dir, watch->config_filename);
     return 0;
 }
 
@@ -59,7 +63,8 @@ int config_watch_check(struct miru_config_watch *watch)
     if (watch->watch_wd < 0) {
         watch->watch_wd = inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO);
         if (watch->watch_wd >= 0) {
-            fprintf(stderr, "config_watch: re-established watch on %s\n", watch->config_dir);
+            // fprintf(stderr, "config_watch: re-established watch on %s\n", watch->config_dir);
+            MIRU_LOG("config_watch: re-established watch on %s", watch->config_dir);
             changed = 1;
         } else {
             return 0;
@@ -87,7 +92,8 @@ int config_watch_check(struct miru_config_watch *watch)
             if (ev->mask & IN_Q_OVERFLOW) {
                 // event queue overflow
                 // some events were dropped
-                fprintf(stderr, "config_watch: event queue overflow, reloading defensively\n");
+                // fprintf(stderr, "config_watch: event queue overflow, reloading defensively\n");
+                MIRU_LOG("config_watch: event queue overflow, reloading defensively");
                 changed = 1;
                 offset += (ssize_t)sizeof(struct inotify_event) + ev->len;
                 continue;
@@ -95,11 +101,13 @@ int config_watch_check(struct miru_config_watch *watch)
 
             if (ev->mask & IN_IGNORED) {
                 // config dir was removed or moved
-                fprintf(stderr, "config_watch: watch invalidated, attempting to re-add\n");
+                // fprintf(stderr, "config_watch: watch invalidated, attempting to re-add\n");
+                MIRU_LOG("config_watch: watch invalidated, attempting to re-add");
                 watch->watch_wd = inotify_add_watch(watch->inotify_fd, watch->config_dir, IN_CLOSE_WRITE | IN_MOVED_TO);
 
                 if (watch->watch_wd < 0) {
-                    fprintf(stderr, "config_watch: re-add failed (%s), will retry periodically\n", strerror(errno));
+                    // fprintf(stderr, "config_watch: re-add failed (%s), will retry periodically\n", strerror(errno));
+                    MIRU_LOG("config_watch: re-add failed (%s), will retry periodically", strerror(errno));
                 } else {
                     changed = 1;
                 }

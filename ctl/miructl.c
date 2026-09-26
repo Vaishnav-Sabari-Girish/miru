@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include "../src/logo.h"
+#include "../src/debug.h"
 
 void print_help()
 {
@@ -34,7 +35,8 @@ int main(int argc, char *argv[])
     }
 
     if (argc != 2) {
-        fprintf(stderr, "usage: %s <toggle|loupe|quit>\n", argv[0]);
+        // fprintf(stderr, "usage: %s <toggle|loupe|quit>\n", argv[0]);
+        MIRU_LOG("usage: %s <toggle|loupe|quit>", argv[0]);
         return 1;
     }
 
@@ -46,13 +48,15 @@ int main(int argc, char *argv[])
     char socket_path[256];
     int n = snprintf(socket_path, sizeof(socket_path), "%s/miru.sock", runtime_dir);
     if (n < 0 || (size_t)n >= sizeof(socket_path)) {
-        fprintf(stderr, "socket path is too long\n");
+        // fprintf(stderr, "socket path is too long\n");
+        MIRU_LOG("socket path is too long");
         return 1;
     }
 
     struct sockaddr_un addr_size_check;
     if ((size_t)n >= sizeof(addr_size_check.sun_path)) {
-        fprintf(stderr, "miructl: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path));
+        // fprintf(stderr, "miructl: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path));
+        MIRU_LOG("miructl: socket path exceeds sun_path limit (%zu bytes)", sizeof(addr_size_check.sun_path));
         return 1;
     }
 
@@ -68,7 +72,8 @@ int main(int argc, char *argv[])
 
     if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         perror("connect");
-        fprintf(stderr, "is miru-daemon running?\n");
+        // fprintf(stderr, "is miru-daemon running?\n");
+        MIRU_LOG("is miru-daemon running?");
         close(fd);
         return 1;
     }

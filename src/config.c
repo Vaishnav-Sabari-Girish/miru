@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "config.h"
 #include "toml.h"
+#include "debug.h"
 
 // mkdir -p equivalent: mkdir() only ever creates the final path component,
 // so a fresh install where ~/.config itself doesn't exist yet would
@@ -44,7 +45,8 @@ static int ensure_dir(const char *path)
 static int create_default_config(const char *config_dir, const char *config_path)
 {
     if (ensure_dir(config_dir) != 0) {
-        fprintf(stderr, "config: failed to create directory %s: %s\n", config_dir, strerror(errno));
+        // fprintf(stderr, "config: failed to create directory %s: %s\n", config_dir, strerror(errno));
+        MIRU_LOG("config: failed to create directory %s: %s", config_dir, strerror(errno));
         return -1;
     }
 
@@ -53,7 +55,8 @@ static int create_default_config(const char *config_dir, const char *config_path
         if (errno == EEXIST) {
             return 0;
         }
-        fprintf(stderr, "config: failed to create %s: %s\n", config_path, strerror(errno));
+        // fprintf(stderr, "config: failed to create %s: %s\n", config_path, strerror(errno));
+        MIRU_LOG("config: failed to create %s: %s", config_path, strerror(errno));
         return -1;
     }
 
@@ -79,16 +82,19 @@ static int create_default_config(const char *config_dir, const char *config_path
     if (fputs(default_config, f) == EOF) {
         fclose(f);
         unlink(config_path);
-        fprintf(stderr, "config: failed writing default config to %s\n", config_path);
+        // fprintf(stderr, "config: failed writing default config to %s\n", config_path);
+        MIRU_LOG("config: failed writing default config to %s", config_path);
         return -1;
     }
     if (fclose(f) != 0) {
         unlink(config_path); // catches a flush failure (e.g. disk full) that fputs alone wouldn't see
-        fprintf(stderr, "config: failed closing default config %s: %s\n", config_path, strerror(errno));
+        // fprintf(stderr, "config: failed closing default config %s: %s\n", config_path, strerror(errno));
+        MIRU_LOG("config: failed closing default config %s: %s", config_path, strerror(errno));
         return -1;
     }
 
-    fprintf(stderr, "config: created default config at %s\n", config_path);
+    // fprintf(stderr, "config: created default config at %s\n", config_path);
+    MIRU_LOG("config: created default config at %s", config_path);
     return 0;
 }
 
@@ -138,53 +144,65 @@ int config_get_watch_paths(char *dir, size_t dir_size, char *filename, size_t fi
 static void sanitize_config(struct miru_config *c)
 {
     if (!isfinite(c->zoom_factor) || c->zoom_factor < 1.0) {
-        fprintf(stderr, "config: invalid zoom.factor, falling back to default\n");
+        // fprintf(stderr, "config: invalid zoom.factor, falling back to default\n");
+        MIRU_LOG("config: invalid zoom.factor, falling back to default");
         c->zoom_factor = 2.0;
     }
     if (!isfinite(c->zoom_increment) || c->zoom_increment <= 0.0) {
-        fprintf(stderr, "config: invalid zoom.increment (must be positive), falling back to default\n");
+        // fprintf(stderr, "config: invalid zoom.increment (must be positive), falling back to default\n");
+        MIRU_LOG("config: invalid zoom.increment (must be positive), falling back to default");
         c->zoom_increment = 0.25;
     }
     if (!isfinite(c->zoom_max_factor) || c->zoom_max_factor < 1.0) {
-        fprintf(stderr, "config: invalid zoom.max_factor, falling back to default\n");
+        // fprintf(stderr, "config: invalid zoom.max_factor, falling back to default\n");
+        MIRU_LOG("config: invalid zoom.max_factor, falling back to default");
         c->zoom_max_factor = 10.0;
     }
     if (c->zoom_factor > c->zoom_max_factor) {
-        fprintf(stderr, "config: zoom.factor exceeds zoom.max_factor, clamping\n");
+        // fprintf(stderr, "config: zoom.factor exceeds zoom.max_factor, clamping\n");
+        MIRU_LOG("config: zoom.factor exceeds zoom.max_factor, clamping");
         c->zoom_factor = c->zoom_max_factor;
     }
 
     if (!isfinite(c->spotlight_dim) || c->spotlight_dim < 0.0) {
-        fprintf(stderr, "config: invalid spotlight.dim, clamping to 0.0\n");
+        // fprintf(stderr, "config: invalid spotlight.dim, clamping to 0.0\n");
+        MIRU_LOG("config: invalid spotlight.dim, clamping to 0.0");
         c->spotlight_dim = 0.0;
     } else if (c->spotlight_dim > 1.0) {
-        fprintf(stderr, "config: spotlight.dim exceeds 1.0, clamping to 1.0\n");
+        // fprintf(stderr, "config: spotlight.dim exceeds 1.0, clamping to 1.0\n");
+        MIRU_LOG("config: spotlight.dim exceeds 1.0, clamping to 1.0");
         c->spotlight_dim = 1.0;
     }
 
     if (c->spotlight_radius < 0) {
-        fprintf(stderr, "config: invalid spotlight.radius, falling back to default\n");
+        // fprintf(stderr, "config: invalid spotlight.radius, falling back to default\n");
+        MIRU_LOG("config: invalid spotlight.radius, falling back to default");
         c->spotlight_radius = 250;
     }
 
     if (c->spotlight_softness < 0) {
-        fprintf(stderr, "config: invalid spotlight.softness, falling back to default\n");
+        // fprintf(stderr, "config: invalid spotlight.softness, falling back to default\n");
+        MIRU_LOG("config: invalid spotlight.softness, falling back to default");
         c->spotlight_softness = 20;
     }
 
     if (!isfinite(c->spotlight_animation_speed) || c->spotlight_animation_speed <= 0.0) {
-        fprintf(stderr, "config: invalid spotlight.animation_speed (must be positive). falling back to default\n");
+        // fprintf(stderr, "config: invalid spotlight.animation_speed (must be positive). falling back to default\n");
+        MIRU_LOG("config: invalid spotlight.animation_speed (must be positive). falling back to default");
         c->spotlight_animation_speed = 14.0;
     } else if (c->spotlight_animation_speed > 60.0) {
-        fprintf(stderr, "config: spotlight.animation_speed exceeds 60.0. clamping\n");
+        // fprintf(stderr, "config: spotlight.animation_speed exceeds 60.0. clamping\n");
+        MIRU_LOG("config: spotlight.animation_speed exceeds 60.0. clamping");
         c->spotlight_animation_speed = 60.0;
     }
 
     if (!isfinite(c->spotlight_radius_step) || c->spotlight_radius_step <= 0.0) {
-        fprintf(stderr, "config: invalid spotlight.radius_step (must be positive), falling back to defaults\n");
+        // fprintf(stderr, "config: invalid spotlight.radius_step (must be positive), falling back to defaults\n");
+        MIRU_LOG("config: invalid spotlight.radius_step (must be positive), falling back to defaults");
         c->spotlight_radius_step = 20.0;
     } else if (c->spotlight_radius_step > 500.0) {
-        fprintf(stderr, "config: spotlight.radius_step exceeds 500.0, clamping\n");
+        // fprintf(stderr, "config: spotlight.radius_step exceeds 500.0, clamping\n");
+        MIRU_LOG("config: spotlight.radius_step exceeds 500.0, clamping");
         c->spotlight_radius_step = 500.0;
     }
 
@@ -217,7 +235,8 @@ void config_load(struct miru_config *out)
     char config_path[512];
 
     if (get_config_path(config_dir, sizeof(config_dir), config_path, sizeof(config_path)) != 0) {
-        fprintf(stderr, "config: unable to determine config directory\n");
+        // fprintf(stderr, "config: unable to determine config directory\n");
+        MIRU_LOG("config: unable to determine config directory");
         return;
     }
 
@@ -249,8 +268,15 @@ void config_load(struct miru_config *out)
 
     sanitize_config(out);
 
-    fprintf(
-        stderr,
+    // fprintf(
+    //     stderr,
+    //     "config: loaded from %s (zoom factor=%.2f increment=%.2f max=%.2f)\n",
+    //     config_path,
+    //     out->zoom_factor,
+    //     out->zoom_increment,
+    //     out->zoom_max_factor
+    // );
+    MIRU_LOG(
         "config: loaded from %s (zoom factor=%.2f increment=%.2f max=%.2f)\n",
         config_path,
         out->zoom_factor,

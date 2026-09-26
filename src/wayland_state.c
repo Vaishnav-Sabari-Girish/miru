@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "fractional-scale-v1-client-protocol.h"
 #include "viewporter-client-protocol.h"
 #include <stdio.h>
@@ -93,7 +94,8 @@ static void handle_output_scale(void *data, struct wl_output *wl_output, int32_t
     (void)wl_output;
     struct miru_state *state = data;
     state->output_scale = factor;
-    fprintf(stderr, "output scale (wl_output integer): %d\n", factor);
+    // fprintf(stderr, "output scale (wl_output integer): %d\n", factor);
+    MIRU_LOG("output scale (wl_output integer): %d", factor);
 }
 
 static void handle_output_done(void *data, struct wl_output *wl_output)
@@ -129,7 +131,8 @@ static void
 registry_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version)
 {
     struct miru_state *state = data;
-    fprintf(stderr, "global: %s (v%u)\n", interface, version);
+    // fprintf(stderr, "global: %s (v%u)\n", interface, version);
+    MIRU_LOG("global: %s (v%u)", interface, version);
 
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         state->compositor = wl_registry_bind(registry, name, &wl_compositor_interface, WAYLAND_MIN(version, 4));
@@ -174,7 +177,8 @@ int wayland_state_init(struct miru_state *state)
     state->output_scale = 1;
     state->display = wl_display_connect(NULL);
     if (!state->display) {
-        fprintf(stderr, "Failed to connect to wayland display, is a compositor running ?\n");
+        // fprintf(stderr, "Failed to connect to wayland display, is a compositor running ?\n");
+        MIRU_LOG("Failed to connect to wayland display, is a compositor running ?");
         return -1;
     }
 
@@ -187,60 +191,13 @@ int wayland_state_init(struct miru_state *state)
     wl_display_roundtrip(state->display);
 
     if (!state->compositor || !state->seat || !state->shm || !state->layer_shell || !state->screencopy_manager) {
-        fprintf(stderr, "compositor is missing a required protocol, check the log above\n");
+        // fprintf(stderr, "compositor is missing a required protocol, check the log above\n");
+        MIRU_LOG("compositor is missing a required protocol, check the log above");
         wl_display_disconnect(state->display);
         return -1;
     }
     return 0;
 }
-
-// int wayland_state_dispatch(struct miru_state *state, int timeout_ms)
-// {
-//     while (wl_display_prepare_read(state->display) != 0) {
-//         wl_display_dispatch_pending(state->display);
-//     }
-//
-//     int pending_write = 0;
-//     if (wl_display_flush(state->display) == -1) {
-//         if (errno == EAGAIN) {
-//             pending_write = 1;
-//         } else {
-//             wl_display_cancel_read(state->display);
-//             fprintf(stderr, "wl_display_flush failed\n");
-//             return -1;
-//         }
-//     }
-//
-//     struct pollfd pfd = {
-//         .fd = wl_display_get_fd(state->display),
-//         .events = (short)(POLLIN | (pending_write ? POLLOUT : 0)),
-//     };
-//     int ret = poll(&pfd, 1, timeout_ms);
-//     if (ret == -1) {
-//         wl_display_cancel_read(state->display);
-//         if (errno == EINTR) {
-//             return 0;
-//         }
-//         fprintf(stderr, "poll failed\n");
-//         return -1;
-//     }
-//
-//     if (pfd.revents & POLLIN) {
-//         wl_display_read_events(state->display);
-//     } else {
-//         wl_display_cancel_read(state->display);
-//     }
-//
-//     if (pfd.revents & POLLOUT) {
-//         if (wl_display_flush(state->display) == -1 && errno != EAGAIN) {
-//             fprintf(stderr, "wl_display_flush failed after POLLOUT\n");
-//             return -1;
-//         }
-//     }
-//
-//     wl_display_dispatch_pending(state->display);
-//     return 0;
-// }
 
 int wayland_state_get_fd(struct miru_state *state)
 {
@@ -260,7 +217,8 @@ int wayland_state_prepare(struct miru_state *state, short *out_poll_events)
             events |= POLLOUT;
         } else {
             wl_display_cancel_read(state->display);
-            fprintf(stderr, "wl_display_flush failed\n");
+            // fprintf(stderr, "wl_display_flush failed\n");
+            MIRU_LOG("wl_display_flush failed");
             return -1;
         }
     }
@@ -273,7 +231,8 @@ int wayland_state_process(struct miru_state *state, short revents)
 {
     if (revents & (POLLHUP | POLLERR)) {
         wl_display_cancel_read(state->display);
-        fprintf(stderr, "wayland_state_process: POLLHUP/POLLERR on display fd. connection lost\n");
+        // fprintf(stderr, "wayland_state_process: POLLHUP/POLLERR on display fd. connection lost\n");
+        MIRU_LOG("wayland_state_process: POLLHUP/POLLERR on display fd. connection lost");
         return -1;
     }
 
@@ -285,7 +244,8 @@ int wayland_state_process(struct miru_state *state, short revents)
 
     if (revents & POLLOUT) {
         if (wl_display_flush(state->display) == -1 && errno != EAGAIN) {
-            fprintf(stderr, "wl_display_flush failed after POLLOUT\n");
+            // fprintf(stderr, "wl_display_flush failed after POLLOUT\n");
+            MIRU_LOG("wl_display_flush failed after POLLOUT");
             return -1;
         }
     }

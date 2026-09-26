@@ -88,9 +88,10 @@ static GLuint compile_shader(GLenum type, const char *src)
     if (!status) {
         char log[512];
         glGetShaderInfoLog(shader, sizeof(log), NULL, log);
-        if (miru_debug_enabled()) {
-            fprintf(stderr, "gl_renderer: shader compile failed: %s\n", log);
-        }
+        // if (miru_debug_enabled()) {
+        //     fprintf(stderr, "gl_renderer: shader compile failed: %s\n", log);
+        // }
+        MIRU_DBG("gl_renderer: shader compile failed: %s", log);
 
         glDeleteShader(shader);
         return 0;
@@ -122,7 +123,8 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     if (!linked) {
         char log[512];
         glGetProgramInfoLog(r->program, sizeof(log), NULL, log);
-        fprintf(stderr, "gl_renderer: program link failed: %s\n", log);
+        // fprintf(stderr, "gl_renderer: program link failed: %s\n", log);
+        MIRU_LOG("gl_renderer: program link failed: %s", log);
         return -1;
     }
     r->a_position = glGetAttribLocation(r->program, "a_position");
@@ -190,9 +192,17 @@ void gl_renderer_upload_texture(
     uint32_t format
 )
 {
-    fprintf(
-        stderr,
-        "gl_renderer: upload width=%d height=%d stride=%d (width*4=%d) %s path\n",
+    // fprintf(
+    //     stderr,
+    //     "gl_renderer: upload width=%d height=%d stride=%d (width*4=%d) %s path\n",
+    //     width,
+    //     height,
+    //     stride,
+    //     width * 4,
+    //     (stride == width * 4) ? "FAST" : "ROW BY ROW"
+    // );
+    MIRU_LOG(
+        "gl_renderer: upload width=%d height=%d stride=%d (width*4=%d) %s path",
         width,
         height,
         stride,

@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include "ipc_server.h"
+#include "debug.h"
 
 static int build_socket_path(char *out, size_t out_size)
 {
@@ -22,15 +23,17 @@ static int build_socket_path(char *out, size_t out_size)
 
     int n = snprintf(out, out_size, "%s/miru.sock", runtime_dir);
     if (n < 0 || (size_t)n >= out_size) {
-        fprintf(stderr, "ipc_server : socket path too long\n");
+        // fprintf(stderr, "ipc_server : socket path too long\n");
+        MIRU_LOG("ipc_server : socket path too long");
         return -1;
     }
 
     struct sockaddr_un addr_size_check;
     if ((size_t)n >= sizeof(addr_size_check.sun_path)) {
-        fprintf(
-            stderr, "ipc_server: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path)
-        );
+        // fprintf(
+        //     stderr, "ipc_server: socket path exceeds sun_path limit (%zu bytes)\n", sizeof(addr_size_check.sun_path)
+        // );
+        MIRU_LOG("ipc_server: socket path exceeds sun_path limit (%zu bytes)", sizeof(addr_size_check.sun_path));
         return -1;
     }
 
@@ -45,7 +48,8 @@ static int build_lock_path(char *out, size_t out_size)
     if (runtime_dir && *runtime_dir) {
         n = snprintf(out, out_size, "%s/miru.lock", runtime_dir);
         if (n < 0 || (size_t)n >= out_size) {
-            fprintf(stderr, "ipc_server: lock path too long\n");
+            // fprintf(stderr, "ipc_server: lock path too long\n");
+            MIRU_LOG("ipc_server: lock path too long");
             return -1;
         }
         return 0;
@@ -64,21 +68,27 @@ static int build_lock_path(char *out, size_t out_size)
         n = snprintf(out, out_size, "%s/miru.lock", run_user_dir);
 
         if (n < 0 || (size_t)n >= out_size) {
-            fprintf(stderr, "ipc_server: lock path too long\n");
+            // fprintf(stderr, "ipc_server: lock path too long\n");
+            MIRU_LOG("ipc_server: lock path too long");
             return -1;
         }
 
-        fprintf(stderr, "ipc_server: XDG_RUNTIME_DIR not set, use %s instead\n", run_user_dir);
+        // fprintf(stderr, "ipc_server: XDG_RUNTIME_DIR not set, use %s instead\n", run_user_dir);
+        MIRU_LOG("ipc_server: XDG_RUNTIME_DIR not set, use %s instead", run_user_dir);
         return 0;
     }
 
-    fprintf(
-        stderr,
-        "ipc_server: no trusted per-user runtime directory found, falling back to a UID-scoped /tmp lock (less secure)\n"
+    // fprintf(
+    //     stderr,
+    //     "ipc_server: no trusted per-user runtime directory found, falling back to a UID-scoped /tmp lock (less secure)\n"
+    // );
+    MIRU_LOG(
+        "ipc_server: no trusted per-user runtime directory found, falling back to a UID-scoped /tmp lock (less secure)"
     );
     n = snprintf(out, out_size, "/tmp/miru-%d.lock", (int)getuid());
     if (n < 0 || (size_t)n >= out_size) {
-        fprintf(stderr, "ipc_server: lock path too long\n");
+        // fprintf(stderr, "ipc_server: lock path too long\n");
+        MIRU_LOG("ipc_server: lock path too long");
         return -1;
     }
 
@@ -95,37 +105,48 @@ static int acquire_instance_lock(struct miru_ipc_server *srv)
     int fd = open(lock_path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0644);
     if (fd < 0) {
         if (errno == ELOOP) {
-            fprintf(
-                stderr, "ipc_server: refusing to open %s, it is a symlink (possible attack or leftover)\n", lock_path
-            );
+            // fprintf(
+            //     stderr, "ipc_server: refusing to open %s, it is a symlink (possible attack or leftover)\n", lock_path
+            // );
+            MIRU_LOG("ipc_server: refusing to open %s, it is a symlink (possible attack or leftover)", lock_path);
         } else if (errno == EACCES) {
-            fprintf(
-                stderr,
+            // fprintf(
+            //     stderr,
+            //     "ipc_server: cannot open lockfile %s (permission denied) - a file at this path "
+            //     "may already be owned by another user; If XDG_RUNTIME_DIR is unset, set it or "
+            //     "ensure a proper per-user runtime directory exists\n",
+            //     lock_path
+            // );
+            MIRU_LOG(
                 "ipc_server: cannot open lockfile %s (permission denied) - a file at this path "
                 "may already be owned by another user; If XDG_RUNTIME_DIR is unset, set it or "
-                "ensure a proper per-user runtime directory exists\n",
+                "ensure a proper per-user runtime directory exists",
                 lock_path
             );
         } else {
-            fprintf(stderr, "ipc_server: failed to open lockfile %s: %s\n", lock_path, strerror(errno));
+            // fprintf(stderr, "ipc_server: failed to open lockfile %s: %s\n", lock_path, strerror(errno));
+            MIRU_LOG("ipc_server: failed to open lockfile %s: %s", lock_path, strerror(errno));
         }
         return -1;
     }
 
     struct stat st;
     if (fstat(fd, &st) != 0 || st.st_uid != getuid()) {
-        fprintf(stderr, "ipc_server: refusing to use lockfile %s not owned by us\n", lock_path);
+        // fprintf(stderr, "ipc_server: refusing to use lockfile %s not owned by us\n", lock_path);
+        MIRU_LOG("ipc_server: refusing to use lockfile %s not owned by us", lock_path);
         close(fd);
         return -1;
     }
 
     if (flock(fd, LOCK_EX | LOCK_NB) != 0) {
         if (errno == EWOULDBLOCK) {
-            fprintf(
-                stderr, "ipc_server: another miru-daemon instance is already running (lock held on %s)\n", lock_path
-            );
+            // fprintf(
+            //     stderr, "ipc_server: another miru-daemon instance is already running (lock held on %s)\n", lock_path
+            // );
+            MIRU_LOG("ipc_server: another miru-daemon instance is already running (lock held on %s)", lock_path);
         } else {
-            fprintf(stderr, "ipc_server: flock failed on %s: %s\n", lock_path, strerror(errno));
+            // fprintf(stderr, "ipc_server: flock failed on %s: %s\n", lock_path, strerror(errno));
+            MIRU_LOG("ipc_server: flock failed on %s: %s", lock_path, strerror(errno));
         }
         close(fd);
         return -1;
@@ -191,7 +212,8 @@ int ipc_server_init(struct miru_ipc_server *srv)
         return -1;
     }
 
-    fprintf(stderr, "ipc_server: listening on %s\n", srv->socket_path);
+    // fprintf(stderr, "ipc_server: listening on %s\n", srv->socket_path);
+    MIRU_LOG("ipc_server: listening on %s", srv->socket_path);
     return 0;
 }
 
@@ -229,7 +251,8 @@ enum miru_ipc_command ipc_server_accept_command(struct miru_ipc_server *srv)
             perror("ipc_server: poll on accepted client");
         }
 
-        fprintf(stderr, "ipc_server: client sent no data in time, dropping\n");
+        // fprintf(stderr, "ipc_server: client sent no data in time, dropping\n");
+        MIRU_LOG("ipc_server: client sent no data in time, dropping");
         close(client_fd);
         return MIRU_IPC_NONE;
     }
@@ -260,7 +283,8 @@ enum miru_ipc_command ipc_server_accept_command(struct miru_ipc_server *srv)
         return MIRU_IPC_QUIT;
     }
 
-    fprintf(stderr, "ipc_server: unknown command %s\n", buf);
+    // fprintf(stderr, "ipc_server: unknown command %s\n", buf);
+    MIRU_LOG("ipc_server: unknown command %s", buf);
     return MIRU_IPC_UNKNOWN;
 }
 
