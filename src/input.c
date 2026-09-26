@@ -431,7 +431,7 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
     }
 
     {
-        float impulse = 6.0f * (float)ctx->zoom_increment;
+        float impulse = 6.0f * ctx->zoom_increment;
         if (v > 0)
             layer_surface_add_zoom_impulse(ctx->ls, -impulse);
         else
@@ -544,7 +544,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
             return 1;
         }
 
-        layer_surface_add_zoom_impulse(ctx->ls, 6.0f * (float)ctx->zoom_increment);
+        layer_surface_add_zoom_impulse(ctx->ls, 6.0f * ctx->zoom_increment);
 
     } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
         if (ctx->ctrl_held) {
@@ -552,7 +552,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
             return 1;
         }
 
-        layer_surface_add_zoom_impulse(ctx->ls, -6.0f * (float)ctx->zoom_increment);
+        layer_surface_add_zoom_impulse(ctx->ls, -6.0f * ctx->zoom_increment);
 
     } else if (key == KEY_LEFT || key == KEY_A) {
         ctx->ls->cursor_x -= pan_step(ctx->ls);
