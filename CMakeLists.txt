@@ -102,6 +102,7 @@ add_executable(
   src/shm_buffer.c
   src/capture.c
   src/ipc_server.c
+  src/debug.c
   src/input.c
   src/toml.c
   src/config.c
