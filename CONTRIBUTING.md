@@ -28,6 +28,7 @@ Thank you for your interest in wanting to contribute to `miru`.
 
 ```bash
 cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
 ```
 
 Or using Grimoire
@@ -46,11 +47,23 @@ Install these so local checks match the CI
 | -------------- | --------------- |
 | `clang-format` | Format the C code based on the `clang-format` file |
 | `cmake-format` | Format the `CMakeLists.txt` and other `.cmake` files based on the `.cmake-format.yaml` file |
+| `clang-tidy` | For linting the C code |
 | `typos` | Spell-check |
 | `rumdl` | Markdown lint/format |
 
 The CI (Woodpecker) runs the same checks using the above tools (Check
 `.woodpecker/` directory)
+
+### Linting the code
+
+Use `clang-tidy` for code linting. The linting rules are present in the
+`.clang-tidy` file.
+
+```bash
+cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+clang-tidy -p build --quiet $(find src -type f -name '*.c' | sort)
+```
 
 ### Git Hooks
 
@@ -65,6 +78,7 @@ The pre-commit hook typically:
 
 - runs `typos` (Spell-check)
 - runs `clang-format` (Formats the C code)
+- run `clang-tidy` (Lints the code)
 - runs `cmake-format` (Formats the `CMakeLists.txt` and `.cmake` files)
 - runs `rumdl` on Markdown (Excluding a few files)
 
