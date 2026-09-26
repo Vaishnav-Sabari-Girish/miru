@@ -1,14 +1,11 @@
 #include "annotations.h"
 #include "debug.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <unistd.h>
 #include <time.h>
 #include <linux/input-event-codes.h>
 #include "input.h"
-#include "debug.h"
 #include "layer_surface.h"
 #include <wayland-client-protocol.h>
 
