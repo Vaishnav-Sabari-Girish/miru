@@ -1,4 +1,47 @@
 
+## v0.11.0 - 2026-09-27
+
+
+
+
+
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(pointer_mapping)** Correct fractional pointer mapping
+
+- **(fractional_scaling)** Fractional scaling overlay issue fixed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### :art: Styling
+
+- **(logs)** Replace `fprintf` with logging macros
+
+- **(clang-tidy)** Add clang-tidy for linting
+
+
+
+
+
+
+
 ## v0.10.0 - 2026-09-22
 
 
