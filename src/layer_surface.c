@@ -28,8 +28,9 @@ static void fractional_scale_preferred(void *data, struct wp_fractional_scale_v1
     if (fabsf(s - ls->scale) > 0.001f) {
         ls->scale = s;
         ls->dirty = true;
-        if (miru_debug_enabled())
-            fprintf(stderr, "scale = %.3f (from fractional-scale, scale_120=%u)\n", ls->scale, scale_120);
+        // if (miru_debug_enabled())
+        //     fprintf(stderr, "scale = %.3f (from fractional-scale, scale_120=%u)\n", ls->scale, scale_120);
+        MIRU_DBG("scale = %.3f (from fractional-scale, scale_120=%u)", ls->scale, scale_120);
     }
 }
 
@@ -44,7 +45,8 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     zwlr_layer_surface_v1_ack_configure(surface, serial);
 
     if (width == 0 || height == 0) {
-        fprintf(stderr, "ignoring 0x0 configure, waiting for a real size\n");
+        // fprintf(stderr, "ignoring 0x0 configure, waiting for a real size\n");
+        MIRU_LOG("ignoring 0x0 configure, waiting for a real size");
         return;
     }
 
@@ -68,17 +70,25 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
         ls->buffer_height = (int)lroundf((float)ls->height * s);
     }
 
-    if (miru_debug_enabled()) {
-        fprintf(
-            stderr,
-            "surface: logical=%dx%d buffer=%dx%d scale=%.3f\n",
-            ls->width,
-            ls->height,
-            ls->buffer_width,
-            ls->buffer_width,
-            ls->scale
-        );
-    }
+    // if (miru_debug_enabled()) {
+    //     fprintf(
+    //         stderr,
+    //         "surface: logical=%dx%d buffer=%dx%d scale=%.3f\n",
+    //         ls->width,
+    //         ls->height,
+    //         ls->buffer_width,
+    //         ls->buffer_width,
+    //         ls->scale
+    //     );
+    // }
+    MIRU_DBG(
+        "surface: logical=%dx%d buffer=%dx%d scale=%.3f",
+        ls->width,
+        ls->height,
+        ls->buffer_width,
+        ls->buffer_width,
+        ls->scale
+    );
 
     if (!ls->configured) {
         ls->zoom = ls->zoom_default;
@@ -103,11 +113,13 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
 
     if (!ls->egl.egl_window) {
         if (egl_create_surface(&ls->egl, ls->surface, ls->buffer_width, ls->buffer_height) != 0) {
-            fprintf(stderr, "failed to create EGL surface\n");
+            // fprintf(stderr, "failed to create EGL surface\n");
+            MIRU_LOG("failed to create EGL surface");
             return;
         }
         if (gl_renderer_init(&ls->gl) != 0) {
-            fprintf(stderr, "failed to init GL renderer\n");
+            // fprintf(stderr, "failed to init GL renderer\n");
+            MIRU_LOG("failed to init GL renderer");
             return;
         }
     } else {
@@ -144,7 +156,8 @@ static void handle_closed(void *data, struct zwlr_layer_surface_v1 *surface)
 {
     (void)surface;
     struct miru_layer_surface *ls = data;
-    fprintf(stderr, "compositor closed our layer surface\n");
+    // fprintf(stderr, "compositor closed our layer surface\n");
+    MIRU_LOG("compositor closed our layer surface");
     ls->configured = false;
     ls->closed = true;
 }
@@ -208,7 +221,8 @@ int layer_surface_create(
     }
 
     if (egl_init(&ls->egl, state->display) != 0) {
-        fprintf(stderr, "failed to initialize EGL\n");
+        // fprintf(stderr, "failed to initialize EGL\n");
+        MIRU_LOG("failed to initialize EGL");
         return -1;
     }
 

@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include "debug.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -17,7 +18,8 @@ struct wl_buffer *shm_buffer_create_stride_bpp(
 )
 {
     if (width <= 0 || height <= 0 || stride <= 0 || bpp <= 0) {
-        fprintf(stderr, "shm_buffer_create_stride: invalid dimensions %dx%d stride=%d\n", width, height, stride);
+        // fprintf(stderr, "shm_buffer_create_stride: invalid dimensions %dx%d stride=%d\n", width, height, stride);
+        MIRU_LOG("shm_buffer_create_stride: invalid dimensions %dx%d stride=%d", width, height, stride);
         return NULL;
     }
 
@@ -25,7 +27,8 @@ struct wl_buffer *shm_buffer_create_stride_bpp(
     // multiplication itself can silently overflow (signed int UB) before
     // any check ever runs, letting an undersized stride slip through
     if (width > (INT32_MAX / bpp)) {
-        fprintf(stderr, "shm_buffer_create_stride: width %d too large\n", width);
+        // fprintf(stderr, "shm_buffer_create_stride: width %d too large\n", width);
+        MIRU_LOG("shm_buffer_create_stride: width %d too large", width);
         return NULL;
     }
 
@@ -34,11 +37,13 @@ struct wl_buffer *shm_buffer_create_stride_bpp(
     // stride can never legitimately  be smaller than width * bpp for the
     // caller-specified pixel size, even before row padding is considered.
     if (stride < min_stride) {
-        fprintf(stderr, "shm_buffer_create_stride: stride %d smaller than width*bpp (%d)\n", stride, min_stride);
+        // fprintf(stderr, "shm_buffer_create_stride: stride %d smaller than width*bpp (%d)\n", stride, min_stride);
+        MIRU_LOG("shm_buffer_create_stride: stride %d smaller than width*bpp (%d)", stride, min_stride);
         return NULL;
     }
     if ((int64_t)stride * (int64_t)height > INT32_MAX) {
-        fprintf(stderr, "shm_buffer_create_stride: %dx%d buffer exceeds INT32_MAX bytes\n", width, height);
+        // fprintf(stderr, "shm_buffer_create_stride: %dx%d buffer exceeds INT32_MAX bytes\n", width, height);
+        MIRU_LOG("shm_buffer_create_stride: %dx%d buffer exceeds INT32_MAX bytes", width, height);
         return NULL;
     }
     size_t size = (size_t)stride * (size_t)height;
@@ -66,7 +71,8 @@ struct wl_buffer *shm_buffer_create_stride_bpp(
     close(fd); // pool holds its own reference now regardless of success
 
     if (!pool) {
-        fprintf(stderr, "wl_shm_create_pool failed\n");
+        // fprintf(stderr, "wl_shm_create_pool failed\n");
+        MIRU_LOG("wl_shm_create_pool failed");
         munmap(data, size);
         return NULL;
     }
@@ -75,7 +81,8 @@ struct wl_buffer *shm_buffer_create_stride_bpp(
     wl_shm_pool_destroy(pool); // buffer keeps working after this either way
 
     if (!buffer) {
-        fprintf(stderr, "wl_shm_pool_create_buffer failed\n");
+        // fprintf(stderr, "wl_shm_pool_create_buffer failed\n");
+        MIRU_LOG("wl_shm_pool_create_buffer failed");
         munmap(data, size); // nothing else owns this mapping if the buffer never came into being
         return NULL;
     }
@@ -104,7 +111,8 @@ struct wl_buffer *
 shm_buffer_create(struct wl_shm *shm, int width, int height, uint32_t format, void **out_data, size_t *out_size)
 {
     if (width <= 0 || width > (INT32_MAX / 4)) {
-        fprintf(stderr, "shm_buffer_create: invalid width %d\n", width);
+        // fprintf(stderr, "shm_buffer_create: invalid width %d\n", width);
+        MIRU_LOG("shm_buffer_create: invalid width %d", width);
         return NULL;
     }
     return shm_buffer_create_stride(shm, width, height, width * 4, format, out_data, out_size);

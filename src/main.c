@@ -13,6 +13,7 @@
 #include "logo.h"
 #include "config.h"
 #include "config_watch.h"
+#include "debug.h"
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
@@ -60,7 +61,8 @@ static int activate(
 )
 {
     if (capture_output_frame(state, state->output, &should_exit, capture) != 0) {
-        fprintf(stderr, "toggle: capture failed, staying inactive\n");
+        // fprintf(stderr, "toggle: capture failed, staying inactive\n");
+        MIRU_LOG("toggle: capture failed, staying inactive");
         return -1;
     }
 
@@ -78,13 +80,16 @@ static int activate(
     };
 
     if (layer_surface_create(state, ls, capture, &ls_config) != 0) {
-        fprintf(stderr, "toggle: failed to create layer surface \n");
+        // fprintf(stderr, "toggle: failed to create layer surface \n");
+        MIRU_LOG("toggle: failed to create layer surface");
         capture_frame_destroy(capture);
         return -1;
     }
 
-    fprintf(stderr, "zoom: smooth=%d speed=%.1f\n", ls->smooth_enabled, ls->zoom_animation_speed);
-    fprintf(stderr, "toggle: activated\n");
+    // fprintf(stderr, "zoom: smooth=%d speed=%.1f\n", ls->smooth_enabled, ls->zoom_animation_speed);
+    // fprintf(stderr, "toggle: activated\n");
+    MIRU_LOG("zoom: smooth=%d speed=%.1f", ls->smooth_enabled, ls->zoom_animation_speed);
+    MIRU_LOG("toggle: activated");
     return 0;
 }
 
@@ -93,7 +98,7 @@ static void deactivate(struct miru_layer_surface *ls, struct miru_capture *captu
     layer_surface_destroy(ls);
     *ls = (struct miru_layer_surface){ 0 };
     capture_frame_destroy(capture);
-    fprintf(stderr, "toggle: deactivated\n");
+    MIRU_LOG("toggle: deactivated");
 }
 
 static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls, struct miru_capture *capture)
@@ -118,24 +123,28 @@ static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls
     egl_swap_buffers(&ls->egl);
 
     if (wl_display_roundtrip(state->display) == -1) {
-        fprintf(stderr, "refresh: roundtrip after transparent swap failed\n");
+        // fprintf(stderr, "refresh: roundtrip after transparent swap failed\n");
+        MIRU_LOG("refresh: roundtrip after transparent swap failed");
         return -1;
     }
 
     if (wl_display_roundtrip(state->display) == -1) {
-        fprintf(stderr, "refresh: second roundtrip failed\n");
+        // fprintf(stderr, "refresh: second roundtrip failed\n");
+        MIRU_LOG("refresh: second roundtrip failed");
         return -1;
     }
 
     if (capture_refresh(state, state->output, &should_exit, capture) != 0) {
-        fprintf(stderr, "refresh: capture failed\n");
+        // fprintf(stderr, "refresh: capture failed\n");
+        MIRU_LOG("refresh: capture failed");
         ls->dirty = true;
         layer_surface_render(ls);
         return -1;
     }
 
     if (layer_surface_refresh_texture(ls) != 0) {
-        fprintf(stderr, "refresh: texture upload failed\n");
+        // fprintf(stderr, "refresh: texture upload failed\n");
+        MIRU_LOG("refresh: texture upload failed");
         ls->dirty = true;
         layer_surface_render(ls);
         return -1;
@@ -144,7 +153,8 @@ static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls
     ls->dirty = true;
     layer_surface_render(ls);
 
-    fprintf(stderr, "refresh: ok\n");
+    // fprintf(stderr, "refresh: ok\n");
+    MIRU_LOG("refresh: ok");
     return 0;
 }
 
@@ -195,18 +205,21 @@ int main(int argc, char *argv[])
     input_setup(&state, &input_ctx);
 
     if (ipc_server_init(&ipc) != 0) {
-        fprintf(stderr, "failed to start up IPC server\n");
+        // fprintf(stderr, "failed to start up IPC server\n");
+        MIRU_LOG("failed to start up IPC server");
         wayland_state_cleanup(&state);
         return -1;
     }
 
-    fprintf(stderr, "miru-daemon ready. waiting for toggle commands on %s\n", ipc.socket_path);
+    // fprintf(stderr, "miru-daemon ready. waiting for toggle commands on %s\n", ipc.socket_path);
+    MIRU_LOG("miru-daemon ready. waiting for toggle commands on %s", ipc.socket_path);
     state.running = 1;
 
     while (state.running && !should_exit) {
         short wayland_events = 0;
         if (wayland_state_prepare(&state, &wayland_events) != 0) {
-            fprintf(stderr, "fatal: wayland_state_prepare failed. connection to compositor lost\n");
+            // fprintf(stderr, "fatal: wayland_state_prepare failed. connection to compositor lost\n");
+            MIRU_LOG("fatal: wayland_state_prepare failed. connection to compositor lost");
             wayland_connection_lost = true;
             break;
         }
@@ -237,13 +250,15 @@ int main(int argc, char *argv[])
             if (errno == EINTR) {
                 continue;
             }
-            fprintf(stderr, "poll failed\n");
+            // fprintf(stderr, "poll failed\n");
+            MIRU_LOG("poll failed");
             wayland_connection_lost = true;
             break;
         }
 
         if (wayland_state_process(&state, pfds[0].revents) != 0) {
-            fprintf(stderr, "fatal: wayland_state_process failed. connection to compositor lost\n");
+            // fprintf(stderr, "fatal: wayland_state_process failed. connection to compositor lost\n");
+            MIRU_LOG("fatal: wayland_state_process failed. connection to compositor lost");
             wayland_connection_lost = true;
             break;
         }
@@ -257,7 +272,8 @@ int main(int argc, char *argv[])
 
         if (pfds[1].revents & POLLIN) {
             enum miru_ipc_command cmd = ipc_server_accept_command(&ipc);
-            fprintf(stderr, "ipc: got command %d, active was %d\n", cmd, active);
+            // fprintf(stderr, "ipc: got command %d, active was %d\n", cmd, active);
+            MIRU_LOG("ipc: got command %d, active was %d", cmd, active);
             if (cmd == MIRU_IPC_TOGGLE) {
                 if (!active) {
                     active = (activate(&state, &ls, &capture, &config) == 0);
@@ -276,7 +292,8 @@ int main(int argc, char *argv[])
                         ls.loupe.committed = false;
                         ls.loupe.zoom = (float)config.zoom_factor;
                         ls.loupe.display_zoom = ls.loupe.zoom;
-                        fprintf(stderr, "loupe: selecting rectangle\n");
+                        // fprintf(stderr, "loupe: selecting rectangle\n");
+                        MIRU_LOG("loupe: selecting rectangle");
                     }
                 } else {
                     deactivate(&ls, &capture);
@@ -284,16 +301,19 @@ int main(int argc, char *argv[])
                     active = 0;
                 }
             } else if (cmd == MIRU_IPC_QUIT) {
-                fprintf(stderr, "received quit command\n");
+                // fprintf(stderr, "received quit command\n");
+                MIRU_LOG("received quit command");
                 should_exit = 1;
             }
-            fprintf(stderr, "activate is now %d\n", active);
+            // fprintf(stderr, "activate is now %d\n", active);
+            MIRU_LOG("activate is now %d", active);
         }
 
         if ((pfds[2].revents & POLLIN) || (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0)) {
             int changed = config_watch_check(&config_watch);
             if (changed > 0) {
-                fprintf(stderr, "config: change detected, reloading\n");
+                // fprintf(stderr, "config: change detected, reloading\n");
+                MIRU_LOG("config: change detected, reloading");
                 struct miru_config new_config = { 0 };
                 config_load(&new_config);
                 if (config.zoom_factor != new_config.zoom_factor ||
@@ -307,7 +327,8 @@ int main(int argc, char *argv[])
                     config.spotlight_animation_speed != new_config.spotlight_animation_speed ||
                     config.spotlight_radius_step != new_config.spotlight_radius_step ||
                     config.show_cursor != new_config.show_cursor) {
-                    fprintf(stderr, "config: change detected reloading\n");
+                    // fprintf(stderr, "config: change detected reloading\n");
+                    MIRU_LOG("config: change detected reloading");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
                     input_ctx.radius_step = (float)config.spotlight_radius_step;
@@ -330,7 +351,8 @@ int main(int argc, char *argv[])
                     }
                 }
             } else if (changed < 0) {
-                fprintf(stderr, "config_watch: error reading events, disabling hot-reloading\n");
+                // fprintf(stderr, "config_watch: error reading events, disabling hot-reloading\n");
+                MIRU_LOG("config_watch: error reading events, disabling hot-reloading");
                 config_watch_cleanup(&config_watch);
             }
         }
@@ -338,7 +360,8 @@ int main(int argc, char *argv[])
         if (active && ls.closed) {
             // the compositor tore the surface down on it's own (output unplugged
             // etc), go back to inactive instead of looping through a dead surface
-            fprintf(stderr, "layer surface closed unexpectedly, deactivating\n");
+            // fprintf(stderr, "layer surface closed unexpectedly, deactivating\n");
+            MIRU_LOG("layer surface closed unexpectedly, deactivating");
             deactivate(&ls, &capture);
             input_reset_repeat(&input_ctx);
             active = 0;
@@ -357,7 +380,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    fprintf(stderr, "shutting down\n");
+    // fprintf(stderr, "shutting down\n");
+    MIRU_LOG("shutting down");
     if (active) {
         layer_surface_destroy(&ls);
     }
@@ -367,70 +391,9 @@ int main(int argc, char *argv[])
     config_watch_cleanup(&config_watch);
     wayland_state_cleanup(&state);
     if (wayland_connection_lost) {
-        fprintf(stderr, "exiting with failure due to lost wayland connection\n");
+        // fprintf(stderr, "exiting with failure due to lost wayland connection\n");
+        MIRU_LOG("exiting with failure due to lost wayland connection");
         return 1;
     }
     return 0;
-
-    // if (capture_output_frame(&state, state.output, &should_exit, &capture) != 0) {
-    //     fprintf(stderr, "screencopy capture failed\n");
-    // } else {
-    //     fprintf(
-    //         stderr,
-    //         "captured frame: %ux%u stride = %u format = %u y_invert = %d\n",
-    //         capture.width,
-    //         capture.height,
-    //         capture.stride,
-    //         capture.format,
-    //         capture.y_invert
-    //     );
-    // }
-    // // capture_frame_destroy(&capture);
-    //
-    // // Capture stays alive; handle_configure needs it to blit the frame in
-    // if (layer_surface_create(&state, &ls, &capture) != 0) {
-    //     fprintf(stderr, "failed to create layer surface\n");
-    //     capture_frame_destroy(&capture);
-    //     wayland_state_cleanup(&state);
-    //     return 1;
-    // }
-    //
-    // fprintf(stderr, "layer surface created, entering event loop\n");
-    // state.running = 1;
-    //
-    // long long last_capture_ms = now_ms();
-    //
-    // while (state.running && !should_exit && !ls.closed) {
-    //     // short timeout instead of blocking forever
-    //     // so the loop wakes up regularly enough
-    //     // to check whether it's time to recapture even when the compositor
-    //     // sends nothing
-    //     if (wayland_state_dispatch(&state, 50) != 0) {
-    //         break;
-    //     }
-    //
-    //     long long t = now_ms();
-    //     if (ls.configured && (t - last_capture_ms) >= RECAPTURE_INTERVAL_MS) {
-    //         fprintf(stderr, "recapture: starting\n");
-    //         long long capture_start = now_ms();
-    //
-    //         struct miru_capture fresh_capture = { 0 };
-    //         if (capture_output_frame(&state, state.output, &should_exit, &fresh_capture) == 0) {
-    //             fprintf(stderr, "recapture: succeeded in %lld\n", now_ms() - capture_start);
-    //             capture_frame_destroy(&capture); // free the previous frame's shm/wl_buffer first
-    //             capture = fresh_capture; // ls.captuer already points at &capture, no update needed
-    //             layer_surface_render(&ls);
-    //         } else {
-    //             fprintf(stderr, "recapture: FAILED after %lld\n", now_ms() - capture_start);
-    //             capture_frame_destroy(&fresh_capture);
-    //         }
-    //         last_capture_ms = t;
-    //     }
-    // }
-    //
-    // fprintf(stderr, "shutting down\n");
-    // capture_frame_destroy(&capture);
-    // layer_surface_destroy(&ls);
-    // wayland_state_cleanup(&state);
-    // return 0;
 }
