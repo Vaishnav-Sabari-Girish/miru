@@ -16,6 +16,7 @@ void print_help()
     printf("Commands: \n");
     printf("    toggle      Toggle the overlay\n");
     printf("    loupe       Zoom a specific region instead of whole screen\n");
+    printf("    spotlight   Dim desktop around cursor (click-through no-freeze)\n");
     printf("    quit        Shut down the running miru-daemon\n\n");
     printf("Options: \n");
     printf("    -h, --help      Show this help message\n");
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
 
     if (argc != 2) {
         // fprintf(stderr, "usage: %s <toggle|loupe|quit>\n", argv[0]);
-        MIRU_LOG("usage: %s <toggle|loupe|quit>", argv[0]);
+        MIRU_LOG("usage: %s <toggle|loupe|spotlight|quit>", argv[0]);
         return 1;
     }
 

@@ -15,6 +15,14 @@ struct miru_gl_renderer {
 
     GLuint line_program, line_vbo;
     GLint line_a_pos, line_u_color;
+
+    GLuint spotlight_program;
+    GLint spotlight_a_pos;
+    GLint spotlight_u_cursor;
+    GLint spotlight_u_resolution;
+    GLint spotlight_u_radius;
+    GLint spotlight_u_softness;
+    GLint spotlight_u_dim;
 };
 
 int gl_renderer_init(struct miru_gl_renderer *r);
@@ -26,6 +34,7 @@ void gl_renderer_upload_texture(
     int stride,
     uint32_t format
 );
+
 void gl_renderer_draw(
     struct miru_gl_renderer *r,
     float crop_x,
@@ -81,6 +90,17 @@ void gl_renderer_draw_loupe_outline(
     float y1,
     int buf_w,
     int buf_h
+);
+
+void gl_renderer_draw_standalone_spotlight(
+    struct miru_gl_renderer *r,
+    float cursor_px_x,
+    float cursor_px_y,
+    float viewport_w,
+    float viewport_h,
+    float radius,
+    float softness,
+    float dim
 );
 
 #endif

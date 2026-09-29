@@ -12,17 +12,6 @@
 #include "help.h"
 #include "font8x8_basic.h"
 
-/* bool miru_debug_enabled(void) */
-/* { */
-/*     static int cached = -1; */
-/*     if (cached == -1) { */
-/*         const char *v = getenv("MIRU_DEBUG"); */
-/*         cached = (v && *v && strcmp(v, "0") != 0) ? 1 : 0; */
-/*     } */
-
-/*     return cached != 0; */
-/* } */
-
 #ifndef GL_BGRA_EXT
 #define GL_BGRA_EXT 0x80E1
 #endif /* ifndef MACRO */
@@ -76,6 +65,27 @@ static const char *line_fs = "precision mediump float;\n"
                              "void main() {\n"
                              "   gl_FragColor = u_color;\n"
                              "}\n";
+
+static const char *spotlight_vs = "attribute vec2 a_position;\n"
+                                  "void main() {\n"
+                                  "     gl_Position = vec4(a_position, 0.0, 1.0);\n"
+                                  "}\n";
+
+static const char *spotlight_fs = "precision mediump float;\n"
+                                  "uniform vec2 u_cursor;\n"
+                                  "uniform vec2 u_resolution;\n"
+                                  "uniform float u_radius;\n"
+                                  "uniform float u_softness;\n"
+                                  "uniform float u_dim;\n"
+                                  "void main() {\n"
+                                  "     float dist = distance(gl_FragCoord.xy, u_cursor);\n"
+                                  "     float soft = max(u_softness, 1.0);\n"
+                                  "     float inner = max(u_radius - soft, 0.0);\n"
+                                  "     float outer = u_radius + soft;\n"
+                                  "     float t = smoothstep(inner, outer, dist);\n"
+                                  "     float a = u_dim * t;\n"
+                                  "     gl_FragColor = vec4(0.0, 0.0, 0.0, a);\n"
+                                  "}\n";
 
 static GLuint compile_shader(GLenum type, const char *src)
 {
@@ -179,6 +189,34 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     r->line_a_pos = glGetAttribLocation(r->line_program, "a_position");
     r->line_u_color = glGetUniformLocation(r->line_program, "u_color");
     glGenBuffers(1, &r->line_vbo);
+
+    GLuint svs = compile_shader(GL_VERTEX_SHADER, spotlight_vs);
+    GLuint sfs = compile_shader(GL_FRAGMENT_SHADER, spotlight_fs);
+
+    if (!svs || !sfs)
+        return -1;
+
+    r->spotlight_program = glCreateProgram();
+    glAttachShader(r->spotlight_program, svs);
+    glAttachShader(r->spotlight_program, sfs);
+    glLinkProgram(r->spotlight_program);
+
+    glDeleteShader(svs);
+    glDeleteShader(sfs);
+    ok = 0;
+
+    glGetProgramiv(r->spotlight_program, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        MIRU_LOG("gl_renderer: spotlight program link failed");
+        return -1;
+    }
+
+    r->spotlight_a_pos = glGetAttribLocation(r->spotlight_program, "a_position");
+    r->spotlight_u_cursor = glGetUniformLocation(r->spotlight_program, "u_cursor");
+    r->spotlight_u_resolution = glGetUniformLocation(r->spotlight_program, "u_resolution");
+    r->spotlight_u_radius = glGetUniformLocation(r->spotlight_program, "u_radius");
+    r->spotlight_u_softness = glGetUniformLocation(r->spotlight_program, "u_softness");
+    r->spotlight_u_dim = glGetUniformLocation(r->spotlight_program, "u_dim");
 
     return 0;
 }
@@ -298,6 +336,9 @@ void gl_renderer_cleanup(struct miru_gl_renderer *r)
     }
     if (r->line_program) {
         glDeleteProgram(r->line_program);
+    }
+    if (r->spotlight_program) {
+        glDeleteProgram(r->spotlight_program);
     }
     memset(r, 0, sizeof(*r));
 }
@@ -754,4 +795,40 @@ void gl_renderer_draw_loupe_outline(
     emit_line(r, x1, y0, x1, y1, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
     emit_line(r, x1, y1, x0, y1, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
     emit_line(r, x0, y1, x0, y0, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
+}
+
+void gl_renderer_draw_standalone_spotlight(
+    struct miru_gl_renderer *r,
+    float cursor_px_x,
+    float cursor_px_y,
+    float viewport_w,
+    float viewport_h,
+    float radius,
+    float softness,
+    float dim
+)
+{
+    if (!r->spotlight_program || viewport_w <= 0 || viewport_h <= 0)
+        return;
+
+    float verts[] = {
+        -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+    };
+
+    glViewport(0, 0, viewport_w, viewport_h);
+    glUseProgram(r->spotlight_program);
+    glEnable(GL_BLEND);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glUniform2f(r->spotlight_u_cursor, cursor_px_x, cursor_px_y);
+    glUniform2f(r->spotlight_u_resolution, viewport_w, viewport_h);
+    glUniform1f(r->spotlight_u_radius, radius);
+    glUniform1f(r->spotlight_u_softness, softness);
+    glUniform1f(r->spotlight_u_dim, dim);
+
+    glBindBuffer(GL_ARRAY_BUFFER, r->line_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(r->spotlight_a_pos);
+    glVertexAttribPointer(r->spotlight_a_pos, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }

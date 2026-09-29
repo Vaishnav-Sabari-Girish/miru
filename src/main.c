@@ -300,6 +300,44 @@ int main(int argc, char *argv[])
                     input_reset_repeat(&input_ctx);
                     active = 0;
                 }
+            } else if (cmd == MIRU_IPC_SPOTLIGHT) {
+                if (!active) {
+                    struct layer_surface_config ls_config = {
+                        .zoom_default = (float)config.zoom_factor,
+                        .zoom_max = (float)config.zoom_max_factor,
+                        .zoom_animation_speed = (float)config.zoom_animation_speed,
+                        .spotlight_radius = (float)config.spotlight_radius,
+                        .spotlight_dim = (float)(config.spotlight_dim < 0.0 ? 0.0 :
+                                                 config.spotlight_dim > 1.0 ? 1.0 :
+                                                                              config.spotlight_dim),
+                        .spotlight_softness = (float)config.spotlight_softness,
+                        .spotlight_animation_speed = (float)config.spotlight_animation_speed,
+                        .smooth_enabled = config.zoom_smooth,
+                        .standalone_spotlight = true,
+                        .has_initial_cursor = false,
+                    };
+
+                    if (input_ctx.has_last_pointer) {
+                        ls_config.has_initial_cursor = true;
+                        ls_config.initial_cursor_x = input_ctx.last_pointer_x;
+                        ls_config.initial_cursor_y = input_ctx.last_pointer_y;
+                    }
+
+                    memset(&ls, 0, sizeof(ls));
+                    active = (layer_surface_create_spotlight(&state, &ls, &ls_config) == 0);
+                    if (active) {
+                        input_ctx.ls = &ls;
+                        MIRU_LOG("spotlight: standalone on");
+                    } else {
+                        MIRU_LOG("spotlight: failed to create surface");
+                    }
+                } else {
+                    deactivate(&ls, &capture);
+                    input_reset_repeat(&input_ctx);
+                    input_ctx.ls = NULL;
+                    active = 0;
+                    MIRU_LOG("spotlight: off");
+                }
             } else if (cmd == MIRU_IPC_QUIT) {
                 // fprintf(stderr, "received quit command\n");
                 MIRU_LOG("received quit command");
