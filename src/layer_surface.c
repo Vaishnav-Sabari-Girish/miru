@@ -86,7 +86,7 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
         ls->width,
         ls->height,
         ls->buffer_width,
-        ls->buffer_width,
+        ls->buffer_height,
         ls->scale
     );
 
@@ -140,12 +140,18 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
     ls->configured = true;
     ls->dirty = true;
 
-    if (ls->compositor && ls->surface && ls->width > 0 && ls->height > 0) {
+    if (!ls->standalone_spotlight && ls->compositor && ls->surface && ls->width > 0 && ls->height > 0) {
         struct wl_region *opaque = wl_compositor_create_region(ls->compositor);
         if (opaque) {
             wl_region_add(opaque, 0, 0, ls->width, ls->height);
             wl_surface_set_opaque_region(ls->surface, opaque);
             wl_region_destroy(opaque);
+        }
+    } else if (ls->standalone_spotlight && ls->compositor && ls->surface) {
+        struct wl_region *empty = wl_compositor_create_region(ls->compositor);
+        if (empty) {
+            wl_surface_set_opaque_region(ls->surface, empty);
+            wl_region_destroy(empty);
         }
     }
 
@@ -186,6 +192,7 @@ int layer_surface_create(
     ls->spotlight_dim = config->spotlight_dim;
     ls->spotlight_softness = config->spotlight_softness;
     ls->spotlight_enabled = false;
+    ls->standalone_spotlight = config->standalone_spotlight;
     ls->display_spotlight_radius = 0.0f;
     ls->display_spotlight_dim = 0.0f;
     ls->spotlight_animation_speed = config->spotlight_animation_speed > 0.0f ? config->spotlight_animation_speed :
@@ -257,13 +264,44 @@ int layer_surface_create(
             ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT
     );
     zwlr_layer_surface_v1_set_exclusive_zone(ls->layer_surface, -1);
-    zwlr_layer_surface_v1_set_keyboard_interactivity(
-        ls->layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE
-    );
+    // zwlr_layer_surface_v1_set_keyboard_interactivity(
+    //     ls->layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE
+    // );
+    if (ls->standalone_spotlight) {
+        zwlr_layer_surface_v1_set_keyboard_interactivity(
+            ls->layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE
+        );
+
+        {
+            struct wl_region *empty = wl_compositor_create_region(state->compositor);
+            if (empty) {
+                wl_surface_set_input_region(ls->surface, empty);
+                wl_region_destroy(empty);
+            }
+        }
+
+        ls->spotlight_enabled = true;
+    } else {
+        zwlr_layer_surface_v1_set_keyboard_interactivity(
+            ls->layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE
+        );
+    }
+
     zwlr_layer_surface_v1_add_listener(ls->layer_surface, &layer_surface_listener, ls);
     wl_surface_commit(ls->surface);
 
     return 0;
+}
+
+int layer_surface_create_spotlight(
+    struct miru_state *state,
+    struct miru_layer_surface *ls,
+    const struct layer_surface_config *config
+)
+{
+    struct layer_surface_config cfg = *config;
+    cfg.standalone_spotlight = true;
+    return layer_surface_create(state, ls, NULL, &cfg);
 }
 
 void layer_surface_apply_config(struct miru_layer_surface *ls, const struct layer_surface_config *config)
@@ -331,8 +369,8 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls)
 
 void layer_surface_render(struct miru_layer_surface *ls)
 {
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    // glClearColor(0.f, 0.f, 0.f, 1.f);
+    // glClear(GL_COLOR_BUFFER_BIT);
 
     if (!ls->configured || !ls->egl.egl_window)
         return;
@@ -340,6 +378,48 @@ void layer_surface_render(struct miru_layer_surface *ls)
     bool animating = layer_surface_is_animating(ls);
     if (!animating && !ls->dirty)
         return;
+
+    if (ls->standalone_spotlight) {
+        float speed = ls->spotlight_animation_speed > 0.0f ? ls->spotlight_animation_speed : 14.0f;
+        float st = 1.0f - expf(-speed * (1.0f / 60.0f));
+        float target_radius = ls->spotlight_enabled ? ls->spotlight_radius : 0.0f;
+        float target_dim = ls->spotlight_enabled ? ls->spotlight_dim : 0.0f;
+        ls->display_spotlight_radius += (target_radius - ls->display_spotlight_radius) * st;
+        ls->display_spotlight_dim += (target_dim - ls->display_spotlight_dim) * st;
+
+        if (fabsf(ls->display_spotlight_radius - target_radius) <= SPOTLIGHT_RADIUS_EPSILON)
+            ls->display_spotlight_radius = target_radius;
+
+        if (fabsf(ls->display_spotlight_dim - target_dim) <= SPOTLIGHT_DIM_EPSILON)
+            ls->display_spotlight_dim = target_dim;
+
+        glViewport(0, 0, ls->buffer_width, ls->buffer_height);
+        glClearColor(0.f, 0.f, 0.f, 0.f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+        float cx = (float)ls->display_cursor_x;
+        float cy = (float)ls->buffer_height - (float)ls->display_cursor_y;
+
+        gl_renderer_draw_standalone_spotlight(
+            &ls->gl,
+            cx,
+            cy,
+            ls->buffer_width,
+            ls->buffer_height,
+            ls->display_spotlight_radius,
+            ls->spotlight_softness,
+            ls->display_spotlight_dim
+        );
+
+        egl_swap_buffers(&ls->egl);
+        ls->dirty = false;
+        return;
+    }
+
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     if (ls->loupe.active) {
         glViewport(0, 0, ls->buffer_width, ls->buffer_height);

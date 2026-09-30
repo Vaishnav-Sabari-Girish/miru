@@ -95,7 +95,7 @@ See [Roadmap](#roadmap) for the full picture.
   different, harder problem than Cursor Highlight above: it needs cursor
   tracking without stealing pointer/keyboard focus, which Cursor Highlight
   sidesteps entirely by already owning input while Magnifier is active.
-  **Not built yet.**
+  **Work In Progress.**
 
 ### Why
 
@@ -542,7 +542,7 @@ Highlight/annotations within that one frozen frame is fully live, however.
 The overlay grabs keyboard and pointer input while active (needed for
 pan/zoom/Cursor Highlight/annotate to work), so clicks and most keys won't
 reach whatever's underneath until you exit; that's expected for Magnifier
-mode. A future standalone Spotlight mode would behave differently —
+mode. A standalone Spotlight mode would behave differently —
 click-through by design, see [What it does](#what-it-does) above.
 
 > [!NOTE]
@@ -615,7 +615,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Rectangle loupe mode (`miructl loupe`): region select, fixed-size window,
       cursor follow, content zoom inside the selection
 * [x] Frame refresh
-* [ ] Spotlight mode: standalone, click-through overlay (no Magnifier
+* [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
   Niri IPC or similar)

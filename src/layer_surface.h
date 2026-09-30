@@ -21,6 +21,7 @@ struct layer_surface_config {
     double initial_cursor_x, initial_cursor_y;
     bool has_initial_cursor;
     bool smooth_enabled;
+    bool standalone_spotlight;
 };
 
 struct miru_loupe {
@@ -65,6 +66,7 @@ struct miru_layer_surface {
     float zoom_default, zoom_max;
     float spotlight_radius, spotlight_dim, spotlight_softness;
     bool spotlight_enabled;
+    bool standalone_spotlight;
     float display_spotlight_radius;
     float display_spotlight_dim;
     float spotlight_animation_speed;
@@ -79,6 +81,12 @@ int layer_surface_create(
     struct miru_state *state,
     struct miru_layer_surface *ls,
     const struct miru_capture *capture,
+    const struct layer_surface_config *config
+);
+
+int layer_surface_create_spotlight(
+    struct miru_state *state,
+    struct miru_layer_surface *ls,
     const struct layer_surface_config *config
 );
 
