@@ -1,3 +1,5 @@
+name: Check code linting
+
 when:
   - event: push
     branch: main

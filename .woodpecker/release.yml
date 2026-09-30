@@ -1,3 +1,5 @@
+name: Create a new release
+
 clone:
   git:
     image: woodpeckerci/plugin-git

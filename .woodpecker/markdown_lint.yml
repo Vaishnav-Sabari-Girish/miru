@@ -1,3 +1,5 @@
+name: Check Markdown linting
+
 when:
   - event: push
     branch: main

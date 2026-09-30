@@ -1,3 +1,5 @@
+name: Check code formatting
+
 when:
   - event: push
     branch: main
