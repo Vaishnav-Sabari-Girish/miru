@@ -88,14 +88,14 @@ See [Roadmap](#roadmap) for the full picture.
   again (or quit) to exit. Separate from the above **Magnifier Mode**.
   **Requires a separate compositor keybind**.
 
-* **Spotlight mode** — a fully independent, click-through overlay that
-  darkens the whole screen except a cursor-tracking circle, while you keep
-  working normally underneath — no freeze, no input grab, usable during
-  normal desktop work rather than only inside a Magnifier session. This is a
-  different, harder problem than Cursor Highlight above: it needs cursor
-  tracking without stealing pointer/keyboard focus, which Cursor Highlight
-  sidesteps entirely by already owning input while Magnifier is active.
-  **Work In Progress.**
+* **Spotlight mode** — a fully independent, click-through overlay that darkens
+  the whole screen except a cursor-tracking circle, while you keep working
+  normally underneath — no freeze, no input grab, usable during normal desktop
+  work rather than only inside a Magnifier session. This is a different, harder
+  problem than Cursor Highlight above: it needs cursor tracking without stealing
+  pointer/keyboard focus, which Cursor Highlight sidesteps entirely by already
+  owning input while Magnifier is active. **Work In Progress. (Mode is
+  implemented, but cursor follow through is a WIP)**
 
 ### Why
 
@@ -349,6 +349,7 @@ Toggle the overlay on/off:
 ./build/miru-daemon --version # prints version info + an ASCII logo, exits immediately
 ./build/miructl toggle        # freezes + zooms the screen / returns it to normal
 ./build/miructl loupe         # region loupe: drag a rectangle, then zoom that region only
+./build/miructl spotlight     # standalone dim-around-cursor (click-through; cursor follow is a WIP)
 ./build/miructl quit          # tells the daemon to shut down
 ```
 
@@ -394,6 +395,7 @@ factor = 2.0
 increment = 0.25
 max_factor = 10.0
 smooth = false
+upscale = "bicubic"
 
 [spotlight]
 radius = 250
@@ -415,6 +417,10 @@ The currently active options are:
 * `zoom.max_factor` — maximum zoom level. Must be at least `1.0`.
 * `zoom.smooth` — when `true`, zoom level and pan position are smoothly
   interpolated toward their targets instead of snapping.
+* `zoom.upscale` - how the frozen capture is re-sampled when zoomed:
+  * `"nearest"` - sharp, block (GL nearest)
+  * `"linear"` - bilinear (default hardware filter)
+  * `"bicubic"` - Catmull-Rom bicubic in the fragment shader (default)
 * `spotlight.radius` — radius, in pixels, of the fully-bright circle around
   the cursor.
 * `spotlight.dim` — how much darker the dimmed area gets, from `0.0` (no
@@ -615,6 +621,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Rectangle loupe mode (`miructl loupe`): region select, fixed-size window,
       cursor follow, content zoom inside the selection
 * [x] Frame refresh
+* [x] Configurable capture upscale (`zoom.upscale` `linear/nearest/bicubic`)
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
