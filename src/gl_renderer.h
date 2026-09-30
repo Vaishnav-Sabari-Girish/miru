@@ -12,6 +12,10 @@ struct miru_gl_renderer {
     GLint u_texture, u_crop_origin, u_crop_scale, u_y_invert;
     GLint u_cursor_px, u_resolution;
     GLint u_spotlight_enabled, u_spotlight_radius, u_spotlight_softness, u_spotlight_dim;
+    GLint u_texel_size;
+    GLint u_upscale;
+    int tex_w, tex_h;
+    int upscale_mode;
 
     GLuint line_program, line_vbo;
     GLint line_a_pos, line_u_color;
@@ -34,6 +38,8 @@ void gl_renderer_upload_texture(
     int stride,
     uint32_t format
 );
+
+void gl_renderer_set_upscale(struct miru_gl_renderer *r, int mode);
 
 void gl_renderer_draw(
     struct miru_gl_renderer *r,

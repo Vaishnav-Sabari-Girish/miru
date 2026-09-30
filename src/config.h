@@ -12,6 +12,8 @@ struct miru_config {
     bool zoom_smooth;
     double zoom_animation_speed;
 
+    int zoom_upscale;
+
     // Spotlight
     long spotlight_radius;
     double spotlight_dim;
