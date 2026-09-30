@@ -122,6 +122,7 @@ handle_configure(void *data, struct zwlr_layer_surface_v1 *surface, uint32_t ser
             MIRU_LOG("failed to init GL renderer");
             return;
         }
+        gl_renderer_set_upscale(&ls->gl, ls->zoom_upscale);
     } else {
         egl_resize_surface(&ls->egl, ls->buffer_width, ls->buffer_height);
     }
@@ -188,6 +189,7 @@ int layer_surface_create(
     ls->zoom_default = config->zoom_default;
     ls->zoom_max = config->zoom_max;
     ls->zoom_animation_speed = config->zoom_animation_speed > 0.f ? config->zoom_animation_speed : 14.0f;
+    ls->zoom_upscale = (config->zoom_upscale >= 0 && config->zoom_upscale <= 2) ? config->zoom_upscale : 2;
     ls->spotlight_radius = config->spotlight_radius;
     ls->spotlight_dim = config->spotlight_dim;
     ls->spotlight_softness = config->spotlight_softness;
@@ -315,6 +317,13 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
     ls->smooth_enabled = config->smooth_enabled;
     if (config->zoom_animation_speed > 0.0f)
         ls->zoom_animation_speed = config->zoom_animation_speed;
+
+    if (config->zoom_upscale >= 0 && config->zoom_upscale <= 2) {
+        ls->zoom_upscale = config->zoom_upscale;
+        if (ls->configured)
+            gl_renderer_set_upscale(&ls->gl, ls->zoom_upscale);
+    }
+
     if (ls->zoom > ls->zoom_max)
         ls->zoom = ls->zoom_max;
     ls->dirty = true;

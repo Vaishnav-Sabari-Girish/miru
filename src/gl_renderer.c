@@ -39,15 +39,55 @@ static const char *fragment_shader_src = "precision mediump float;\n"
                                          "uniform float u_spotlight_radius;\n"
                                          "uniform float u_spotlight_softness;\n"
                                          "uniform float u_spotlight_dim;\n"
+                                         "uniform vec2 u_texel_size;\n"
+                                         "uniform float u_upscale;\n"
+                                         "\n"
+                                         "vec4 cubic(float v) {\n"
+                                         "    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;\n"
+                                         "    vec4 s = n * n * n;\n"
+                                         "    float x = s.x;\n"
+                                         "    float y = s.y - 4.0 * s.x;\n"
+                                         "    float z = s.z - 4.0 * s.y + 6.0 * s.x;\n"
+                                         "    float w = 6.0 - x - y - z;\n"
+                                         "    return vec4(x, y, z, w) * (1.0 / 6.0);\n"
+                                         "}\n"
+                                         "\n"
+                                         "vec3 textureBicubic(sampler2D tex, vec2 uv) {\n"
+                                         "    vec2 texSize = 1.0 / u_texel_size;\n"
+                                         "    vec2 invTexSize = u_texel_size;\n"
+                                         "    uv = uv * texSize - 0.5;\n"
+                                         "    vec2 fxy = fract(uv);\n"
+                                         "    uv -= fxy;\n"
+                                         "    vec4 xcubic = cubic(fxy.x);\n"
+                                         "    vec4 ycubic = cubic(fxy.y);\n"
+                                         "    vec4 c = uv.xxyy + vec2(-0.5, 1.5).xyxy;\n"
+                                         "    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);\n"
+                                         "    vec4 offset = c + vec4(xcubic.yw, ycubic.yw) / s;\n"
+                                         "    offset *= invTexSize.xxyy;\n"
+                                         "    vec4 sample0 = texture2D(tex, offset.xz);\n"
+                                         "    vec4 sample1 = texture2D(tex, offset.yz);\n"
+                                         "    vec4 sample2 = texture2D(tex, offset.xw);\n"
+                                         "    vec4 sample3 = texture2D(tex, offset.yw);\n"
+                                         "    float sx = s.x / (s.x + s.y);\n"
+                                         "    float sy = s.z / (s.z + s.w);\n"
+                                         "    return mix(mix(sample3.rgb, sample2.rgb, sx),\n"
+                                         "               mix(sample1.rgb, sample0.rgb, sx), sy);\n"
+                                         "}\n"
+                                         "\n"
                                          "void main() {\n"
                                          "    vec2 uv = v_texcoord;\n"
                                          "    if (u_y_invert > 0.5) { uv.y = 1.0 - uv.y; }\n"
                                          "    vec2 sample_uv = u_crop_origin + uv * u_crop_scale;\n"
-                                         "    vec3 color = texture2D(u_texture, sample_uv).rgb;\n"
+                                         "    vec3 color;\n"
+                                         "    if (u_upscale > 1.5) {\n"
+                                         "        color = textureBicubic(u_texture, sample_uv);\n"
+                                         "    } else {\n"
+                                         "        color = texture2D(u_texture, sample_uv).rgb;\n"
+                                         "    }\n"
                                          "    if (u_spotlight_enabled > 0.5) {\n"
                                          "        vec2 frag_px = gl_FragCoord.xy;\n"
                                          "        float dist = distance(frag_px, u_cursor_px);\n"
-                                         "        float inner = max(u_spotlight_radius - u_spotlight_softness , 0.0);\n"
+                                         "        float inner = max(u_spotlight_radius - u_spotlight_softness, 0.0);\n"
                                          "        float outer = u_spotlight_radius + u_spotlight_softness;\n"
                                          "        float t = smoothstep(inner, outer, dist);\n"
                                          "        color *= (1.0 - u_spotlight_dim * t);\n"
@@ -149,6 +189,11 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     r->u_spotlight_dim = glGetUniformLocation(r->program, "u_spotlight_dim");
     r->u_spotlight_radius = glGetUniformLocation(r->program, "u_spotlight_radius");
     r->u_spotlight_softness = glGetUniformLocation(r->program, "u_spotlight_softness");
+    r->u_texel_size = glGetUniformLocation(r->program, "u_texel_size");
+    r->u_upscale = glGetUniformLocation(r->program, "u_upscale");
+    r->tex_w = 0;
+    r->tex_h = 0;
+    r->upscale_mode = 2;
 
     float verts[] = {
         // x, y (clip space), u, v
@@ -277,6 +322,10 @@ void gl_renderer_upload_texture(
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, width, 1, gl_fmt, GL_UNSIGNED_BYTE, pixels + (size_t)y * stride);
         }
     }
+
+    r->tex_w = width;
+    r->tex_h = height;
+    gl_renderer_set_upscale(r, r->upscale_mode);
 }
 
 void gl_renderer_draw(
@@ -319,6 +368,13 @@ void gl_renderer_draw(
     glUniform1f(r->u_spotlight_radius, spotlight_radius);
     glUniform1f(r->u_spotlight_softness, spotlight_softness);
     glUniform1f(r->u_spotlight_dim, spotlight_dim);
+
+    if (r->tex_w > 0 && r->tex_h > 0)
+        glUniform2f(r->u_texel_size, 1.0f / (float)r->tex_w, 1.0f / (float)r->tex_h);
+    else
+        glUniform2f(r->u_texel_size, 1.0f, 1.0f);
+
+    glUniform1f(r->u_upscale, (float)r->upscale_mode);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
@@ -769,6 +825,12 @@ void gl_renderer_draw_loupe(
     glUniform1f(r->u_spotlight_softness, 0.0f);
     glUniform1f(r->u_spotlight_dim, 0.0f);
 
+    if (r->tex_w > 0 && r->tex_h > 0)
+        glUniform2f(r->u_texel_size, 1.0f / (float)r->tex_w, 1.0f / (float)r->tex_h);
+    else
+        glUniform2f(r->u_texel_size, 1.0f, 1.0f);
+
+    glUniform1f(r->u_upscale, (float)r->upscale_mode);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     float full[] = {
@@ -831,4 +893,24 @@ void gl_renderer_draw_standalone_spotlight(
     glEnableVertexAttribArray(r->spotlight_a_pos);
     glVertexAttribPointer(r->spotlight_a_pos, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+void gl_renderer_set_upscale(struct miru_gl_renderer *r, int mode)
+{
+    if (!r)
+        return;
+
+    if (mode < 0 || mode > 2)
+        mode = 2;
+
+    r->upscale_mode = mode;
+    glBindTexture(GL_TEXTURE_2D, r->texture);
+
+    if (mode == 0) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    } else {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
 }

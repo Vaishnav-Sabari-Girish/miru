@@ -306,6 +306,7 @@ int main(int argc, char *argv[])
                         .zoom_default = (float)config.zoom_factor,
                         .zoom_max = (float)config.zoom_max_factor,
                         .zoom_animation_speed = (float)config.zoom_animation_speed,
+                        .zoom_upscale = config.zoom_upscale,
                         .spotlight_radius = (float)config.spotlight_radius,
                         .spotlight_dim = (float)(config.spotlight_dim < 0.0 ? 0.0 :
                                                  config.spotlight_dim > 1.0 ? 1.0 :
@@ -359,6 +360,7 @@ int main(int argc, char *argv[])
                     config.zoom_max_factor != new_config.zoom_max_factor ||
                     config.zoom_smooth != new_config.zoom_smooth ||
                     config.zoom_animation_speed != new_config.zoom_animation_speed ||
+                    config.zoom_upscale != new_config.zoom_upscale ||
                     config.spotlight_radius != new_config.spotlight_radius ||
                     config.spotlight_dim != new_config.spotlight_dim ||
                     config.spotlight_softness != new_config.spotlight_softness ||
@@ -376,6 +378,7 @@ int main(int argc, char *argv[])
                             .zoom_default = (float)config.zoom_factor,
                             .zoom_max = (float)config.zoom_max_factor,
                             .zoom_animation_speed = (float)config.zoom_animation_speed,
+                            .zoom_upscale = config.zoom_upscale,
                             .smooth_enabled = config.zoom_smooth,
                             .spotlight_radius = (float)config.spotlight_radius,
                             .spotlight_dim = (float)config.spotlight_dim,
