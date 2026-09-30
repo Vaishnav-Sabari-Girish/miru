@@ -1,5 +1,3 @@
-name: Spell check
-
 when:
   - event: push
     branch: main
