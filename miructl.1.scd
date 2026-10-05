@@ -27,6 +27,9 @@ connection error.
 	Show or hide the magnifier overlay for a specific region. On first toggle the daemon captures
 	one frame and allows the user to drag a rectangle over the area to be zoomed; a second toggle tears it down
 	(same as exiting with *Esc* when the in-overlay help panel is closed).
+*spotlight*
+	Show the standalone spotlight overlay. Has click-through, but no zooming and
+	no cursor-follow.
 *quit*
 	Ask *miru-daemon* to shut down.
 
