@@ -685,6 +685,43 @@ void gl_renderer_draw_annotations(
                 a->thickness,
                 viewport_w
             );
+        } else if (a->type == MIRU_ANN_LINE) {
+            emit_line(
+                r,
+                a->x0,
+                a->y0,
+                a->x1,
+                a->y1,
+                src_left,
+                src_top,
+                src_w,
+                src_h,
+                a->r,
+                a->g,
+                a->b,
+                a->a,
+                a->thickness,
+                viewport_w
+            );
+        } else if (a->type == MIRU_ANN_ELLIPSE) {
+            float cx = (a->x0 + a->x1) * 0.5f;
+            float cy = (a->y0 + a->y1) * 0.5f;
+            float rx = fabsf(a->x1 - a->x0) * 0.5f;
+            float ry = fabsf(a->y1 - a->y0) * 0.5f;
+            const int N = 48;
+            float px = cx + rx;
+            float py = cy;
+
+            for (int i = 1; i <= N; i++) {
+                float t = (float)i / (float)N * 6.2831853f;
+                float qx = cx + rx * cosf(t);
+                float qy = cy + ry * sinf(t);
+                emit_line(
+                    r, px, py, qx, qy, src_left, src_top, src_w, src_h, a->r, a->g, a->b, a->a, a->thickness, viewport_w
+                );
+                px = qx;
+                py = qy;
+            }
         } else if (a->type == MIRU_ANN_TEXT && a->text[0]) {
             float nx, ny;
             annotation_buffer_to_ndc(a->x0, a->y0, src_left, src_top, src_w, src_h, &nx, &ny);
@@ -704,6 +741,25 @@ void gl_renderer_draw_annotations(
 
         if (ann->tool == MIRU_ANN_ARROW) {
             emit_arrow(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+        } else if (ann->tool == MIRU_ANN_LINE) {
+            emit_line(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+        } else if (ann->tool == MIRU_ANN_ELLIPSE) {
+            float cx = (x0 + x1) * 0.5f;
+            float cy = (y0 + y1) * 0.5f;
+            float rx = fabsf(x1 - x0) * 0.5f;
+            float ry = fabsf(y1 - y0) * 0.5f;
+            const int N = 48;
+            float px = cx + rx;
+            float py = cy;
+
+            for (int i = 1; i <= N; i++) {
+                float t = (float)i / (float)N * 6.2831853f;
+                float qx = cx + rx * cosf(t);
+                float qy = cy + ry * sinf(t);
+                emit_line(r, px, py, qx, qy, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+                px = qx;
+                py = qy;
+            }
         } else {
             emit_line(r, x0, y0, x1, y0, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
             emit_line(r, x1, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);

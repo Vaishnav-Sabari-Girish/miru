@@ -16,6 +16,8 @@ static const char *const lines[] = {
     "SHIFT + A         Annotation Mode",
     " W                Arrow",
     " R                Rectangle",
+    " L                Line",
+    " O                Ellipse",
     " T                Text",
     " Drag LMB         Place Shape",
     " Click + type     Place Text",

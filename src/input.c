@@ -361,6 +361,17 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
         if (ctx->ls->annotations.dragging) {
             ctx->ls->annotations.drag_x1 = bx;
             ctx->ls->annotations.drag_y1 = by;
+
+            // Create a circle when in ellpise mode and holding shift and dragging
+            if (ctx->ls->annotations.tool == MIRU_ANN_ELLIPSE && ctx->shift_held) {
+                float dx = bx - ctx->ls->annotations.drag_x0;
+                float dy = by - ctx->ls->annotations.drag_y0;
+
+                float s = fabsf(dx) > fabsf(dy) ? fabsf(dx) : fabsf(dy);
+
+                ctx->ls->annotations.drag_x1 = ctx->ls->annotations.drag_x0 + (dx < 0.f ? -s : s);
+                ctx->ls->annotations.drag_y1 = ctx->ls->annotations.drag_y0 + (dy < 0.f ? -s : s);
+            }
         }
         ctx->ls->dirty = true;
         return;
@@ -750,6 +761,18 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
 
         return;
     }
+    if (key == KEY_L && ctx->ls->annotations.mode) {
+        ctx->ls->annotations.tool = MIRU_ANN_LINE;
+        ctx->ls->annotations.dragging = false;
+        MIRU_DBG("annotate tool: line");
+        return;
+    }
+    if (key == KEY_O && ctx->ls->annotations.mode) {
+        ctx->ls->annotations.tool = MIRU_ANN_ELLIPSE;
+        ctx->ls->annotations.dragging = false;
+        MIRU_DBG("annotate tool: ellipse");
+        return;
+    }
     if (key == KEY_A && ctx->shift_held) {
         ctx->ls->annotations.mode = !ctx->ls->annotations.mode;
         if (!ctx->ls->annotations.mode)
@@ -803,7 +826,7 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
-    if (key == KEY_W) {
+    if (key == KEY_W && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_ARROW;
         // if (miru_debug_enabled()) {
         //     fprintf(stderr, "annotate tool: arrow\n");
