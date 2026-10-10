@@ -315,11 +315,19 @@ void gl_renderer_upload_texture(
 
     glBindTexture(GL_TEXTURE_2D, r->texture);
     if (stride == width * 4) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, gl_fmt, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, (GLint)gl_fmt, width, height, 0, gl_fmt, GL_UNSIGNED_BYTE, pixels);
     } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, gl_fmt, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, (GLint)gl_fmt, width, height, 0, gl_fmt, GL_UNSIGNED_BYTE, NULL);
         for (int y = 0; y < height; y++) {
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, width, 1, gl_fmt, GL_UNSIGNED_BYTE, pixels + (size_t)y * stride);
+        }
+    }
+    {
+        GLenum err = glGetError();
+        if (err == !GL_NO_ERROR) {
+            MIRU_LOG(
+                "gl_renderer: upload failed glerr=0x%x format=0x%x gl_fmt=0x%x", (unsigned)err, format, (unsigned)gl_fmt
+            );
         }
     }
 
