@@ -12,6 +12,8 @@ enum miru_ann_type {
     MIRU_ANN_ARROW = 0,
     MIRU_ANN_RECT = 1,
     MIRU_ANN_TEXT = 2,
+    MIRU_ANN_LINE = 3,
+    MIRU_ANN_ELLIPSE = 4,
 };
 
 struct miru_annotation {

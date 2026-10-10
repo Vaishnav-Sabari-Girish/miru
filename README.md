@@ -72,8 +72,8 @@ See [Roadmap](#roadmap) for the full picture.
     with **Shift+Plus/Minus** or **Ctrl+scroll**. Entry/exit of the highlight
     is animated (`spotlight.animation_speed`).
   * **Shift+A** toggles **Annotate mode** — pan freezes and you can draw
-    presentation shapes on the frozen frame (arrows and rectangles). See
-    controls below.
+    presentation shapes on the frozen frame (arrows, rectangles, lines, ellipse
+    and circle). See controls below.
   * **Shift+H** or **?** toggles an on-screen **help panel** listing the
     current keybinds (Esc closes help first, then exits the magnifier).
 
@@ -526,6 +526,8 @@ centered on your cursor when possible. While active:
 * **Shift+A** to toggle **Annotate mode** (orange frame, pan frozen):
   * **W** — arrow tool
   * **R** — rectangle tool
+  * **L** — line tool
+  * **O** — ellipse tool (Shift + drag for circle)
   * **Left-click drag** — place the current tool on the frozen frame
   * **T** - text tool
   * **Click + type** - start typing text from the clicked location (indicated by
@@ -611,7 +613,8 @@ click-through by design, see [What it does](#what-it-does) above.
   the real pointer position (absolute tracking) even while zoomed
 * [x] Animated Cursor Highlight entry/exit; live radius adjust (Shift+/- /
   Ctrl+scroll); `animation_speed` / `radius_step` config
-* [x] Shape annotations on the frozen frame (Shift+A: arrow / rectangle)
+* [x] Shape annotations on the frozen frame (Shift+A: arrow / rectangle / line /
+      ellipse / circle)
 * [x] In-overlay help panel (Shift+H / ?)
 * [x] systemd user service + `cmake --install`/`grim cast install` support
 * [x] Hot-reloading of the config while `miru-daemon` is running
