@@ -76,8 +76,10 @@ See [Roadmap](#roadmap) for the full picture.
     and circle). See controls below.
   * **Shift+H** or **?** toggles an on-screen **help panel** listing the
     current keybinds (Esc closes help first, then exits the magnifier).
+  * **Shift+E** exports the current view to a `.bmp` file which is created at
+    `$HOME/Pictures/miru/`
 
-  Cursor Highlight, annotations, and help only work *inside* an active
+  Cursor Highlight, annotations, export, and help only work *inside* an active
   Magnifier session; the desktop underneath stays frozen/grabbed while the
   overlay is on. **Built and working now.**
 
@@ -301,9 +303,13 @@ systemd user service so it starts automatically with your graphical session.
 #### Running directly
 
 ```bash
+# Normal mode
 ./build/miru-daemon
 # or
 grim cast run-daemon
+
+# Debug mode
+MIRU_DEBUG=1 ./build/miru-daemon
 ```
 
 #### As a systemd user service
@@ -625,6 +631,8 @@ click-through by design, see [What it does](#what-it-does) above.
       cursor follow, content zoom inside the selection
 * [x] Frame refresh
 * [x] Configurable capture upscale (`zoom.upscale` `linear/nearest/bicubic`)
+* [x] Export current view to an image making it easier to share to others or add
+      to presentations
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
