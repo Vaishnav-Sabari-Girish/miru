@@ -77,7 +77,7 @@ See [Roadmap](#roadmap) for the full picture.
   * **Shift+H** or **?** toggles an on-screen **help panel** listing the
     current keybinds (Esc closes help first, then exits the magnifier).
   * **Shift+E** exports the current view to a `.bmp` file which is created at
-    `$HOME/Pictures/miru/`
+    `$HOME/Pictures/miru/` (Check out [`test_export.bmp`](./test_export.bmp))
 
   Cursor Highlight, annotations, export, and help only work *inside* an active
   Magnifier session; the desktop underneath stays frozen/grabbed while the
@@ -632,7 +632,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Frame refresh
 * [x] Configurable capture upscale (`zoom.upscale` `linear/nearest/bicubic`)
 * [x] Export current view to an image making it easier to share to others or add
-      to presentations
+      to presentations (Check out [`test_export.bmp`](./test_export.bmp))
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
