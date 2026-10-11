@@ -850,6 +850,13 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (key == KEY_E && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        ctx->ls->export_pending = true;
+        ctx->ls->dirty = true;
+        MIRU_DBG("export: requested");
+        return;
+    }
+
     if ((key == KEY_H && ctx->shift_held) || (key == KEY_SLASH && ctx->shift_held)) {
         ctx->ls->help_visible = !ctx->ls->help_visible;
         ctx->ls->dirty = true;

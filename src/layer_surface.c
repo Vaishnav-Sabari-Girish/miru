@@ -10,6 +10,7 @@
 #include "layer_surface.h"
 #include "viewporter-client-protocol.h"
 #include "fractional-scale-v1-client-protocol.h"
+#include "export.h"
 
 #define SMOOTH_SPEED 12.0f
 #define ZOOM_EPSILON 0.01f
@@ -206,6 +207,8 @@ int layer_surface_create(
 
     ls->zoom_velocity = 0.0f;
     ls->zoom_momentum_friction = 8.0f;
+
+    ls->export_pending = false;
 
     ls->help_visible = false;
 
@@ -422,6 +425,11 @@ void layer_surface_render(struct miru_layer_surface *ls)
             ls->display_spotlight_dim
         );
 
+        if (ls->export_pending) {
+            ls->export_pending = false;
+            miru_export_framebuffer(ls->buffer_width, ls->buffer_height);
+        }
+
         egl_swap_buffers(&ls->egl);
         ls->dirty = false;
         return;
@@ -526,6 +534,10 @@ void layer_surface_render(struct miru_layer_surface *ls)
         } else if (ls->loupe.selecting || ls->loupe.dragging) {
             gl_renderer_draw_loupe_outline(&ls->gl, x0, y0, x1, y1, ls->buffer_width, ls->buffer_height);
         }
+        if (ls->export_pending) {
+            ls->export_pending = false;
+            miru_export_framebuffer(ls->buffer_width, ls->buffer_height);
+        }
 
         egl_swap_buffers(&ls->egl);
         ls->dirty = false;
@@ -624,6 +636,12 @@ void layer_surface_render(struct miru_layer_surface *ls)
     if (ls->help_visible) {
         gl_renderer_draw_help(&ls->gl, ls->buffer_width, ls->buffer_height);
     }
+
+    if (ls->export_pending) {
+        ls->export_pending = false;
+        miru_export_framebuffer(ls->buffer_width, ls->buffer_height);
+    }
+
     egl_swap_buffers(&ls->egl);
     ls->dirty = false;
 }
