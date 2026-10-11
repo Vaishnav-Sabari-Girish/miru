@@ -76,6 +76,8 @@ struct miru_layer_surface {
     struct miru_annotation_state annotations;
     bool help_visible;
     struct miru_loupe loupe;
+
+    bool export_pending;
 };
 
 int layer_surface_create(

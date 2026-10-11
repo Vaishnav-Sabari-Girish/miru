@@ -24,6 +24,7 @@ static const char *const lines[] = {
     "   Enter          Commit Text",
     "   ESC            Cancel Text",
     " C                Clear Annotations",
+    "SHIFT+E           Export view (Image)",
     "SHIFT+H or ?      Toggle this help",
     "ESC               Close help / exit",
 };

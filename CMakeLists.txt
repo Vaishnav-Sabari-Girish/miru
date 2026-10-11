@@ -110,6 +110,7 @@ add_executable(
   src/egl_context.c
   src/gl_renderer.c
   src/annotations.c
+  src/export.c
   src/help.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}

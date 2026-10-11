@@ -35,6 +35,7 @@ be bound in the compositor to run *miructl toggle*.
 See *miructl*(1). Typical usage:
 
 	miructl toggle
+
 	miructl quit
 
 # ENVIRONMENT
@@ -124,6 +125,10 @@ https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration
 
 *Shift+H* or *?*
 	Toggle help panel. *Esc* closes help first if open.
+
+*Shift+E*
+	Export current view to a *.bmp* file. The file is stored at
+	*$HOME/Pictures/miru/*
 
 *Esc* or compositor toggle keybind (*miructl toggle*)
 	Exit magnifier (after closing help if needed).

@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-08\-30" "Miru" "miru\-daemon Manual"
+.TH "MIRU\-DAEMON" "1" "2026\-10\-11" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
@@ -47,6 +47,7 @@ See \fBmiructl\fR(1).\& Typical usage:
 .PP
 .RS 4
 miructl toggle
+.PP
 miructl quit
 .PP
 .RE
@@ -166,6 +167,12 @@ Toggle annotate mode (pan frozen; orange frame).\&
 \fBShift+H\fR or \fB?\&\fR
 .RS 4
 Toggle help panel.\& \fBEsc\fR closes help first if open.\&
+.PP
+.RE
+\fBShift+E\fR
+.RS 4
+Export current view to a \fB.\&bmp\fR file.\& The file is stored at
+\fB$HOME/Pictures/miru/\fR
 .PP
 .RE
 \fBEsc\fR or compositor toggle keybind (\fBmiructl toggle\fR)
