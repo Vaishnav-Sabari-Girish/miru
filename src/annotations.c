@@ -6,10 +6,13 @@ void annotation_state_init(struct miru_annotation_state *s)
 {
     memset(s, 0, sizeof(*s));
     s->tool = MIRU_ANN_ARROW;
+    s->redo_count = 0;
 }
 
 void annotation_clear(struct miru_annotation_state *s)
 {
+    s->redo_count = 0;
+
     s->count = 0;
     s->dragging = false;
     s->typing = false;
@@ -34,6 +37,7 @@ bool annotation_add(struct miru_annotation_state *s, enum miru_ann_type type, fl
     a->a = 1.0f;
 
     a->thickness = 4.0f;
+    s->redo_count = 0;
     return true;
 }
 
@@ -93,6 +97,7 @@ bool annotation_add_text(struct miru_annotation_state *s, float x, float y, cons
 
     a->thickness = 1.0f;
     snprintf(a->text, MIRU_ANN_TEXT_MAX, "%s", text);
+    s->redo_count = 0;
     return true;
 }
 
@@ -177,4 +182,28 @@ char annotation_keycode_to_char(uint32_t key, bool shift)
         return '/';
 
     return 0;
+}
+
+bool annotation_undo(struct miru_annotation_state *s)
+{
+    if (!s || s->count <= 0)
+        return false;
+
+    if (s->redo_count >= MIRU_MAX_ANNOTATIONS)
+        return false;
+
+    s->redo_stack[s->redo_count++] = s->items[--s->count];
+    return true;
+}
+
+bool annotation_redo(struct miru_annotation_state *s)
+{
+    if (!s || s->redo_count <= 0)
+        return false;
+
+    if (s->count >= MIRU_MAX_ANNOTATIONS)
+        return false;
+
+    s->items[s->count++] = s->redo_stack[--s->redo_count];
+    return true;
 }

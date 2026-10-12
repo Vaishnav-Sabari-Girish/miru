@@ -751,6 +751,24 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (ctx->ctrl_held && state == WL_KEYBOARD_KEY_STATE_PRESSED && ctx->ls) {
+        if (key == KEY_Z && !ctx->shift_held) {
+            if (annotation_undo(&ctx->ls->annotations)) {
+                ctx->ls->dirty = true;
+                MIRU_DBG("annotate: undo count=%d redo=%d", ctx->ls->annotations.count, ctx->ls->annotations.redo_count);
+            }
+            return;
+        }
+
+        if (key == KEY_Y || (key == KEY_Z && ctx->shift_held)) {
+            if (annotation_redo(&ctx->ls->annotations)) {
+                ctx->ls->dirty = true;
+                MIRU_DBG("annotate: redo count=%d redo=%d", ctx->ls->annotations.count, ctx->ls->annotations.redo_count);
+            }
+            return;
+        }
+    }
+
     if (key == KEY_T && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_TEXT;
         ctx->ls->annotations.dragging = false;

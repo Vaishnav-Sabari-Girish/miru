@@ -29,6 +29,9 @@ struct miru_annotation_state {
     struct miru_annotation items[MIRU_MAX_ANNOTATIONS];
     int count;
 
+    struct miru_annotation redo_stack[MIRU_MAX_ANNOTATIONS];
+    int redo_count;
+
     bool mode; // annotate mode active
     enum miru_ann_type tool;
 
@@ -73,5 +76,8 @@ void annotation_buffer_to_ndc(
 
 bool annotation_add_text(struct miru_annotation_state *s, float x, float y, const char *text);
 char annotation_keycode_to_char(uint32_t key, bool shift);
+
+bool annotation_undo(struct miru_annotation_state *s);
+bool annotation_redo(struct miru_annotation_state *s);
 
 #endif // !ANNOTATIONS_H

@@ -23,6 +23,8 @@ static const char *const lines[] = {
     " Click + type     Place Text",
     "   Enter          Commit Text",
     "   ESC            Cancel Text",
+    " CTRL+Z           Undo Annotation",
+    " CTRL+Y           Redo Annotation",
     " C                Clear Annotations",
     "SHIFT+E           Export view (Image)",
     "SHIFT+H or ?      Toggle this help",
