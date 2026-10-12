@@ -121,7 +121,7 @@ https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration
 
 *Shift+A*
 	Toggle annotate mode (pan frozen; orange frame).  
-	*W* — arrow tool; *R* — rectangle; drag LMB — place; *C* — clear.
+	*W* — arrow tool; *R* — rectangle; drag LMB — place; *CTRL+Z/Y* - Undo/Redo; *C* — clear.
 
 *Shift+H* or *?*
 	Toggle help panel. *Esc* closes help first if open.
