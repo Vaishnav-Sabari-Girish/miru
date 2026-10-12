@@ -799,8 +799,31 @@ void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewp
 
     emit_solid_quad(r, -1.f, -1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.35f);
 
+    const char *const *lines = help_lines();
+    size_t n = help_line_count();
+
     const float panel_w = 0.72f;
-    const float panel_h = 0.78f;
+    const float max_panel_h = 0.90f;
+    const float margin_x = panel_w * 0.05f;
+    float aspect = (float)viewport_w / (float)viewport_h;
+    float margin_y = margin_x * aspect;
+
+    float inner_w = panel_w - 2.f * margin_x;
+    float px_w = inner_w / (42.0f * 8.0f);
+    float px_h = px_w * aspect;
+    float line_advance = px_h * 9.5f;
+
+    float content_h = px_h * 8.0f + (float)(n > 0 ? n - 1 : 0) * line_advance;
+    float panel_h = content_h + 2.f * margin_y;
+    if (panel_h > max_panel_h) {
+        float s = max_panel_h / panel_h;
+        px_w *= s;
+        px_h *= s;
+        line_advance *= s;
+        margin_y *= s;
+        panel_h = max_panel_h;
+    }
+
     float x0 = -panel_w * 0.5f;
     float x1 = panel_w * 0.5f;
     float y0 = -panel_h * 0.5f;
@@ -814,17 +837,9 @@ void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewp
     emit_solid_quad(r, x0, y0, x0 + t, y1, 1.f, 0.55f, 0.1f, 1.f);
     emit_solid_quad(r, x1 - t, y0, x1, y1, 1.f, 0.55f, 0.1f, 1.f);
 
-    float margin = panel_w * 0.05f;
-    float inner_w = panel_w - 2.f * margin;
-    float px_w = inner_w / (42.0f * 8.0f);
+    float text_x = x0 + margin_x;
+    float text_y = y1 - margin_y - px_h * 8.0f;
 
-    float px_h = px_w * ((float)viewport_w / (float)viewport_h);
-    float line_advance = px_h * 9.5f;
-    float text_x = x0 + margin;
-    float text_y = y1 - margin - px_h * 8.0f;
-
-    const char *const *lines = help_lines();
-    size_t n = help_line_count();
     for (size_t i = 0; i < n; i++) {
         if (i == 0) {
             draw_text_line(r, lines[i], text_x, text_y, px_w, px_h, 1.0f, 0.85f, 0.55f, 1.f);
