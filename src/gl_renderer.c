@@ -821,7 +821,6 @@ void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewp
         px_h *= s;
         line_advance *= s;
         margin_y *= s;
-        content_h *= s;
         panel_h = max_panel_h;
     }
 
