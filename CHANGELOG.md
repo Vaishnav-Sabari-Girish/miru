@@ -1,4 +1,60 @@
 
+## v0.12.0 - 2026-10-13
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(annotate)** Configuration annotations via `[annotate]` in config
+
+- **(undo_redo)** Add undo and redo for annotations
+
+- **(export)** Export current view to `.bmp` image file
+
+- **(annotate)** Add line, ellipse and circle annotations
+
+- **(zoom)** Configurable upscale (nearest/linear/bicubic)
+
+- **(spotlight)** Standalone click-through dim overlay
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(gl)** Match internal format for BGRA texture upload
+
+- **(trigger)** Trigger Build
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### :art: Styling
+
+- **(lint)** Fixed linting warnings
+
+
+
+
+
+
+
 ## v0.11.0 - 2026-09-27
 
 
@@ -178,6 +234,8 @@
 
 
 
+### :tada: New Contributors
+- @medrinnn made their first contribution
 ## v0.7.0 - 2026-08-29
 
 
