@@ -7,6 +7,44 @@ void annotation_state_init(struct miru_annotation_state *s)
     memset(s, 0, sizeof(*s));
     s->tool = MIRU_ANN_ARROW;
     s->redo_count = 0;
+
+    s->shape_r = 1.0f;
+    s->shape_g = 0.2f;
+    s->shape_b = 0.2f;
+    s->text_r = 1.0f;
+    s->text_g = 0.85f;
+    s->text_b = 0.2f;
+    s->thickness = 4.0f;
+    s->text_size = 1.0f;
+}
+
+void annotation_state_set_style(
+    struct miru_annotation_state *s,
+    int default_tool,
+    float thickness,
+    float shape_r,
+    float shape_g,
+    float shape_b,
+    float text_r,
+    float text_g,
+    float text_b,
+    float text_size
+)
+{
+    if (!s)
+        return;
+
+    if (default_tool >= 0 && default_tool <= 4)
+        s->tool = (enum miru_ann_type)default_tool;
+
+    s->thickness = thickness > 0.f ? thickness : 4.0f;
+    s->shape_r = shape_r;
+    s->shape_g = shape_g;
+    s->shape_b = shape_b;
+    s->text_r = text_r;
+    s->text_g = text_g;
+    s->text_b = text_b;
+    s->text_size = text_size >= 0.25f ? text_size : 1.0f;
 }
 
 void annotation_clear(struct miru_annotation_state *s)
@@ -31,12 +69,12 @@ bool annotation_add(struct miru_annotation_state *s, enum miru_ann_type type, fl
     a->x1 = x1;
     a->y0 = y0;
     a->y1 = y1;
-    a->r = 1.0f;
-    a->g = 0.2f;
-    a->b = 0.2f;
+    a->r = s->shape_r;
+    a->g = s->shape_g;
+    a->b = s->shape_b;
     a->a = 1.0f;
 
-    a->thickness = 4.0f;
+    a->thickness = s->thickness;
     s->redo_count = 0;
     return true;
 }
@@ -90,12 +128,12 @@ bool annotation_add_text(struct miru_annotation_state *s, float x, float y, cons
     a->x1 = x;
     a->y1 = y;
 
-    a->r = 1.0f;
-    a->g = 0.85f;
-    a->b = 0.2f;
+    a->r = s->text_r;
+    a->g = s->text_g;
+    a->b = s->text_b;
     a->a = 1.0f;
 
-    a->thickness = 1.0f;
+    a->thickness = s->text_size;
     snprintf(a->text, MIRU_ANN_TEXT_MAX, "%s", text);
     s->redo_count = 0;
     return true;

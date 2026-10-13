@@ -73,7 +73,8 @@ See [Roadmap](#roadmap) for the full picture.
     is animated (`spotlight.animation_speed`).
   * **Shift+A** toggles **Annotate mode** — pan freezes and you can draw
     presentation shapes on the frozen frame (arrows, rectangles, lines, ellipse
-    and circle). See controls below.
+    and circle). Defaults (tool, colors, thickness, text size) are configurable
+    under `[annotate]`. See controls below.
   * **Shift+H** or **?** toggles an on-screen **help panel** listing the
     current keybinds (Esc closes help first, then exits the magnifier).
   * **Shift+E** exports the current view to a `.bmp` file which is created at
@@ -412,6 +413,13 @@ radius_step = 20.0
 
 [general]
 show_cursor = true
+
+[annotate]
+default = "rect"
+thickness = 4.0
+color = "ff3333"
+text_color = "ffd933"
+text_size = 1.0
 ```
 
 The currently active options are:
@@ -440,6 +448,13 @@ The currently active options are:
 * `general.show_cursor` — when `false`, hides the hardware cursor while the
   overlay is active (restoring a themed cursor when turning it back on may
   be limited depending on the compositor).
+* `annotate.default` - default tool when entering annotate mode:
+  * `"arrow", "rect/rectangle", "line", "ellipse", or "text"`
+* `annotate.thickness` - stroke width for shapes (value ranges from `1` to `8`)
+* `annotate.color` - has RGB hex for shapes (default value is `ff3333`)
+* `annotate.text_color` - has RGB hex for text (default value is `ffd933`)
+* `annotate.text_size` - scale for annotation text (`0.25` - `8.0`; default is
+  `1.0`)
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
 non-positive values where applicable, fall back to safe defaults. `zoom.factor`
@@ -458,6 +473,9 @@ and every `[spotlight]` value update live, including on an already-active
 overlay; `zoom.factor` (the *initial* zoom on toggle-on) takes effect starting
 with the next toggle, since retroactively snapping an in-progress session to a
 different zoom level would be jarring rather than useful.
+
+`[annotate]` changes apply to **new** strokes after reload (or the next
+toggle-on). Existing annotations keep the color/size they were drawn with.
 
 Additional input, zoom and texture-upload diagnostics can be enabled by
 setting `MIRU_DEBUG` to a non-zero value:
@@ -633,6 +651,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Configurable capture upscale (`zoom.upscale` `linear/nearest/bicubic`)
 * [x] Export current view to an image making it easier to share to others or add
       to presentations (Check out [`test_export.bmp`](./test_export.bmp))
+* [x] Configurable annotation defaults (`[annotate]` in `config.toml`)
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely

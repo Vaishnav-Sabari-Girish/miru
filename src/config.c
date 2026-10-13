@@ -11,6 +11,43 @@
 #include "toml.h"
 #include "debug.h"
 
+static int parse_hex_rgb(const char *s, float *r, float *g, float *b)
+{
+    if (!s || !*s)
+        return -1;
+    if (s[0] == '#')
+        s++;
+
+    char *end = NULL;
+    unsigned long v = strtoul(s, &end, 16);
+
+    if (end == s || *end != '\0' || v > 0xffffffUL)
+        return -1;
+
+    *r = ((v >> 16) & 0xff) / 255.0f;
+    *g = ((v >> 8) & 0xff) / 255.0f;
+    *b = (v & 0xff) / 255.0f;
+
+    return 0;
+}
+
+static int parse_annotate_default(const char *s)
+{
+    if (!s)
+        return 0;
+
+    if (strcmp(s, "rect") == 0 || strcmp(s, "rectangle") == 0)
+        return 1;
+    if (strcmp(s, "text") == 0)
+        return 2;
+    if (strcmp(s, "line") == 0)
+        return 3;
+    if (strcmp(s, "ellipse") == 0)
+        return 4;
+
+    return 0; // arrow
+}
+
 // mkdir -p equivalent: mkdir() only ever creates the final path component,
 // so a fresh install where ~/.config itself doesn't exist yet would
 // otherwise fail here silently
@@ -78,7 +115,14 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "radius_step = 20.0\n"
                                          "\n"
                                          "[general]\n"
-                                         "show_cursor = true\n";
+                                         "show_cursor = true\n"
+                                         "\n"
+                                         "[annotate]\n"
+                                         "default = \"arrow\"\n"
+                                         "thickness = 4.0\n"
+                                         "color = \"ff3333\"\n"
+                                         "text_color = \"ffd933\"\n"
+                                         "text_size = 1.0\n";
 
     if (fputs(default_config, f) == EOF) {
         fclose(f);
@@ -209,6 +253,19 @@ static void sanitize_config(struct miru_config *c)
 
     if (!isfinite(c->zoom_animation_speed) || c->zoom_animation_speed <= 0)
         c->zoom_animation_speed = 14.0;
+
+    if (c->annotate_default < 0 || c->annotate_default > 4)
+        c->annotate_default = 0;
+
+    if (!isfinite(c->annotate_thickness) || c->annotate_thickness < 0.0)
+        c->annotate_thickness = 4.0;
+    else if (c->annotate_thickness > 64.0)
+        c->annotate_thickness = 64.0;
+
+    if (!isfinite(c->annotate_text_size) || c->annotate_text_size < 0.25)
+        c->annotate_text_size = 1.0;
+    else if (c->annotate_text_size > 8.0)
+        c->annotate_text_size = 8.0;
 }
 
 void config_load(struct miru_config *out)
@@ -232,6 +289,16 @@ void config_load(struct miru_config *out)
     out->spotlight_radius_step = 20.0;
 
     out->show_cursor = true;
+
+    out->annotate_default = 0; // arrow
+    out->annotate_thickness = 4.0f;
+    out->annotate_color_r = 1.0f;
+    out->annotate_color_g = 0.2f;
+    out->annotate_color_b = 0.2f;
+    out->annotate_text_r = 1.0f;
+    out->annotate_text_g = 0.85f;
+    out->annotate_text_b = 0.2f;
+    out->annotate_text_size = 1.0;
 
     char config_dir[512];
     char config_path[512];
@@ -278,6 +345,26 @@ void config_load(struct miru_config *out)
     out->spotlight_radius_step = toml_get_double(t, "spotlight", "radius_step", out->spotlight_radius_step);
 
     out->show_cursor = toml_get_bool(t, "general", "show_cursor", out->show_cursor);
+
+    out->annotate_default = parse_annotate_default(toml_get_string(t, "annotate", "default", "arrow"));
+    out->annotate_thickness = toml_get_double(t, "annotate", "thickness", out->annotate_thickness);
+    out->annotate_text_size = toml_get_double(t, "annotate", "text_size", out->annotate_text_size);
+
+    {
+        float r, g, b;
+
+        if (parse_hex_rgb(toml_get_string(t, "annotate", "color", "ff3333"), &r, &g, &b) == 0) {
+            out->annotate_color_r = r;
+            out->annotate_color_g = g;
+            out->annotate_color_b = b;
+        }
+
+        if (parse_hex_rgb(toml_get_string(t, "annotate", "text_color", "ffd933"), &r, &g, &b) == 0) {
+            out->annotate_text_r = r;
+            out->annotate_text_g = g;
+            out->annotate_text_b = b;
+        }
+    }
 
     toml_free(t);
 

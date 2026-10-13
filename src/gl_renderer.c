@@ -733,7 +733,14 @@ void gl_renderer_draw_annotations(
         } else if (a->type == MIRU_ANN_TEXT && a->text[0]) {
             float nx, ny;
             annotation_buffer_to_ndc(a->x0, a->y0, src_left, src_top, src_w, src_h, &nx, &ny);
-            const float glyph_buf = 40.0f;
+            float text_scale = a->thickness > 0.f ? a->thickness : 1.0f;
+            if (text_scale < 0.25f)
+                text_scale = 0.25f;
+            if (text_scale > 8.0f)
+                text_scale = 8.0f;
+
+            const float glyph_buf = 40.0f * text_scale;
+
             float cell = glyph_buf / 8.0f;
             float px_w = (src_w > 1.f) ? (cell / src_w) * 2.0f : 0.f;
             float px_h = (src_h > 1.f) ? (cell / src_h) * 2.0f : 0.f;
@@ -747,10 +754,13 @@ void gl_renderer_draw_annotations(
         float x1 = ann->drag_x1;
         float y1 = ann->drag_y1;
 
+        float pr = ann->shape_r, pg = ann->shape_g, pb = ann->shape_b;
+        float pt = ann->thickness > 0.f ? ann->thickness : 4.f;
+
         if (ann->tool == MIRU_ANN_ARROW) {
-            emit_arrow(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+            emit_arrow(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
         } else if (ann->tool == MIRU_ANN_LINE) {
-            emit_line(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+            emit_line(r, x0, y0, x1, y1, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
         } else if (ann->tool == MIRU_ANN_ELLIPSE) {
             float cx = (x0 + x1) * 0.5f;
             float cy = (y0 + y1) * 0.5f;
@@ -764,27 +774,35 @@ void gl_renderer_draw_annotations(
                 float t = (float)i / (float)N * 6.2831853f;
                 float qx = cx + rx * cosf(t);
                 float qy = cy + ry * sinf(t);
-                emit_line(r, px, py, qx, qy, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+                emit_line(r, px, py, qx, qy, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
                 px = qx;
                 py = qy;
             }
         } else {
-            emit_line(r, x0, y0, x1, y0, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
-            emit_line(r, x1, y0, x1, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
-            emit_line(r, x1, y1, x0, y1, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
-            emit_line(r, x0, y1, x0, y0, src_left, src_top, src_w, src_h, 1.0f, 0.85f, 0.2f, 1.f, 4.f, viewport_w);
+            emit_line(r, x0, y0, x1, y0, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
+            emit_line(r, x1, y0, x1, y1, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
+            emit_line(r, x1, y1, x0, y1, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
+            emit_line(r, x0, y1, x0, y0, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
         }
     }
 
     if (ann->typing) {
         float nx, ny;
         annotation_buffer_to_ndc(ann->text_x, ann->text_y, src_left, src_top, src_w, src_h, &nx, &ny);
-        const float glyph_buf = 40.0f;
+
+        float text_scale = ann->text_size > 0.f ? ann->text_size : 1.0f;
+        if (text_scale < 0.25f)
+            text_scale = 0.25f;
+        if (text_scale > 8.0f)
+            text_scale = 8.0f;
+
+        const float glyph_buf = 40.0f * text_scale;
+
         float cell = glyph_buf / 8.0f;
         float px_w = (src_w > 1.f) ? (cell / src_w) * 2.0f : 0.f;
         float px_h = (src_h > 1.f) ? (cell / src_h) * 2.0f : 0.f;
         const char *preview = ann->text_len > 0 ? ann->text_buf : "_";
-        draw_text_line(r, preview, nx, ny, px_w, px_h, 1.f, 0.85f, 0.2f, 1.f);
+        draw_text_line(r, preview, nx, ny, px_w, px_h, ann->text_r, ann->text_g, ann->text_b, 1.f);
     }
 }
 
