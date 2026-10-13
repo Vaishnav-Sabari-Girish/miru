@@ -250,10 +250,8 @@ int main(int argc, char *argv[])
                 timeout = anim_timeout;
         }
 
-        if (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0) {
-            if (timeout < 0 || timeout > 1000) {
-                timeout = 1000;
-            }
+        if (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0 && (timeout < 0 || timeout > 1000)) {
+            timeout = 1000;
         }
 
         int ret = poll(pfds, 3, timeout);
