@@ -160,6 +160,8 @@ Miru currently requires a compositor that exposes both `wlr-layer-shell` and
 * **Nauka** — supported and tested by
   [@shadowash8](https://github.com/shadowash8)
   (<https://github.com/shadowash8/nauka>)
+* **SomeWM** - supported and tested by [@yvnth](https://github.com/yvnth)
+  [<https://somewm.org/>]
 * **GNOME / Mutter** — not supported
 * **KDE Plasma / KWin** — not supported
 
@@ -526,6 +528,19 @@ bind=SUPER,ALT,Z,spawn,/path/to/miru/build/miructl loupe
 ```conf
 keybind super z run "/path/to/miru/build/miructl toggle"
 keybind super alt z run "/path/to/miru/build/miructl loupe"
+```
+
+**SomeWM** - `~/.config/somewm/rc.lua`
+
+```lua
+awful.spawn.once("miru-daemon")
+awful.key({ modkey }, "z", function()
+  awful.spawn("/path/to/miru/build/miructl toggle")
+end),
+
+awful.key({ modkey, "Mod1" }, "z", function()
+  awful.spawn("/path/to/miru/build/miructl loupe")
+end),
 ```
 
 Substitute the actual path to your built `miructl` binary in each case (or
