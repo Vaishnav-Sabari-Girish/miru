@@ -44,6 +44,11 @@ struct miru_annotation_state {
     float text_x, text_y;
     char text_buf[MIRU_ANN_TEXT_MAX];
     int text_len;
+
+    float shape_r, shape_g, shape_b;
+    float text_r, text_g, text_b;
+    float thickness;
+    float text_size;
 };
 
 void annotation_screen_to_buffer(
@@ -79,5 +84,18 @@ char annotation_keycode_to_char(uint32_t key, bool shift);
 
 bool annotation_undo(struct miru_annotation_state *s);
 bool annotation_redo(struct miru_annotation_state *s);
+
+void annotation_state_set_style(
+    struct miru_annotation_state *s,
+    int default_tool,
+    float thickness,
+    float shape_r,
+    float shape_g,
+    float shape_b,
+    float text_r,
+    float text_g,
+    float text_b,
+    float text_size
+);
 
 #endif // !ANNOTATIONS_H

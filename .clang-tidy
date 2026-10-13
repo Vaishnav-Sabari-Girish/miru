@@ -12,6 +12,7 @@ Checks: >
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -clang-analyzer-security.ArrayBound,
   bugprone-*,
+  -bugprone-signed-bitwise,
   -bugprone-easily-swappable-parameters,
   -bugprone-assignment-in-if-condition,
   -bugprone-narrowing-conversions,

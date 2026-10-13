@@ -3,7 +3,6 @@
 #include <string.h>
 #include <errno.h>
 #include <poll.h>
-// #include <time.h>
 #include "wayland_state.h"
 #include "layer_surface.h"
 #include "capture.h"
@@ -14,6 +13,7 @@
 #include "config.h"
 #include "config_watch.h"
 #include "debug.h"
+#include "annotations.h"
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
@@ -70,6 +70,7 @@ static int activate(
         .zoom_default = (float)config->zoom_factor,
         .zoom_max = (float)config->zoom_max_factor,
         .zoom_animation_speed = (float)config->zoom_animation_speed,
+        .zoom_upscale = config->zoom_upscale,
         .smooth_enabled = config->zoom_smooth,
         .spotlight_radius = (float)config->spotlight_radius,
         .spotlight_dim = (float)(config->spotlight_dim < 0.0 ? 0.0 :
@@ -86,8 +87,19 @@ static int activate(
         return -1;
     }
 
-    // fprintf(stderr, "zoom: smooth=%d speed=%.1f\n", ls->smooth_enabled, ls->zoom_animation_speed);
-    // fprintf(stderr, "toggle: activated\n");
+    annotation_state_set_style(
+        &ls->annotations,
+        config->annotate_default,
+        (float)config->annotate_thickness,
+        config->annotate_color_r,
+        config->annotate_color_g,
+        config->annotate_color_b,
+        config->annotate_text_r,
+        config->annotate_text_g,
+        config->annotate_text_b,
+        (float)config->annotate_text_size
+    );
+
     MIRU_LOG("zoom: smooth=%d speed=%.1f", ls->smooth_enabled, ls->zoom_animation_speed);
     MIRU_LOG("toggle: activated");
     return 0;
@@ -238,10 +250,8 @@ int main(int argc, char *argv[])
                 timeout = anim_timeout;
         }
 
-        if (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0) {
-            if (timeout < 0 || timeout > 1000) {
-                timeout = 1000;
-            }
+        if (config_watch.inotify_fd >= 0 && config_watch.watch_wd < 0 && (timeout < 0 || timeout > 1000)) {
+            timeout = 1000;
         }
 
         int ret = poll(pfds, 3, timeout);
@@ -366,8 +376,16 @@ int main(int argc, char *argv[])
                     config.spotlight_softness != new_config.spotlight_softness ||
                     config.spotlight_animation_speed != new_config.spotlight_animation_speed ||
                     config.spotlight_radius_step != new_config.spotlight_radius_step ||
-                    config.show_cursor != new_config.show_cursor) {
-                    // fprintf(stderr, "config: change detected reloading\n");
+                    config.show_cursor != new_config.show_cursor ||
+                    config.annotate_default != new_config.annotate_default ||
+                    config.annotate_thickness != new_config.annotate_thickness ||
+                    config.annotate_color_r != new_config.annotate_color_r ||
+                    config.annotate_color_g != new_config.annotate_color_g ||
+                    config.annotate_color_b != new_config.annotate_color_b ||
+                    config.annotate_text_r != new_config.annotate_text_r ||
+                    config.annotate_text_g != new_config.annotate_text_g ||
+                    config.annotate_text_b != new_config.annotate_text_b ||
+                    config.annotate_text_size != new_config.annotate_text_size) {
                     MIRU_LOG("config: change detected reloading");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
@@ -387,6 +405,18 @@ int main(int argc, char *argv[])
                         };
 
                         layer_surface_apply_config(&ls, &ls_config);
+                        annotation_state_set_style(
+                            &ls.annotations,
+                            config.annotate_default,
+                            (float)config.annotate_thickness,
+                            config.annotate_color_r,
+                            config.annotate_color_g,
+                            config.annotate_color_b,
+                            config.annotate_text_r,
+                            config.annotate_text_g,
+                            config.annotate_text_b,
+                            (float)config.annotate_text_size
+                        );
                         layer_surface_render(&ls);
                         ls.dirty = false;
                     }

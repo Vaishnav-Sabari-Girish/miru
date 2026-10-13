@@ -72,6 +72,7 @@ factor = 2.0
 increment = 0.25
 max_factor = 10.0
 smooth = false
+upscale = "bicubic"
 
 [spotlight]
 radius = 250
@@ -82,6 +83,13 @@ radius_step = 20.0
 
 [general]
 show_cursor = true
+
+[annotate]
+default = "rect"
+thickness = 4.0
+color = "ff3333"
+text_color = "ffd933"
+text_size = 1.0
 ```
 
 *[zoom]*
@@ -89,6 +97,7 @@ show_cursor = true
 	*increment* — zoom step for keys/scroll.  
 	*max_factor* — maximum zoom.  
 	*smooth* — interpolate zoom/pan when true.
+	*upscale* - Choose between *linear*/*normal*/*bicubic* for upscaling
 
 *[spotlight]* (Cursor Highlight while magnifier is active, toggled with Tab)
 	*radius*, *dim*, *softness* — circle size, outside darkness, edge feather.  
@@ -98,6 +107,13 @@ show_cursor = true
 *[general]*
 	*show_cursor* — hide the hardware cursor while the overlay is active when
 	false (compositor-dependent).
+
+*[annotate]*
+	*default* - Default shape when entering annotation mode.
+	*thickness* - Thickness of the stroke (1-8).
+	*color* - Hex RGB for annotation.
+	*text_size* - Size of annotation text (0.25 - 8.0).
+	*text_color* - Hex RGB for annotation text.
 
 Full detail:
 https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration

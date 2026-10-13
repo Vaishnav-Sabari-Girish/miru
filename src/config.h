@@ -23,6 +23,13 @@ struct miru_config {
 
     // General
     bool show_cursor;
+
+    // Annotate
+    int annotate_default;
+    double annotate_thickness;
+    float annotate_color_r, annotate_color_b, annotate_color_g;
+    float annotate_text_r, annotate_text_b, annotate_text_g;
+    double annotate_text_size;
 };
 
 void config_load(struct miru_config *out);

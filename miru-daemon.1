@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-10\-12" "Miru" "miru\-daemon Manual"
+.TH "MIRU\-DAEMON" "1" "2026\-10\-13" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
@@ -94,6 +94,7 @@ factor = 2\&.0
 increment = 0\&.25
 max_factor = 10\&.0
 smooth = false
+upscale = "bicubic"
 
 [spotlight]
 radius = 250
@@ -104,6 +105,13 @@ radius_step = 20\&.0
 
 [general]
 show_cursor = true
+
+[annotate]
+default = "rect"
+thickness = 4\&.0
+color = "ff3333"
+text_color = "ffd933"
+text_size = 1\&.0
 .fi
 .RE
 .PP
@@ -113,6 +121,7 @@ show_cursor = true
 \fBincrement\fR — zoom step for keys/scroll.\&  
 \fBmax_factor\fR — maximum zoom.\&  
 \fBsmooth\fR — interpolate zoom/pan when true.\&
+\fBupscale\fR \- Choose between \fBlinear\fR/\fBnormal\fR/\fBbicubic\fR for upscaling
 .PP
 .RE
 \fB[spotlight]\fR (Cursor Highlight while magnifier is active, toggled with Tab)
@@ -126,6 +135,15 @@ show_cursor = true
 .RS 4
 \fBshow_cursor\fR — hide the hardware cursor while the overlay is active when
 false (compositor\-dependent).\&
+.PP
+.RE
+\fB[annotate]\fR
+.RS 4
+\fBdefault\fR \- Default shape when entering annotation mode.\&
+\fBthickness\fR \- Thickness of the stroke (1\-8).\&
+\fBcolor\fR \- Hex RGB for annotation.\&
+\fBtext_size\fR \- Size of annotation text (0.\&25 \- 8.\&0).\&
+\fBtext_color\fR \- Hex RGB for annotation text.\&
 .PP
 .RE
 Full detail:
