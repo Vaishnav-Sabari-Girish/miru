@@ -1,0 +1,63 @@
+name: Sync Codeberg closures to GitHub
+
+# Polls Codeberg for recently closed mirrored issues and closes the GitHub copy.
+# Requires:
+#   variable CODEBERG_REPO   (e.g. "yourname/yourrepo")
+# If your Codeberg repo is private, also add the CODEBERG_TOKEN secret and an
+# Authorization header to the fetch call below.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        env:
+          CODEBERG_REPO: ${{ vars.CODEBERG_REPO }}
+        with:
+          script: |
+            // Look back 6 hours so delayed or skipped cron runs don't miss closures.
+            // Already-closed GitHub issues are skipped, so re-checking is harmless.
+            const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+            const url =
+              `https://codeberg.org/api/v1/repos/${process.env.CODEBERG_REPO}/issues` +
+              `?state=closed&type=issues&limit=50&since=${encodeURIComponent(since)}`;
+
+            const res = await fetch(url);
+            if (!res.ok) {
+              throw new Error(`Codeberg list failed: ${res.status} ${await res.text()}`);
+            }
+            const closed = await res.json();
+
+            for (const cbIssue of closed) {
+              const m = (cbIssue.body ?? '').match(/<!-- gh-issue: (\d+) -->/);
+              if (!m) continue; // not a mirrored issue
+
+              const issue_number = Number(m[1]);
+              const { data: gh } = await github.rest.issues.get({
+                ...context.repo,
+                issue_number,
+              });
+              if (gh.state !== 'open') continue;
+
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number,
+                body: `This issue was closed on Codeberg: ${cbIssue.html_url}`,
+              });
+              await github.rest.issues.update({
+                ...context.repo,
+                issue_number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+              core.info(`Closed GitHub #${issue_number} (Codeberg #${cbIssue.number})`);
+            }

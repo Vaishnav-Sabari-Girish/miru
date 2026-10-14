@@ -1,0 +1,108 @@
+name: Mirror issues to Codeberg
+
+# One-way mirror: GitHub issues and comments -> Codeberg (source of truth).
+# Requires:
+#   secret   CODEBERG_TOKEN  (Codeberg token with write:issue scope)
+#   variable CODEBERG_REPO   (e.g. "yourname/yourrepo")
+
+on:
+  issues:
+    types: [opened, closed, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  mirror:
+    # Skip pull request comments and anything done by bots (loop protection)
+    if: github.event.issue.pull_request == null && github.event.sender.type != 'Bot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        env:
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          CODEBERG_REPO: ${{ vars.CODEBERG_REPO }}
+        with:
+          script: |
+            const api = `https://codeberg.org/api/v1/repos/${process.env.CODEBERG_REPO}`;
+            const headers = {
+              'Authorization': `token ${process.env.CODEBERG_TOKEN}`,
+              'Content-Type': 'application/json',
+            };
+            const issue = context.payload.issue;
+            const MARKER = /<!-- codeberg-issue: (\d+) -->/;
+
+            // Stop @mentions from pinging unrelated Codeberg users with the same handle
+            const defang = (text) => (text ?? '').replace(/@(?=[A-Za-z0-9_-])/g, '@\u200b');
+
+            async function cb(path, method, body) {
+              const res = await fetch(`${api}${path}`, {
+                method,
+                headers,
+                body: JSON.stringify(body),
+              });
+              if (!res.ok) {
+                throw new Error(`Codeberg ${method} ${path} failed: ${res.status} ${await res.text()}`);
+              }
+              return res.json();
+            }
+
+            // Look up the Codeberg issue number via the hidden marker comment
+            async function findCodebergNumber() {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...context.repo,
+                issue_number: issue.number,
+                per_page: 100,
+              });
+              const link = comments.find(
+                (c) => c.user.login === 'github-actions[bot]' && MARKER.test(c.body ?? '')
+              );
+              return link ? link.body.match(MARKER)[1] : null;
+            }
+
+            if (context.eventName === 'issues' && context.payload.action === 'opened') {
+              // New issue -> create the Codeberg copy
+              const created = await cb('/issues', 'POST', {
+                title: `[GH #${issue.number}] ${issue.title}`,
+                body:
+                  `<!-- gh-issue: ${issue.number} -->\n` +
+                  `Mirrored from ${issue.html_url} (opened by @\u200b${issue.user.login} on GitHub)\n\n---\n\n` +
+                  defang(issue.body),
+              });
+
+              // Leave a hidden marker + friendly note on the GitHub issue
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: issue.number,
+                body:
+                  `<!-- codeberg-issue: ${created.number} -->\n` +
+                  `Thanks for the report! Maintainers track issues on Codeberg: ${created.html_url}\n\n` +
+                  `Comments you add here are copied over, and we'll note here when the issue is closed.`,
+              });
+            } else if (context.eventName === 'issues') {
+              // Closed or reopened on GitHub -> mirror the state change
+              const cbNumber = await findCodebergNumber();
+              if (!cbNumber) {
+                core.info('This issue was not mirrored; skipping.');
+                return;
+              }
+              const closing = context.payload.action === 'closed';
+              await cb(`/issues/${cbNumber}`, 'PATCH', { state: closing ? 'closed' : 'open' });
+              await cb(`/issues/${cbNumber}/comments`, 'POST', {
+                body: `${closing ? 'Closed' : 'Reopened'} on GitHub by @\u200b${context.payload.sender.login} (${issue.html_url}).`,
+              });
+            } else {
+              // New comment -> find the mapped Codeberg issue and copy it over
+              const cbNumber = await findCodebergNumber();
+              if (!cbNumber) {
+                core.info('This issue was not mirrored; skipping.');
+                return;
+              }
+              const c = context.payload.comment;
+              await cb(`/issues/${cbNumber}/comments`, 'POST', {
+                body: `**@\u200b${c.user.login}** commented on GitHub (${c.html_url}):\n\n${defang(c.body)}`,
+              });
+            }
