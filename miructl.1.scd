@@ -23,13 +23,16 @@ connection error.
 	Show or hide the magnifier overlay. On first toggle the daemon captures
 	one frame and displays the zoomed view; a second toggle tears it down
 	(same as exiting with *Esc* when the in-overlay help panel is closed).
+
 *loupe*
 	Show or hide the magnifier overlay for a specific region. On first toggle the daemon captures
 	one frame and allows the user to drag a rectangle over the area to be zoomed; a second toggle tears it down
 	(same as exiting with *Esc* when the in-overlay help panel is closed).
+
 *spotlight*
 	Show the standalone spotlight overlay. Has click-through, but no zooming and
 	no cursor-follow.
+
 *quit*
 	Ask *miru-daemon* to shut down.
 
@@ -54,7 +57,7 @@ connection error.
 
 # SETTING UP A KEYBIND
 
-Bind a compositor key to *miructl toggle* (Niri, Hyprland, Sway, Mango, etc.).
+Bind a compositor key to *miructl toggle/loupe/spotlight* (Niri, Hyprland, Sway, Mango, etc.).
 Ensure *miru-daemon* is already running (e.g. as a systemd user service).
 
 Examples and paths:
