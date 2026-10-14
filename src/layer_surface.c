@@ -219,8 +219,10 @@ int layer_surface_create(
         .selecting = false,
         .dragging = false,
         .committed = false,
+        .shape = 0,
         .zoom = config->zoom_default > 1.0f ? config->zoom_default : 2.0f,
         .display_zoom = config->zoom_default > 1.0f ? config->zoom_default : 2.0f,
+        .zoom_velocity = 0.0f,
     };
 
     if (config->has_initial_cursor) {
@@ -359,6 +361,8 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls)
 
     if (fabsf(ls->zoom_velocity) > 0.01f)
         return true;
+    if (ls->loupe.active && ls->loupe.committed && fabsf(ls->loupe.zoom_velocity) > 0.01f)
+        return true;
     if (ls->loupe.active && ls->loupe.committed && fabsf(ls->loupe.display_zoom - ls->loupe.zoom) > ZOOM_EPSILON)
         return true;
     if (fabsf(ls->display_zoom - ls->zoom) > ZOOM_EPSILON)
@@ -476,6 +480,20 @@ void layer_surface_render(struct miru_layer_surface *ls)
         }
 
         if (ls->loupe.committed) {
+            const float dt = 1.0f / 60.0f;
+            if (ls->loupe.zoom_velocity != 0.0f) {
+                ls->loupe.zoom += ls->loupe.zoom_velocity * dt;
+                if (ls->loupe.zoom < 1.0f)
+                    ls->loupe.zoom = 1.0f;
+                if (ls->loupe.zoom > ls->zoom_max)
+                    ls->loupe.zoom = ls->zoom_max;
+
+                float friction = ls->zoom_momentum_friction > 0.0f ? ls->zoom_momentum_friction : 8.0f;
+                ls->loupe.zoom_velocity *= expf(-friction * dt);
+                if (fabsf(ls->loupe.zoom_velocity) < 0.01f)
+                    ls->loupe.zoom_velocity = 0.0f;
+            }
+
             float zt = ls->smooth_enabled ? (1.0f - expf(-ls->zoom_animation_speed * (1.0f / 60.0f))) : 1.0f;
 
             if (ls->zoom_animation_speed <= 0.0f) {
@@ -526,13 +544,29 @@ void layer_surface_render(struct miru_layer_surface *ls)
                 sy0 = 0;
 
             gl_renderer_draw_loupe(
-                &ls->gl, sx0, sy0, sx1, sy1, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, y_invert
+                &ls->gl,
+                sx0,
+                sy0,
+                sx1,
+                sy1,
+                dx0,
+                dy0,
+                dx1,
+                dy1,
+                ls->buffer_width,
+                ls->buffer_height,
+                y_invert,
+                ls->loupe.shape != 0
             );
 
-            gl_renderer_draw_loupe_outline(&ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height);
+            gl_renderer_draw_loupe_outline(
+                &ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
+            );
 
         } else if (ls->loupe.selecting || ls->loupe.dragging) {
-            gl_renderer_draw_loupe_outline(&ls->gl, x0, y0, x1, y1, ls->buffer_width, ls->buffer_height);
+            gl_renderer_draw_loupe_outline(
+                &ls->gl, x0, y0, x1, y1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
+            );
         }
         if (ls->export_pending) {
             ls->export_pending = false;
@@ -540,7 +574,8 @@ void layer_surface_render(struct miru_layer_surface *ls)
         }
 
         egl_swap_buffers(&ls->egl);
-        ls->dirty = false;
+        ls->dirty = ls->loupe.committed && (fabsf(ls->loupe.zoom_velocity) > 0.01f) ||
+                    fabsf(ls->loupe.display_zoom - ls->loupe.zoom) > ZOOM_EPSILON;
         return;
     }
 

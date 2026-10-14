@@ -14,6 +14,7 @@ struct miru_gl_renderer {
     GLint u_spotlight_enabled, u_spotlight_radius, u_spotlight_softness, u_spotlight_dim;
     GLint u_texel_size;
     GLint u_upscale;
+    GLint u_ellipse_mask;
     int tex_w, tex_h;
     int upscale_mode;
 
@@ -85,7 +86,8 @@ void gl_renderer_draw_loupe(
     float dst_y1,
     int buf_w,
     int buf_h,
-    int y_invert
+    int y_invert,
+    int ellipse_mask
 );
 
 void gl_renderer_draw_loupe_outline(
@@ -95,7 +97,8 @@ void gl_renderer_draw_loupe_outline(
     float x1,
     float y1,
     int buf_w,
-    int buf_h
+    int buf_h,
+    int ellipse
 );
 
 void gl_renderer_draw_standalone_spotlight(

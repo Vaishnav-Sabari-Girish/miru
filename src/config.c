@@ -48,6 +48,19 @@ static int parse_annotate_default(const char *s)
     return 0; // arrow
 }
 
+static int parse_loupe_shape(const char *s)
+{
+    if (!s)
+        return 0;
+
+    if (strcmp(s, "ellipse") == 0)
+        return 1;
+    if (strcmp(s, "circle") == 0)
+        return 2;
+
+    return 0;
+}
+
 // mkdir -p equivalent: mkdir() only ever creates the final path component,
 // so a fresh install where ~/.config itself doesn't exist yet would
 // otherwise fail here silently
@@ -122,7 +135,10 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "thickness = 4.0\n"
                                          "color = \"ff3333\"\n"
                                          "text_color = \"ffd933\"\n"
-                                         "text_size = 1.0\n";
+                                         "text_size = 1.0\n"
+                                         "\n"
+                                         "[loupe]\n"
+                                         "shape = \"rect\"\n";
 
     if (fputs(default_config, f) == EOF) {
         fclose(f);
@@ -266,6 +282,9 @@ static void sanitize_config(struct miru_config *c)
         c->annotate_text_size = 1.0;
     else if (c->annotate_text_size > 8.0)
         c->annotate_text_size = 8.0;
+
+    if (c->loupe_shape < 0 || c->loupe_shape > 2)
+        c->loupe_shape = 0;
 }
 
 void config_load(struct miru_config *out)
@@ -299,6 +318,8 @@ void config_load(struct miru_config *out)
     out->annotate_text_g = 0.85f;
     out->annotate_text_b = 0.2f;
     out->annotate_text_size = 1.0;
+
+    out->loupe_shape = 0;
 
     char config_dir[512];
     char config_path[512];
@@ -365,6 +386,8 @@ void config_load(struct miru_config *out)
             out->annotate_text_b = b;
         }
     }
+
+    out->loupe_shape = parse_loupe_shape(toml_get_string(t, "loupe", "shape", "rect"));
 
     toml_free(t);
 

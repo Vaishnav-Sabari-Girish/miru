@@ -300,10 +300,16 @@ int main(int argc, char *argv[])
                         ls.loupe.selecting = true;
                         ls.loupe.dragging = false;
                         ls.loupe.committed = false;
+                        ls.loupe.shape = config.loupe_shape;
                         ls.loupe.zoom = (float)config.zoom_factor;
                         ls.loupe.display_zoom = ls.loupe.zoom;
-                        // fprintf(stderr, "loupe: selecting rectangle\n");
-                        MIRU_LOG("loupe: selecting rectangle");
+                        ls.loupe.zoom_velocity = 0.0f;
+                        MIRU_LOG(
+                            "loupe: selecting %s",
+                            ls.loupe.shape == 2 ? "circle" :
+                            ls.loupe.shape == 1 ? "ellipse" :
+                                                  "rectangle"
+                        );
                     }
                 } else {
                     deactivate(&ls, &capture);
@@ -385,7 +391,8 @@ int main(int argc, char *argv[])
                     config.annotate_text_r != new_config.annotate_text_r ||
                     config.annotate_text_g != new_config.annotate_text_g ||
                     config.annotate_text_b != new_config.annotate_text_b ||
-                    config.annotate_text_size != new_config.annotate_text_size) {
+                    config.annotate_text_size != new_config.annotate_text_size ||
+                    config.loupe_shape != new_config.loupe_shape) {
                     MIRU_LOG("config: change detected reloading");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;

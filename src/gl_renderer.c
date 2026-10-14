@@ -41,6 +41,7 @@ static const char *fragment_shader_src = "precision mediump float;\n"
                                          "uniform float u_spotlight_dim;\n"
                                          "uniform vec2 u_texel_size;\n"
                                          "uniform float u_upscale;\n"
+                                         "uniform float u_ellipse_mask;\n"
                                          "\n"
                                          "vec4 cubic(float v) {\n"
                                          "    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;\n"
@@ -76,6 +77,10 @@ static const char *fragment_shader_src = "precision mediump float;\n"
                                          "\n"
                                          "void main() {\n"
                                          "    vec2 uv = v_texcoord;\n"
+                                         "    if (u_ellipse_mask > 0.5) {\n"
+                                         "        vec2 p = (v_texcoord - vec2(0.5)) * 2.0;\n"
+                                         "        if (dot(p, p) > 1.0) discard;\n"
+                                         "    }\n"
                                          "    if (u_y_invert > 0.5) { uv.y = 1.0 - uv.y; }\n"
                                          "    vec2 sample_uv = u_crop_origin + uv * u_crop_scale;\n"
                                          "    vec3 color;\n"
@@ -191,6 +196,7 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     r->u_spotlight_softness = glGetUniformLocation(r->program, "u_spotlight_softness");
     r->u_texel_size = glGetUniformLocation(r->program, "u_texel_size");
     r->u_upscale = glGetUniformLocation(r->program, "u_upscale");
+    r->u_ellipse_mask = glGetUniformLocation(r->program, "u_ellipse_mask");
     r->tex_w = 0;
     r->tex_h = 0;
     r->upscale_mode = 2;
@@ -383,6 +389,8 @@ void gl_renderer_draw(
         glUniform2f(r->u_texel_size, 1.0f, 1.0f);
 
     glUniform1f(r->u_upscale, (float)r->upscale_mode);
+
+    glUniform1f(r->u_ellipse_mask, 0.0f);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
@@ -880,7 +888,8 @@ void gl_renderer_draw_loupe(
     float dst_y1,
     int buf_w,
     int buf_h,
-    int y_invert
+    int y_invert,
+    int ellipse_mask
 )
 {
     float bw = (float)buf_w;
@@ -897,7 +906,7 @@ void gl_renderer_draw_loupe(
     float y1 = 1.f - (dst_y1 / bh) * 2.f;
 
     float verts[] = {
-        x0, y0, u0, v0, x1, y0, u1, v0, x0, y1, u0, v1, x1, y1, u1, v1,
+        x0, y0, 0.f, 0.f, x1, y0, 1.f, 0.f, x0, y1, 0.f, 1.f, x1, y1, 1.f, 1.f,
     };
 
     glViewport(0, 0, buf_w, buf_h);
@@ -912,8 +921,8 @@ void gl_renderer_draw_loupe(
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, r->texture);
     glUniform1i(r->u_texture, 0);
-    glUniform2f(r->u_crop_origin, 0.0f, 0.0f);
-    glUniform2f(r->u_crop_scale, 1.0f, 1.0f);
+    glUniform2f(r->u_crop_origin, u0, v0);
+    glUniform2f(r->u_crop_scale, u1 - u0, v1 - v0);
     glUniform1f(r->u_y_invert, y_invert ? 1.0f : 0.0f);
     glUniform2f(r->u_cursor_px, 0.0f, 0.0f);
     glUniform2f(r->u_resolution, bw, bh);
@@ -928,7 +937,9 @@ void gl_renderer_draw_loupe(
         glUniform2f(r->u_texel_size, 1.0f, 1.0f);
 
     glUniform1f(r->u_upscale, (float)r->upscale_mode);
+    glUniform1f(r->u_ellipse_mask, ellipse_mask ? 1.0f : 0.0f);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glUniform1f(r->u_ellipse_mask, 0.0f);
 
     float full[] = {
         -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f,
@@ -944,11 +955,38 @@ void gl_renderer_draw_loupe_outline(
     float x1,
     float y1,
     int buf_w,
-    int buf_h
+    int buf_h,
+    int ellipse
 )
 {
     float L = 0.f, T = 0.f, W = (float)buf_w, H = (float)buf_h;
     float t = 3.f;
+
+    glUseProgram(r->line_program);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    if (ellipse) {
+        float cx = (x0 + x1) * 0.5f;
+        float cy = (y0 + y1) * 0.5f;
+        float rx = fabsf(x1 - x0) * 0.5f;
+        float ry = fabsf(y1 - y0) * 0.5f;
+
+        const int N = 48;
+
+        float px = cx + rx, py = cy;
+
+        for (int i = 1; i <= N; i++) {
+            float a = (float)i / (float)N * 6.2831853f;
+            float qx = cx + rx * cosf(a);
+            float qy = cy + ry * sinf(a);
+            emit_line(r, px, py, qx, qy, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
+            px = qx;
+            py = qy;
+        }
+
+        return;
+    }
 
     emit_line(r, x0, y0, x1, y0, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
     emit_line(r, x1, y0, x1, y1, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
