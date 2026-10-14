@@ -30,6 +30,9 @@ struct miru_config {
     float annotate_color_r, annotate_color_b, annotate_color_g;
     float annotate_text_r, annotate_text_b, annotate_text_g;
     double annotate_text_size;
+
+    // Loupe 0 = rect, 1 = ellipse, 2 = circle
+    int loupe_shape;
 };
 
 void config_load(struct miru_config *out);

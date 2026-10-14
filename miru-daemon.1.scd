@@ -90,6 +90,9 @@ thickness = 4.0
 color = "ff3333"
 text_color = "ffd933"
 text_size = 1.0
+
+[loupe]
+shape = "circle"
 ```
 
 *[zoom]*
@@ -114,6 +117,9 @@ text_size = 1.0
 	*color* - Hex RGB for annotation.
 	*text_size* - Size of annotation text (0.25 - 8.0).
 	*text_color* - Hex RGB for annotation text.
+
+*[loupe]*
+	*shape* - Default shape when entering loupe mode
 
 Full detail:
 https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration

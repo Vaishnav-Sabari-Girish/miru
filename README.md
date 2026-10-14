@@ -87,9 +87,10 @@ See [Roadmap](#roadmap) for the full picture.
 * **Loupe Mode**: `miructl loupe` freezes the screen the same way as
   `miructl toggle`, then lets you drag a rectangle over an area. After release,
   only the selected region is zoomed in a fixed-size window that follows the
-  cursor; the rest of the frame stays at 1x. Scroll to change loupe zoom. Toggle
-  again (or quit) to exit. Separate from the above **Magnifier Mode**.
-  **Requires a separate compositor keybind**.
+  cursor; the rest of the frame stays at 1x. The selection shape is configurable
+  (`[loupe] shape`: `"rectangle", "ellipse" or "circle"`. Scroll to change loupe
+  zoom. Toggle again (or quit) to exit. Separate from the above
+  **Magnifier Mode**. **Requires a separate compositor keybind**.
 
 * **Spotlight mode** — a fully independent, click-through overlay that darkens
   the whole screen except a cursor-tracking circle, while you keep working
@@ -422,6 +423,9 @@ thickness = 4.0
 color = "ff3333"
 text_color = "ffd933"
 text_size = 1.0
+
+[loupe]
+shape = "rect"
 ```
 
 The currently active options are:
@@ -457,6 +461,8 @@ The currently active options are:
 * `annotate.text_color` - has RGB hex for text (default value is `ffd933`)
 * `annotate.text_size` - scale for annotation text (`0.25` - `8.0`; default is
   `1.0`)
+* `loupe.shape` - the shape to use when in `loupe` mode:
+  * `"rect"/"rectangle", "ellipse", "circle"`
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
 non-positive values where applicable, fall back to safe defaults. `zoom.factor`
@@ -660,8 +666,8 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] `man` pages for `miru-daemon` and `miructl`
 * [x] Optional smooth interpolation for zoom/pan (`zoom.smooth`)
 * [x] Text annotations (typed labels on the frozen frame)
-* [x] Rectangle loupe mode (`miructl loupe`): region select, fixed-size window,
-      cursor follow, content zoom inside the selection
+* [x] Loupe mode (`miructl loupe`): region select, fixed-size window,
+      cursor follow, content zoom inside the selection. Shape is configurable.
 * [x] Frame refresh
 * [x] Configurable capture upscale (`zoom.upscale` `linear/nearest/bicubic`)
 * [x] Export current view to an image making it easier to share to others or add

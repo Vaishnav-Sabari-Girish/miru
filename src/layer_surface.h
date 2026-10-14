@@ -30,11 +30,13 @@ struct miru_loupe {
     bool selecting;
     bool dragging;
     bool committed;
+    int shape;
     float x0, y0, x1, y1;
     float sel_w, sel_h;
     float center_x, center_y;
     float zoom;
     float display_zoom;
+    float zoom_velocity;
 };
 
 struct miru_layer_surface {

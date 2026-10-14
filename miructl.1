@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRUCTL" "1" "2026\-10\-05" "Miru" "miructl Manual"
+.TH "MIRUCTL" "1" "2026\-10\-14" "Miru" "miructl Manual"
 .PP
 .SH NAME
 .PP
@@ -31,17 +31,20 @@ connection error.\&
 Show or hide the magnifier overlay.\& On first toggle the daemon captures
 one frame and displays the zoomed view; a second toggle tears it down
 (same as exiting with \fBEsc\fR when the in\-overlay help panel is closed).\&
+.PP
 .RE
 \fBloupe\fR
 .RS 4
 Show or hide the magnifier overlay for a specific region.\& On first toggle the daemon captures
 one frame and allows the user to drag a rectangle over the area to be zoomed; a second toggle tears it down
 (same as exiting with \fBEsc\fR when the in\-overlay help panel is closed).\&
+.PP
 .RE
 \fBspotlight\fR
 .RS 4
 Show the standalone spotlight overlay.\& Has click\-through, but no zooming and
 no cursor\-follow.\&
+.PP
 .RE
 \fBquit\fR
 .RS 4
@@ -77,7 +80,7 @@ miructl quit
 .RE
 .SH SETTING UP A KEYBIND
 .PP
-Bind a compositor key to \fBmiructl toggle\fR (Niri, Hyprland, Sway, Mango, etc.\&).\&
+Bind a compositor key to \fBmiructl toggle/loupe/spotlight\fR (Niri, Hyprland, Sway, Mango, etc.\&).\&
 Ensure \fBmiru\-daemon\fR is already running (e.\&g.\& as a systemd user service).\&
 .PP
 Examples and paths:

@@ -168,6 +168,20 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
             L->y1 = y1;
 
             if ((x1 - x0) > 8.f && (y1 - y0) > 8.f) {
+                if (L->shape == 2) {
+                    float s = (x1 - x0) < (y1 - y0) ? (x1 - x0) : (y1 - y0);
+                    float cx = 0.5f * (x0 + x1);
+                    float cy = 0.5f * (y0 + y1);
+                    x0 = cx - s * 0.5f;
+                    x1 = cx + s * 0.5f;
+                    y0 = cy - s * 0.5f;
+                    y1 = cy + s * 0.5f;
+                    L->x0 = x0;
+                    L->x1 = x1;
+                    L->y0 = y0;
+                    L->y1 = y1;
+                }
+
                 L->selecting = false;
                 L->committed = true;
                 L->sel_w = x1 - x0;
@@ -342,8 +356,19 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
         ctx->ls->cursor_x = nx;
         ctx->ls->cursor_y = ny;
         if (ctx->ls->loupe.dragging) {
-            ctx->ls->loupe.x1 = (float)nx;
-            ctx->ls->loupe.y1 = (float)ny;
+            float x1 = (float)nx;
+            float y1 = (float)ny;
+
+            if (ctx->ls->loupe.shape == 2 || (ctx->ls->loupe.shape == 1 && ctx->shift_held)) {
+                float dx = x1 - ctx->ls->loupe.x0;
+                float dy = y1 - ctx->ls->loupe.y0;
+                float s = fabsf(dx) > fabsf(dy) ? fabsf(dx) : fabsf(dy);
+                x1 = ctx->ls->loupe.x0 + (dx < 0.f ? -s : s);
+                y1 = ctx->ls->loupe.y0 + (dy < 0.f ? -s : s);
+            }
+
+            ctx->ls->loupe.x1 = x1;
+            ctx->ls->loupe.y1 = y1;
         }
 
         ctx->ls->dirty = true;
@@ -408,15 +433,12 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
     double v = wl_fixed_to_double(value);
 
     if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
-        if (v > 0)
-            ctx->ls->loupe.zoom -= ctx->zoom_increment;
-        else
-            ctx->ls->loupe.zoom += ctx->zoom_increment;
+        float impulse = 6.0f * ctx->zoom_increment;
 
-        if (ctx->ls->loupe.zoom < 1.0f)
-            ctx->ls->loupe.zoom = 1.0f;
-        if (ctx->ls->loupe.zoom > ctx->ls->zoom_max)
-            ctx->ls->loupe.zoom = ctx->ls->zoom_max;
+        if (v > 0)
+            ctx->ls->loupe.zoom_velocity -= impulse;
+        else
+            ctx->ls->loupe.zoom_velocity += impulse;
 
         ctx->ls->dirty = true;
         return;
@@ -533,16 +555,6 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
 
 static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
 {
-    // if (miru_debug_enabled()) {
-    //     fprintf(
-    //         stderr,
-    //         "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f\n",
-    //         key,
-    //         ctx->zoom_increment,
-    //         ctx->ls->zoom,
-    //         ctx->ls->zoom_max
-    //     );
-    // }
     MIRU_DBG(
         "handle_key_action: key=%u zoom_increment=%.3f zoom_before=%.3f zoom_max=%.3f",
         key,
@@ -557,7 +569,12 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
             return 1;
         }
 
-        layer_surface_add_zoom_impulse(ctx->ls, 6.0f * ctx->zoom_increment);
+        if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
+            ctx->ls->loupe.zoom_velocity += 6.0f * ctx->zoom_increment;
+            ctx->ls->dirty = true;
+        } else {
+            layer_surface_add_zoom_impulse(ctx->ls, 6.0f * ctx->zoom_increment);
+        }
 
     } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
         if (ctx->ctrl_held) {
@@ -565,7 +582,12 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
             return 1;
         }
 
-        layer_surface_add_zoom_impulse(ctx->ls, -6.0f * ctx->zoom_increment);
+        if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
+            ctx->ls->loupe.zoom_velocity -= 6.0f * ctx->zoom_increment;
+            ctx->ls->dirty = true;
+        } else {
+            layer_surface_add_zoom_impulse(ctx->ls, -6.0f * ctx->zoom_increment);
+        }
 
     } else if (key == KEY_LEFT || key == KEY_A) {
         ctx->ls->cursor_x -= pan_step(ctx->ls);
