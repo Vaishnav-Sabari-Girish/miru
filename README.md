@@ -266,6 +266,60 @@ brew tap Vaishnav-Sabari-Girish/tap
 brew install miru
 ```
 
+#### Gentoo (third-party overlay)
+
+Miru is available for Gentoo through
+[`acooliodude-overlay`](https://codeberg.org/ACoolioDude/acooliodude-overlay)
+(package `gui-apps/miru`).
+
+> [!NOTE]
+> The overlay and ebuild are maintained by
+> [@ACoolioDude](https://codeberg.org/ACoolioDude) — thank you! The ebuild
+> lives in the overlay, not in the official Gentoo tree or Guru.
+
+1. Install `eselect-repository`:
+
+```bash
+sudo emerge --ask app-eselect/eselect-repository
+```
+
+1. Enable the overlay:
+
+```bash
+sudo eselect repository add acooliodude-overlay git https://codeberg.org/ACoolioDude/acooliodude-overlay
+```
+
+1. Sync the overlay (either command works):
+
+```bash
+sudo emerge --sync acooliodude-overlay
+# or
+sudo emaint sync -r acooliodude-overlay
+```
+
+1. Install Miru:
+
+```bash
+sudo emerge --ask gui-apps/miru
+```
+
+The package is a live ebuild, so to follow new commits pushed to `main` you
+have to [unmask the
+package](https://wiki.gentoo.org/wiki/Knowledge_Base:Unmasking_a_package) and
+then update it:
+
+```bash
+sudo emerge --ask --update gui-apps/miru
+```
+
+> [!IMPORTANT]
+> The ebuild does **not** ship an OpenRC or systemd service. After installing,
+> add `miru-daemon` to your autostart yourself, depending on the Wayland
+> compositor you use (see the compositor examples under
+> [Setting up a keybind](#setting-up-a-keybind), or
+> [As a systemd user service](#as-a-systemd-user-service) if you run systemd
+> and want to write your own unit).
+
 #### From source
 
 See [Building](#building) below.
