@@ -22,31 +22,51 @@ jobs:
       - uses: actions/github-script@v9
         env:
           CODEBERG_REPO: ${{ vars.CODEBERG_REPO }}
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         with:
           script: |
             // Look back 6 hours so delayed or skipped cron runs don't miss closures.
             // Already-closed GitHub issues are skipped, so re-checking is harmless.
-            const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+            const since = new Date(Date.now() - 6 * 60 * 60 * 1000)
+              .toISOString()
+              .replace(/\.\d{3}Z$/, 'Z');
             const url =
               `https://codeberg.org/api/v1/repos/${process.env.CODEBERG_REPO}/issues` +
               `?state=closed&type=issues&limit=50&since=${encodeURIComponent(since)}`;
 
-            const res = await fetch(url);
-            if (!res.ok) {
-              throw new Error(`Codeberg list failed: ${res.status} ${await res.text()}`);
+            const headers = { 'User-Agent': 'codeberg-close-sync' };
+            if (process.env.CODEBERG_TOKEN) {
+              headers['Authorization'] = `token ${process.env.CODEBERG_TOKEN}`;
             }
-            const closed = await res.json();
+            const res = await fetch(url, { headers });
+            const text = await res.text();
+            if (!res.ok) {
+              throw new Error(`Codeberg list failed: ${res.status} ${text.slice(0, 500)}`);
+            }
+            let closed;
+            try {
+              closed = JSON.parse(text);
+            } catch {
+              throw new Error(`Codeberg returned non-JSON: ${text.slice(0, 500)}`);
+            }
+            core.info(`Codeberg returned ${closed.length} closed issue(s) since ${since}`);
 
             for (const cbIssue of closed) {
               const m = (cbIssue.body ?? '').match(/<!-- gh-issue: (\d+) -->/);
-              if (!m) continue; // not a mirrored issue
+              if (!m) {
+                core.info(`Codeberg #${cbIssue.number}: no gh-issue marker, skipping`);
+                continue; // not a mirrored issue
+              }
 
               const issue_number = Number(m[1]);
               const { data: gh } = await github.rest.issues.get({
                 ...context.repo,
                 issue_number,
               });
-              if (gh.state !== 'open') continue;
+              if (gh.state !== 'open') {
+                core.info(`GitHub #${issue_number} already closed, skipping`);
+                continue;
+              }
 
               await github.rest.issues.createComment({
                 ...context.repo,
