@@ -47,7 +47,7 @@ jobs:
               if (!res.ok) {
                 throw new Error(`Codeberg ${method} ${path} failed: ${res.status} ${await res.text()}`);
               }
-              return res.json();
+              return res.status === 204 ? null : res.json();
             }
 
             // Look up the Codeberg issue number via the hidden marker comment
@@ -69,7 +69,8 @@ jobs:
                 title: `[GH #${issue.number}] ${issue.title}`,
                 body:
                   `<!-- gh-issue: ${issue.number} -->\n` +
-                  `Mirrored from ${issue.html_url} (opened by @\u200b${issue.user.login} on GitHub)\n\n---\n\n` +
+                  `> **Read-only mirror** of ${issue.html_url} (opened by @\u200b${issue.user.login} on GitHub).\n` +
+                  `> Discuss on GitHub. Comments added here are not synced back; this issue is for tracking (labels, milestones, assignees).\n\n---\n\n` +
                   defang(issue.body),
               });
 
@@ -82,6 +83,14 @@ jobs:
                   `Thanks for the report! Maintainers track issues on Codeberg: ${created.html_url}\n\n` +
                   `Comments you add here are copied over, and we'll note here when the issue is closed.`,
               });
+
+              // Lock the Codeberg copy so only people with write access can comment.
+              // Done last so a lock failure can't break the issue mapping above.
+              try {
+                await cb(`/issues/${created.number}/lock`, 'PUT', {});
+              } catch (e) {
+                core.warning(`Could not lock Codeberg #${created.number}: ${e.message}`);
+              }
             } else if (context.eventName === 'issues') {
               // Closed or reopened on GitHub -> mirror the state change
               const cbNumber = await findCodebergNumber();

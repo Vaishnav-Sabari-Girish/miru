@@ -10,7 +10,16 @@
 > [!IMPORTANT]
 > Development is done on
 > [Codeberg](https://codeberg.org/Vaishnav-Sabari-Girish/miru) with a mirror in
-> [GitHub](https://github.com/Vaishnav-Sabari-Girish/miru)
+> [GitHub](https://github.com/Vaishnav-Sabari-Girish/miru) You can report issues
+> and discuss them on GitHub, no Codeberg account needed. Issues opened on
+> GitHub are automatically mirrored to Codeberg as locked, read-only copies that
+> are used only for tracking (labels, milestones). Comments you add on the
+> GitHub issue are copied across, and closing or reopening an issue on either
+> side is reflected on the other (Codeberg -> GitHub closes can take up to ~15
+> minutes).
+
+Please keep the conversation on the GitHub issue. Comments made on the Codeberg
+copy are not synced back.
 
 A Wayland-native screen magnifier and cursor spotlight tool for streamers, built
 for Wayland compositors supporting the required wlroots protocols. Miru is
