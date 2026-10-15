@@ -2,8 +2,10 @@
 #include "debug.h"
 #include <GLES2/gl2.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <png.h>
 #include <string.h>
 #include <stdint.h>
 #include <sys/stat.h>
@@ -93,7 +95,70 @@ static int write_bmp_bgr(const char *path, int width, int height, const uint8_t 
     return 0;
 }
 
-int miru_export_framebuffer(int width, int height)
+static int write_png_rbga(const char *path, int width, int height, const uint8_t *rgba_bottom_up)
+{
+    FILE *f = fopen(path, "wb");
+
+    if (!f)
+        return -1;
+
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png) {
+        fclose(f);
+        return -1;
+    }
+
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+        png_destroy_write_struct(&png, NULL);
+        fclose(f);
+        return -1;
+    }
+
+    if (setjmp(png_jmpbuf(png))) {
+        png_destroy_write_struct(&png, &info);
+        fclose(f);
+        unlink(path);
+        return -1;
+    }
+
+    png_init_io(png, f);
+    png_set_IHDR(
+        png,
+        info,
+        (png_uint_32)width,
+        (png_uint_32)height,
+        8,
+        PNG_COLOR_TYPE_RGBA,
+        PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_DEFAULT,
+        PNG_FILTER_TYPE_DEFAULT
+    );
+    png_write_info(png, info);
+
+    png_bytep *rows = (png_bytep *)malloc((size_t)height * sizeof(png_bytep));
+    if (!rows) {
+        png_destroy_write_struct(&png, &info);
+        fclose(f);
+        unlink(path);
+        return -1;
+    }
+
+    for (int y = 0; y < height; y++) {
+        int src_y = height - 1 - y;
+        rows[y] = (png_bytep)(rgba_bottom_up + (size_t)src_y * (size_t)width * 4);
+    }
+
+    png_write_image(png, rows);
+    png_write_end(png, NULL);
+
+    free((void *)rows);
+    png_destroy_write_struct(&png, &info);
+    fclose(f);
+    return 0;
+}
+
+int miru_export_framebuffer(int width, int height, int format)
 {
     if (width <= 0 || height <= 0)
         return -1;
@@ -132,22 +197,27 @@ int miru_export_framebuffer(int width, int height)
     struct tm tm;
     localtime_r(&now, &tm);
 
+    const char *ext = (format == MIRU_EXPORT_PNG) ? "png" : "bmp";
+
     char path[640];
 
     snprintf(
         path,
         sizeof(path),
-        "%s/miru-%04d%02d%02d-%02d%02d%02d.bmp",
+        "%s/miru-%04d%02d%02d-%02d%02d%02d.%s",
         dir,
         tm.tm_year + 1900,
         tm.tm_mon + 1,
         tm.tm_mday,
         tm.tm_hour,
         tm.tm_min,
-        tm.tm_sec
+        tm.tm_sec,
+        ext
     );
 
-    int rc = write_bmp_bgr(path, width, height, rgba);
+    int rc = (format == MIRU_EXPORT_PNG) ? write_png_rbga(path, width, height, rgba) :
+                                           write_bmp_bgr(path, width, height, rgba);
+
     free(rgba);
     if (rc != 0) {
         MIRU_LOG("export: write failed to %s: %s", path, strerror(errno));

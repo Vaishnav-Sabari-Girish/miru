@@ -5,5 +5,6 @@
 
 const char *const *help_lines(void);
 size_t help_line_count(void);
+void help_set_export_format(int format);
 
 #endif // !HELP_H

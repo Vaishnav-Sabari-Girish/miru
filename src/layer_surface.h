@@ -23,6 +23,8 @@ struct layer_surface_config {
     bool has_initial_cursor;
     bool smooth_enabled;
     bool standalone_spotlight;
+
+    int export_format;
 };
 
 struct miru_loupe {
@@ -80,6 +82,8 @@ struct miru_layer_surface {
     struct miru_loupe loupe;
 
     bool export_pending;
+
+    int export_format;
 };
 
 int layer_surface_create(

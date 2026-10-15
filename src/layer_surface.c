@@ -210,6 +210,8 @@ int layer_surface_create(
 
     ls->export_pending = false;
 
+    ls->export_format = config->export_format;
+
     ls->help_visible = false;
 
     annotation_state_init(&ls->annotations);
@@ -331,6 +333,8 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
 
     if (ls->zoom > ls->zoom_max)
         ls->zoom = ls->zoom_max;
+
+    ls->export_format = config->export_format;
     ls->dirty = true;
 }
 
@@ -431,7 +435,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
 
         if (ls->export_pending) {
             ls->export_pending = false;
-            miru_export_framebuffer(ls->buffer_width, ls->buffer_height);
+            miru_export_framebuffer(ls->buffer_width, ls->buffer_height, ls->export_format);
         }
 
         egl_swap_buffers(&ls->egl);
@@ -570,7 +574,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
         }
         if (ls->export_pending) {
             ls->export_pending = false;
-            miru_export_framebuffer(ls->buffer_width, ls->buffer_height);
+            miru_export_framebuffer(ls->buffer_width, ls->buffer_height, ls->export_format);
         }
 
         egl_swap_buffers(&ls->egl);
@@ -674,7 +678,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
 
     if (ls->export_pending) {
         ls->export_pending = false;
-        miru_export_framebuffer(ls->buffer_width, ls->buffer_height);
+        miru_export_framebuffer(ls->buffer_width, ls->buffer_height, ls->export_format);
     }
 
     egl_swap_buffers(&ls->egl);

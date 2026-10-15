@@ -10,6 +10,27 @@
 #include "config.h"
 #include "toml.h"
 #include "debug.h"
+#include "export.h"
+
+static int parse_export_format(const char *s)
+{
+    if (!s)
+        return MIRU_EXPORT_PNG;
+
+    if (strcmp(s, "bmp") == 0)
+        return MIRU_EXPORT_BMP;
+
+    if (strcmp(s, "png") == 0)
+        return MIRU_EXPORT_PNG;
+
+    if (strcmp(s, "jpeg") == 0 || strcmp(s, "jpg") == 0) {
+        MIRU_LOG("config: export.%s format is not supported yet, using png", s);
+        return MIRU_EXPORT_PNG;
+    }
+
+    MIRU_LOG("config: unknown export format '%s', using png", s);
+    return MIRU_EXPORT_PNG;
+}
 
 static int parse_hex_rgb(const char *s, float *r, float *g, float *b)
 {
@@ -138,7 +159,10 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "text_size = 1.0\n"
                                          "\n"
                                          "[loupe]\n"
-                                         "shape = \"rect\"\n";
+                                         "shape = \"rect\"\n"
+                                         "\n"
+                                         "[export]\n"
+                                         "format = \"png\"\n";
 
     if (fputs(default_config, f) == EOF) {
         fclose(f);
@@ -285,6 +309,9 @@ static void sanitize_config(struct miru_config *c)
 
     if (c->loupe_shape < 0 || c->loupe_shape > 2)
         c->loupe_shape = 0;
+
+    if (c->export_format != MIRU_EXPORT_PNG && c->export_format != MIRU_EXPORT_BMP)
+        c->export_format = MIRU_EXPORT_PNG;
 }
 
 void config_load(struct miru_config *out)
@@ -320,6 +347,8 @@ void config_load(struct miru_config *out)
     out->annotate_text_size = 1.0;
 
     out->loupe_shape = 0;
+
+    out->export_format = MIRU_EXPORT_PNG;
 
     char config_dir[512];
     char config_path[512];
@@ -388,6 +417,8 @@ void config_load(struct miru_config *out)
     }
 
     out->loupe_shape = parse_loupe_shape(toml_get_string(t, "loupe", "shape", "rect"));
+
+    out->export_format = parse_export_format(toml_get_string(t, "export", "format", "png"));
 
     toml_free(t);
 

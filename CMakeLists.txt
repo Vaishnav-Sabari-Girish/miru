@@ -26,6 +26,7 @@ message(STATUS "miru version: ${MIRU_VERSION}")
 configure_file(${CMAKE_SOURCE_DIR}/src/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h @ONLY)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+pkg_check_modules(PNG REQUIRED libpng)
 # Prefer -DWAYLAND_PROTOCOLS_DIR=... (CI / custom trees); else pkg-config
 if(NOT WAYLAND_PROTOCOLS_DIR)
   pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
@@ -134,14 +135,16 @@ target_include_directories(
           ${EGL_INCLUDE_DIRS}
           ${GLESV2_INCLUDE_DIRS}
           ${WAYLAND_EGL_INCLUDE_DIRS}
+          ${PNG_INCLUDE_DIRS}
           ${CMAKE_BINARY_DIR}/protocol # so #include "*-client-protocol.h" in main.c resolves
           ${CMAKE_SOURCE_DIR}/src
           ${CMAKE_BINARY_DIR}/generated
 )
 target_link_libraries(
-  miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES} ${EGL_LIBRARIES} ${GLESV2_LIBRARIES} ${WAYLAND_EGL_LIBRARIES} m
+  miru-daemon PRIVATE ${WAYLAND_CLIENT_LIBRARIES} ${EGL_LIBRARIES} ${GLESV2_LIBRARIES} ${WAYLAND_EGL_LIBRARIES}
+                      ${PNG_LIBRARIES} m
 )
-target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
+target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER} ${PNG_CFLAGS_OTHER})
 include(GNUInstallDirs)
 install(TARGETS miru-daemon miructl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 set(MAN_PAGES "${CMAKE_SOURCE_DIR}/miru-daemon.1" "${CMAKE_SOURCE_DIR}/miructl.1")

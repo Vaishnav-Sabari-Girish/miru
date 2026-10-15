@@ -1,5 +1,8 @@
 #include "help.h"
+#include <stdio.h>
 #include <stddef.h>
+
+static char export_line[48] = "SHIFT+E           Export view (png)";
 
 static const char *const lines[] = {
     "Miru - controls",
@@ -26,7 +29,7 @@ static const char *const lines[] = {
     " CTRL+Z           Undo Annotation",
     " CTRL+Y           Redo Annotation",
     " C                Clear Annotations",
-    "SHIFT+E           Export view (Image)",
+    export_line,
     "SHIFT+H or ?      Toggle this help",
     "ESC               Close help / exit",
 };
@@ -39,4 +42,9 @@ const char *const *help_lines(void)
 size_t help_line_count()
 {
     return sizeof(lines) / sizeof(lines[0]);
+}
+
+void help_set_export_format(int format)
+{
+    snprintf(export_line, sizeof(export_line), "SHIFT+E           Export view (%s)", format == 1 ? "png" : "bmp");
 }

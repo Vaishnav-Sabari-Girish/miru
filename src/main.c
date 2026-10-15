@@ -1,3 +1,4 @@
+#include "help.h"
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
@@ -78,6 +79,7 @@ static int activate(
                                                                config->spotlight_dim),
         .spotlight_softness = (float)config->spotlight_softness,
         .spotlight_animation_speed = (float)config->spotlight_animation_speed,
+        .export_format = config->export_format,
     };
 
     if (layer_surface_create(state, ls, capture, &ls_config) != 0) {
@@ -188,6 +190,7 @@ int main(int argc, char *argv[])
     struct miru_ipc_server ipc = { 0 };
     struct miru_config config = { 0 };
     config_load(&config);
+    help_set_export_format(config.export_format);
     struct miru_config_watch config_watch = { 0 };
     config_watch_init(&config_watch);
     volatile sig_atomic_t request_deactivate = 0;
@@ -332,6 +335,7 @@ int main(int argc, char *argv[])
                         .smooth_enabled = config.zoom_smooth,
                         .standalone_spotlight = true,
                         .has_initial_cursor = false,
+                        .export_format = config.export_format,
                     };
 
                     if (input_ctx.has_last_pointer) {
@@ -392,7 +396,7 @@ int main(int argc, char *argv[])
                     config.annotate_text_g != new_config.annotate_text_g ||
                     config.annotate_text_b != new_config.annotate_text_b ||
                     config.annotate_text_size != new_config.annotate_text_size ||
-                    config.loupe_shape != new_config.loupe_shape) {
+                    config.loupe_shape != new_config.loupe_shape || config.export_format != new_config.export_format) {
                     MIRU_LOG("config: change detected reloading");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
@@ -409,6 +413,7 @@ int main(int argc, char *argv[])
                             .spotlight_dim = (float)config.spotlight_dim,
                             .spotlight_softness = (float)config.spotlight_softness,
                             .spotlight_animation_speed = (float)config.spotlight_animation_speed,
+                            .export_format = config.export_format,
                         };
 
                         layer_surface_apply_config(&ls, &ls_config);
@@ -425,6 +430,7 @@ int main(int argc, char *argv[])
                             (float)config.annotate_text_size
                         );
                         layer_surface_render(&ls);
+                        help_set_export_format(config.export_format);
                         ls.dirty = false;
                     }
                 }
