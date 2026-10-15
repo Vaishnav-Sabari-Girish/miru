@@ -33,6 +33,8 @@ struct miru_config {
 
     // Loupe 0 = rect, 1 = ellipse, 2 = circle
     int loupe_shape;
+
+    int export_format;
 };
 
 void config_load(struct miru_config *out);
