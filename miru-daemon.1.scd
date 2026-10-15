@@ -85,14 +85,17 @@ radius_step = 20.0
 show_cursor = true
 
 [annotate]
-default = "rect"
+default = "arrow"
 thickness = 4.0
 color = "ff3333"
 text_color = "ffd933"
 text_size = 1.0
 
 [loupe]
-shape = "circle"
+shape = "rect"
+
+[export]
+format = "png"
 ```
 
 *[zoom]*
@@ -120,6 +123,9 @@ shape = "circle"
 
 *[loupe]*
 	*shape* - Default shape when entering loupe mode
+
+*[export]*
+	*format* - File format of exported image
 
 Full detail:
 https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration
@@ -211,4 +217,6 @@ Sources:
 - https://github.com/Vaishnav-Sabari-Girish/miru
 
 Issues and pull requests:
-https://codeberg.org/Vaishnav-Sabari-Girish/miru
+https://codeberg.org/Vaishnav-Sabari-Girish/miru and https://github.com/Vaishnav-Sabari-Girish/miru 
+(The issues are synced)
+

@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-10\-14" "Miru" "miru\-daemon Manual"
+.TH "MIRU\-DAEMON" "1" "2026\-10\-15" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
@@ -107,14 +107,17 @@ radius_step = 20\&.0
 show_cursor = true
 
 [annotate]
-default = "rect"
+default = "arrow"
 thickness = 4\&.0
 color = "ff3333"
 text_color = "ffd933"
 text_size = 1\&.0
 
 [loupe]
-shape = "circle"
+shape = "rect"
+
+[export]
+format = "png"
 .fi
 .RE
 .PP
@@ -152,6 +155,11 @@ false (compositor\-dependent).\&
 \fB[loupe]\fR
 .RS 4
 \fBshape\fR \- Default shape when entering loupe mode
+.PP
+.RE
+\fB[export]\fR
+.RS 4
+\fBformat\fR \- File format of exported image
 .PP
 .RE
 Full detail:
@@ -270,4 +278,6 @@ https://github.\&com/Vaishnav\-Sabari\-Girish/miru
 .PD
 .PP
 Issues and pull requests:
-https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru
+https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru and https://github.\&com/Vaishnav\-Sabari\-Girish/miru 
+(The issues are synced)
+.PP
