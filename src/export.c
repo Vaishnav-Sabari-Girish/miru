@@ -2,15 +2,42 @@
 #include "debug.h"
 #include <GLES2/gl2.h>
 #include <errno.h>
+#include <libnotify/notification.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <png.h>
+#include <libnotify/notify.h>
 #include <string.h>
 #include <stdint.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+
+static void notify_export(const char *path)
+{
+    if (!path || !*path)
+        return;
+
+    static int inited = 0;
+
+    if (!inited) {
+        if (!notify_init("miru"))
+            return;
+        inited = 1;
+    }
+
+    const char *name = strrchr(path, '/');
+    name = name ? name + 1 : path;
+
+    NotifyNotification *n = notify_notification_new("Miru Export", path, "image-x-generic");
+    if (!n)
+        return;
+
+    notify_notification_set_timeout(n, 4000);
+    notify_notification_show(n, NULL);
+    g_object_unref(G_OBJECT(n));
+}
 
 static int ensure_dir(const char *path)
 {
@@ -225,5 +252,6 @@ int miru_export_framebuffer(int width, int height, int format)
     }
 
     MIRU_LOG("export: wrote %s", path);
+    notify_export(path);
     return 0;
 }
