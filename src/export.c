@@ -30,7 +30,7 @@ static void notify_export(const char *path)
     const char *name = strrchr(path, '/');
     name = name ? name + 1 : path;
 
-    NotifyNotification *n = notify_notification_new("Miru Export", path, "image-x-generic");
+    NotifyNotification *n = notify_notification_new("Miru Export", name, "image-x-generic");
     if (!n)
         return;
 
