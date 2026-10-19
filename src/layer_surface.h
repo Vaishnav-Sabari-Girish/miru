@@ -25,6 +25,8 @@ struct layer_surface_config {
     bool standalone_spotlight;
 
     int export_format;
+
+    int color_filter;
 };
 
 struct miru_loupe {
@@ -84,6 +86,8 @@ struct miru_layer_surface {
     bool export_pending;
 
     int export_format;
+
+    int color_filter; /* 0 = None, 1 = grayscale, 2 = invert, 3 = contrast */
 };
 
 int layer_surface_create(

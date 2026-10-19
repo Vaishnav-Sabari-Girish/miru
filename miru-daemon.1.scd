@@ -85,7 +85,7 @@ radius_step = 20.0
 show_cursor = true
 
 [annotate]
-default = "arrow"
+default = "rect"
 thickness = 4.0
 color = "ff3333"
 text_color = "ffd933"
@@ -96,6 +96,9 @@ shape = "rect"
 
 [export]
 format = "png"
+
+[filter]
+default = "none"
 ```
 
 *[zoom]*
@@ -127,6 +130,9 @@ format = "png"
 *[export]*
 	*format* - File format of exported image
 
+*[filter]*
+	*default* - The default image filter to apply when the overlay is active.
+
 Full detail:
 https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration
 
@@ -150,6 +156,10 @@ https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration
 *Shift+A*
 	Toggle annotate mode (pan frozen; orange frame).  
 	*W* — arrow tool; *R* — rectangle; drag LMB — place; *CTRL+Z/Y* - Undo/Redo; *C* — clear.
+
+*F*
+	Shift between different image filters (Normal, Grayscale, Inverted/Negative,
+	High Contrast).
 
 *Shift+H* or *?*
 	Toggle help panel. *Esc* closes help first if open.

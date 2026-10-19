@@ -84,6 +84,8 @@ See [Roadmap](#roadmap) for the full picture.
     presentation shapes on the frozen frame (arrows, rectangles, lines, ellipse
     and circle). Defaults (tool, colors, thickness, text size) are configurable
     under `[annotate]`. See controls below.
+  * **F** cycles between different image filters (inverted, grayscale, contrast,
+    default).
   * **Shift+H** or **?** toggles an on-screen **help panel** listing the
     current keybinds (Esc closes help first, then exits the magnifier).
   * **Shift+E** exports the current view to a `.png` or `.bmp` file which is
@@ -483,7 +485,7 @@ radius_step = 20.0
 show_cursor = true
 
 [annotate]
-default = "arrow"
+default = "rect"
 thickness = 4.0
 color = "ff3333"
 text_color = "ffd933"
@@ -494,6 +496,9 @@ shape = "rect"
 
 [export]
 format = "png"
+
+[filter]
+default = "none"
 ```
 
 The currently active options are:
@@ -533,6 +538,8 @@ The currently active options are:
   * `"rect"/"rectangle", "ellipse", "circle"`
 * `export.format` - File format for exporting
   * `"png", "bmp"`
+* `filter.default` - the default filter to add when zooming:
+  * `"none", "invert/inverted/negative", "contrast/high-contrast", "gray/grey/grayscale"`
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
 non-positive values where applicable, fall back to safe defaults. `zoom.factor`
@@ -650,6 +657,8 @@ centered on your cursor when possible. While active:
   * **C** — clear all annotations
   * **Shift+A** again — leave annotate mode (shapes remain until overlay exit
     or clear)
+* **F**: Cycle between image filters (default, grayscale, inverted/negative,
+  high contrast).
 * **Shift+H** or **?** — toggle the **help panel** (keybind cheat sheet).
   **Esc** closes help if it is open; otherwise Esc exits the magnifier.
 * **Esc**, or pressing the toggle keybind again, to exit back to your normal
@@ -745,6 +754,7 @@ click-through by design, see [What it does](#what-it-does) above.
       [`test_export.bmp`](./test_export.bmp))
 * [x] Configurable annotation defaults (`[annotate]` in `config.toml`)
 * [x] Configurable export format
+* [x] Image filters
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely

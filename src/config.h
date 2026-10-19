@@ -35,6 +35,8 @@ struct miru_config {
     int loupe_shape;
 
     int export_format;
+
+    int color_filter;
 };
 
 void config_load(struct miru_config *out);

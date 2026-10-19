@@ -42,6 +42,7 @@ static const char *fragment_shader_src = "precision mediump float;\n"
                                          "uniform vec2 u_texel_size;\n"
                                          "uniform float u_upscale;\n"
                                          "uniform float u_ellipse_mask;\n"
+                                         "uniform float u_filter;\n"
                                          "\n"
                                          "vec4 cubic(float v) {\n"
                                          "    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;\n"
@@ -88,6 +89,14 @@ static const char *fragment_shader_src = "precision mediump float;\n"
                                          "        color = textureBicubic(u_texture, sample_uv);\n"
                                          "    } else {\n"
                                          "        color = texture2D(u_texture, sample_uv).rgb;\n"
+                                         "    }\n"
+                                         "    if (u_filter > 2.5) {\n"
+                                         "          color = clamp((color - 0.5) * 1.8 + 0.5, 0.0, 1.0);\n"
+                                         "    } else if (u_filter > 1.5) {\n"
+                                         "          color = 1.0 - color;\n"
+                                         "    } else if (u_filter > 0.5) {\n"
+                                         "          float g = dot(color, vec3(0.299, 0.587, 0.114));\n"
+                                         "          color = vec3(g);\n"
                                          "    }\n"
                                          "    if (u_spotlight_enabled > 0.5) {\n"
                                          "        vec2 frag_px = gl_FragCoord.xy;\n"
@@ -200,6 +209,7 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     r->tex_w = 0;
     r->tex_h = 0;
     r->upscale_mode = 2;
+    r->u_filter = glGetUniformLocation(r->program, "u_filter");
 
     float verts[] = {
         // x, y (clip space), u, v
@@ -356,7 +366,8 @@ void gl_renderer_draw(
     bool spotlight_enabled,
     float spotlight_radius,
     float spotlight_softness,
-    float spotlight_dim
+    float spotlight_dim,
+    int color_filter
 )
 {
     glViewport(0, 0, viewport_w, viewport_h);
@@ -382,6 +393,7 @@ void gl_renderer_draw(
     glUniform1f(r->u_spotlight_radius, spotlight_radius);
     glUniform1f(r->u_spotlight_softness, spotlight_softness);
     glUniform1f(r->u_spotlight_dim, spotlight_dim);
+    glUniform1f(r->u_filter, (float)color_filter);
 
     if (r->tex_w > 0 && r->tex_h > 0)
         glUniform2f(r->u_texel_size, 1.0f / (float)r->tex_w, 1.0f / (float)r->tex_h);
@@ -889,7 +901,8 @@ void gl_renderer_draw_loupe(
     int buf_w,
     int buf_h,
     int y_invert,
-    int ellipse_mask
+    int ellipse_mask,
+    int color_filter
 )
 {
     float bw = (float)buf_w;
@@ -930,6 +943,7 @@ void gl_renderer_draw_loupe(
     glUniform1f(r->u_spotlight_radius, 0.0f);
     glUniform1f(r->u_spotlight_softness, 0.0f);
     glUniform1f(r->u_spotlight_dim, 0.0f);
+    glUniform1f(r->u_filter, (float)color_filter);
 
     if (r->tex_w > 0 && r->tex_h > 0)
         glUniform2f(r->u_texel_size, 1.0f / (float)r->tex_w, 1.0f / (float)r->tex_h);

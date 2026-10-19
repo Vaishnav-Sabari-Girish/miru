@@ -897,6 +897,14 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (key == KEY_F && state == WL_KEYBOARD_KEY_STATE_PRESSED && ctx->ls && !ctx->ls->annotations.typing &&
+        !ctx->shift_held && !ctx->ctrl_held) {
+        ctx->ls->color_filter = (ctx->ls->color_filter + 1) % 4;
+        ctx->ls->dirty = true;
+        MIRU_DBG("filter: %d", ctx->ls->color_filter);
+        return;
+    }
+
     if ((key == KEY_H && ctx->shift_held) || (key == KEY_SLASH && ctx->shift_held)) {
         ctx->ls->help_visible = !ctx->ls->help_visible;
         ctx->ls->dirty = true;

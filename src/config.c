@@ -12,6 +12,23 @@
 #include "debug.h"
 #include "export.h"
 
+static int parse_color_filter(const char *s)
+{
+    if (!s)
+        return 0;
+
+    if (strcmp(s, "grayscale") == 0 || strcmp(s, "gray") == 0 || strcmp(s, "grey") == 0)
+        return 1;
+
+    if (strcmp(s, "invert") == 0 || strcmp(s, "inverted") == 0 || strcmp(s, "negative") == 0)
+        return 2;
+
+    if (strcmp(s, "contrast") == 0 || strcmp(s, "high-contrast") == 0)
+        return 3;
+
+    return 0;
+}
+
 static int parse_export_format(const char *s)
 {
     if (!s)
@@ -152,7 +169,7 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "show_cursor = true\n"
                                          "\n"
                                          "[annotate]\n"
-                                         "default = \"arrow\"\n"
+                                         "default = \"rect\"\n"
                                          "thickness = 4.0\n"
                                          "color = \"ff3333\"\n"
                                          "text_color = \"ffd933\"\n"
@@ -162,7 +179,10 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "shape = \"rect\"\n"
                                          "\n"
                                          "[export]\n"
-                                         "format = \"png\"\n";
+                                         "format = \"png\"\n"
+                                         "\n"
+                                         "[filter]\n"
+                                         "default = \"none\"\n";
 
     if (fputs(default_config, f) == EOF) {
         fclose(f);
@@ -312,6 +332,9 @@ static void sanitize_config(struct miru_config *c)
 
     if (c->export_format != MIRU_EXPORT_PNG && c->export_format != MIRU_EXPORT_BMP)
         c->export_format = MIRU_EXPORT_PNG;
+
+    if (c->color_filter < 0 || c->color_filter > 3)
+        c->color_filter = 0;
 }
 
 void config_load(struct miru_config *out)
@@ -324,10 +347,6 @@ void config_load(struct miru_config *out)
     out->zoom_animation_speed = 14.0;
     out->zoom_upscale = 2;
 
-    // [spotlight]/[general] below are parsed and stored but not yet
-    // consumed anywhere — Spotlight mode and cursor rendering aren't built
-    // yet. Kept here so the config file's shape is stable once they are,
-    // rather than adding these fields twice later.
     out->spotlight_radius = 250;
     out->spotlight_dim = 0.65;
     out->spotlight_softness = 20;
@@ -336,7 +355,7 @@ void config_load(struct miru_config *out)
 
     out->show_cursor = true;
 
-    out->annotate_default = 0; // arrow
+    out->annotate_default = 1; // rect
     out->annotate_thickness = 4.0f;
     out->annotate_color_r = 1.0f;
     out->annotate_color_g = 0.2f;
@@ -349,6 +368,8 @@ void config_load(struct miru_config *out)
     out->loupe_shape = 0;
 
     out->export_format = MIRU_EXPORT_PNG;
+
+    out->color_filter = 0;
 
     char config_dir[512];
     char config_path[512];
@@ -419,6 +440,8 @@ void config_load(struct miru_config *out)
     out->loupe_shape = parse_loupe_shape(toml_get_string(t, "loupe", "shape", "rect"));
 
     out->export_format = parse_export_format(toml_get_string(t, "export", "format", "png"));
+
+    out->color_filter = parse_color_filter(toml_get_string(t, "filter", "default", "none"));
 
     toml_free(t);
 

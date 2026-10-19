@@ -15,6 +15,7 @@ struct miru_gl_renderer {
     GLint u_texel_size;
     GLint u_upscale;
     GLint u_ellipse_mask;
+    GLint u_filter;
     int tex_w, tex_h;
     int upscale_mode;
 
@@ -56,7 +57,8 @@ void gl_renderer_draw(
     bool spotlight_enabled,
     float spotlight_radius,
     float spotlight_softness,
-    float spotlight_dim
+    float spotlight_dim,
+    int color_filter
 );
 
 void gl_renderer_cleanup(struct miru_gl_renderer *r);
@@ -87,7 +89,8 @@ void gl_renderer_draw_loupe(
     int buf_w,
     int buf_h,
     int y_invert,
-    int ellipse_mask
+    int ellipse_mask,
+    int color_filter
 );
 
 void gl_renderer_draw_loupe_outline(
