@@ -30,6 +30,7 @@ static const char *const lines[] = {
     " CTRL+Y           Redo Annotation",
     " C                Clear Annotations",
     export_line,
+    "F                 Cycle Color filters",
     "SHIFT+H or ?      Toggle this help",
     "ESC               Close help / exit",
 };

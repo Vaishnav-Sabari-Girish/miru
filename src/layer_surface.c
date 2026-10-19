@@ -212,6 +212,8 @@ int layer_surface_create(
 
     ls->export_format = config->export_format;
 
+    ls->color_filter = config->color_filter;
+
     ls->help_visible = false;
 
     annotation_state_init(&ls->annotations);
@@ -335,6 +337,10 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
         ls->zoom = ls->zoom_max;
 
     ls->export_format = config->export_format;
+
+    if (config->color_filter >= 0 && config->color_filter <= 3)
+        ls->color_filter = config->color_filter;
+
     ls->dirty = true;
 }
 
@@ -467,7 +473,8 @@ void layer_surface_render(struct miru_layer_surface *ls)
             false,
             0.0f,
             0.0f,
-            0.0f
+            0.0f,
+            ls->color_filter
         );
 
         float x0 = ls->loupe.x0, y0 = ls->loupe.y0;
@@ -560,7 +567,8 @@ void layer_surface_render(struct miru_layer_surface *ls)
                 ls->buffer_width,
                 ls->buffer_height,
                 y_invert,
-                ls->loupe.shape != 0
+                ls->loupe.shape != 0,
+                ls->color_filter
             );
 
             gl_renderer_draw_loupe_outline(
@@ -665,7 +673,8 @@ void layer_surface_render(struct miru_layer_surface *ls)
         spotlight_active,
         ls->display_spotlight_radius,
         ls->spotlight_softness,
-        ls->display_spotlight_dim
+        ls->display_spotlight_dim,
+        ls->color_filter
     );
 
     gl_renderer_draw_annotations(

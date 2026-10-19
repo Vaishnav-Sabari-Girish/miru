@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-10\-15" "Miru" "miru\-daemon Manual"
+.TH "MIRU\-DAEMON" "1" "2026\-10\-19" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
@@ -107,7 +107,7 @@ radius_step = 20\&.0
 show_cursor = true
 
 [annotate]
-default = "arrow"
+default = "rect"
 thickness = 4\&.0
 color = "ff3333"
 text_color = "ffd933"
@@ -118,6 +118,9 @@ shape = "rect"
 
 [export]
 format = "png"
+
+[filter]
+default = "none"
 .fi
 .RE
 .PP
@@ -162,6 +165,11 @@ false (compositor\-dependent).\&
 \fBformat\fR \- File format of exported image
 .PP
 .RE
+\fB[filter]\fR
+.RS 4
+\fBdefault\fR \- The default image filter to apply when the overlay is active.\&
+.PP
+.RE
 Full detail:
 https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru#configuration
 .PP
@@ -196,6 +204,12 @@ Adjust highlight radius.\&
 .RS 4
 Toggle annotate mode (pan frozen; orange frame).\&  
 \fBW\fR — arrow tool; \fBR\fR — rectangle; drag LMB — place; \fBCTRL+Z/Y\fR \- Undo/Redo; \fBC\fR — clear.\&
+.PP
+.RE
+\fBF\fR
+.RS 4
+Shift between different image filters (Normal, Grayscale, Inverted/Negative,
+High Contrast).\&
 .PP
 .RE
 \fBShift+H\fR or \fB?\&\fR
