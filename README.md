@@ -631,6 +631,15 @@ awful.key({ modkey, "Mod1" }, "z", function()
 end),
 ```
 
+**Umbriel** - `~/.config/umbriel/config.toml`
+
+```toml
+[keybinds]
+"Mod+Z" = "spawn:/path/to/miru/build/miructl toggle"
+"Mod+Alt+Z" = "spawn:/path/to/miru/build/miructl loupe"
+"Mod+Shift+Z" = "spawn:/path/to/miru/build/miructl spotlight"
+```
+
 Substitute the actual path to your built `miructl` binary in each case (or
 wherever it ends up if installed via a package manager).
 
