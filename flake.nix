@@ -11,44 +11,44 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
+        nativeDeps = with pkgs; [
+          cmake
+          ninja
+          pkg-config
+          wayland-scanner
+        ];
+
+        runtimeDeps = with pkgs; [
+          wayland
+          wayland-protocols
+          libffi
+          mesa
+          libglvnd      # egl.pc, glesv2.pc
+          libpng
+          libnotify
+          glib
+          gdk-pixbuf
+        ];
+
         miru = pkgs.stdenv.mkDerivation {
           pname = "miru";
           version = "0.13.0";
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [
-            cmake
-            ninja
-            pkg-config
-            wayland-scanner
-          ];
+          nativeBuildInputs = nativeDeps;
+          buildInputs = runtimeDeps;
 
-          buildInputs = with pkgs; [
-            wayland
-            wayland-protocols
-            libffi
-            mesa
-            libGL
-          ];
+          meta = with pkgs.lib; {
+            description = "A zooming daemon for wayland";
+            platforms = platforms.linux;
+            mainProgram = "miru-daemon";
+          };
         };
       in
       {
         devShells.default = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [
-            cmake
-            ninja
-            pkg-config
-            wayland-scanner
-          ];
-
-          buildInputs = with pkgs; [
-            wayland
-            wayland-protocols
-            libffi
-            mesa
-            libGL
-          ];
-
+          nativeBuildInputs = nativeDeps;
+          buildInputs = runtimeDeps;
           shellHook = ''
             echo "Entering Nix Dev Shell for Miru"
           '';
@@ -61,7 +61,6 @@
             type = "app";
             program = "${miru}/bin/miru-daemon";
           };
-          
           miructl = {
             type = "app";
             program = "${miru}/bin/miructl";

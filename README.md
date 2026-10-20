@@ -266,8 +266,8 @@ nix develop git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
 #### Homebrew (Linuxbrew)
 
 ```bash
-brew tap Vaishnav-Sabari-Girish/tap
-brew install miru
+brew tap Vaishnav-Sabari-Girish/taps https://codeberg.org/Vaishnav-Sabari-Girish/homebrew-taps
+brew install Vaishnav-Sabari-Girish/taps/miru
 ```
 
 #### Gentoo (third-party overlay)
