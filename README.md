@@ -175,8 +175,8 @@ Miru currently requires a compositor that exposes both `wlr-layer-shell` and
   [@shadowash8](https://github.com/shadowash8)
   (<https://github.com/shadowash8/nauka>)
 * **SomeWM** - supported and tested by [@yvnth](https://github.com/yvnth)
-* **Umbriel** - supported (<https://github.com/noctalia-dev/umbriel>)
   [<https://somewm.org/>]
+* **Umbriel** - supported (<https://github.com/noctalia-dev/umbriel>)
 * **GNOME / Mutter** — not supported
 * **KDE Plasma / KWin** — not supported
 
