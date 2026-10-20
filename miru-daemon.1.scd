@@ -83,6 +83,7 @@ radius_step = 20.0
 
 [general]
 show_cursor = true
+status_badge = true
 
 [annotate]
 default = "rect"
@@ -116,6 +117,7 @@ default = "none"
 *[general]*
 	*show_cursor* — hide the hardware cursor while the overlay is active when
 	false (compositor-dependent).
+	*status_badge* - Choose to display the status badge (*true/false*)
 
 *[annotate]*
 	*default* - Default shape when entering annotation mode.
@@ -156,6 +158,9 @@ https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration
 *Shift+A*
 	Toggle annotate mode (pan frozen; orange frame).  
 	*W* — arrow tool; *R* — rectangle; drag LMB — place; *CTRL+Z/Y* - Undo/Redo; *C* — clear.
+
+*B*
+	Toggle Status Badge (Displays the zoom factor and the annotation tool chosen).
 
 *F*
 	Shift between different image filters (Normal, Grayscale, Inverted/Negative,
