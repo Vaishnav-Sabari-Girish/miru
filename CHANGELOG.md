@@ -1,4 +1,48 @@
 
+## v0.13.0 - 2026-10-20
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(flip)** Status badge flips when cursor is at it's position
+
+- **(badge)** Add a status badge to show zoom factor and tool
+
+- **(filter)** Add color filters (grayscale, invert, contrast)
+
+- **(export)** Added notification of export
+
+- **(export)** Added png export and also made it configurable
+
+- **(loupe)** Add circle/ellipse loupe shapes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## v0.12.0 - 2026-10-13
 
 
