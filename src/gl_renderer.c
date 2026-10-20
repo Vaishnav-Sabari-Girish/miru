@@ -888,7 +888,14 @@ void gl_renderer_draw_help(struct miru_gl_renderer *r, int viewport_w, int viewp
     }
 }
 
-void gl_renderer_draw_status_badge(struct miru_gl_renderer *r, int viewport_w, int viewport_h, const char *text)
+void gl_renderer_draw_status_badge(
+    struct miru_gl_renderer *r,
+    int viewport_w,
+    int viewport_h,
+    const char *text,
+    float cursor_buf_x,
+    float cursor_buf_y
+)
 {
     if (!r || !text || !text[0] || viewport_w <= 0 || viewport_h <= 0)
         return;
@@ -910,10 +917,26 @@ void gl_renderer_draw_status_badge(struct miru_gl_renderer *r, int viewport_w, i
     float text_w = (float)n * 8.0f * px_w;
     float text_h = 8.0f * px_h;
 
-    float x0 = -1.0f + pad_x;
-    float y1 = 1.0f - pad_y;
-    float x1 = x0 + text_w + pad_x * 2.0f;
-    float y0 = y1 - text_h - pad_y * 2.0f;
+    float box_w_ndc = text_w + pad_x * 2.0f;
+    float box_h_ndc = text_h + pad_y * 2.0f;
+
+    float box_w_px = (box_w_ndc * 0.5f) * (float)viewport_w;
+    float box_h_px = (box_h_ndc * 0.5f) * (float)viewport_h;
+    float margin_px = 24.0f;
+
+    bool flip_x = cursor_buf_x < box_w_px + margin_px && cursor_buf_y < box_h_px + margin_px;
+
+    float x0, x1, y0, y1;
+    if (flip_x) {
+        x1 = 1.0f - pad_x;
+        x0 = x1 - box_w_ndc;
+    } else {
+        x0 = -1.0f + pad_x;
+        x1 = x0 + box_w_ndc;
+    }
+
+    y1 = 1.0f - pad_y;
+    y0 = y1 - box_h_ndc;
 
     emit_solid_quad(r, x0, y0, x1, y1, 0.08f, 0.08f, 0.10f, 0.82f);
 

@@ -597,7 +597,15 @@ void layer_surface_render(struct miru_layer_surface *ls)
                     snprintf(buf, sizeof(buf), "%.2fx", ls->display_zoom);
                 }
 
-                gl_renderer_draw_status_badge(&ls->gl, ls->buffer_width, ls->buffer_height, buf);
+                float cx = (float)ls->cursor_x;
+                float cy = (float)ls->cursor_y;
+
+                if (ls->loupe.active && ls->loupe.committed) {
+                    cx = ls->loupe.center_x;
+                    cy = ls->loupe.center_y;
+                }
+
+                gl_renderer_draw_status_badge(&ls->gl, ls->buffer_width, ls->buffer_height, buf, cx, cy);
             }
 
         } else if (ls->loupe.selecting || ls->loupe.dragging) {
@@ -724,7 +732,15 @@ void layer_surface_render(struct miru_layer_surface *ls)
             snprintf(buf, sizeof(buf), "%.2fx", ls->display_zoom);
         }
 
-        gl_renderer_draw_status_badge(&ls->gl, ls->buffer_width, ls->buffer_height, buf);
+        float cx = (float)ls->cursor_x;
+        float cy = (float)ls->cursor_y;
+
+        if (ls->loupe.active && ls->loupe.committed) {
+            cx = ls->loupe.center_x;
+            cy = ls->loupe.center_y;
+        }
+
+        gl_renderer_draw_status_badge(&ls->gl, ls->buffer_width, ls->buffer_height, buf, cx, cy);
     }
 
     if (ls->help_visible) {
