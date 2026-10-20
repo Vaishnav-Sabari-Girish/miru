@@ -27,6 +27,8 @@ struct layer_surface_config {
     int export_format;
 
     int color_filter;
+
+    bool status_badge;
 };
 
 struct miru_loupe {
@@ -88,6 +90,8 @@ struct miru_layer_surface {
     int export_format;
 
     int color_filter; /* 0 = None, 1 = grayscale, 2 = invert, 3 = contrast */
+
+    bool status_badge;
 };
 
 int layer_surface_create(

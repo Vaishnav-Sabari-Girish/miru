@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-10\-19" "Miru" "miru\-daemon Manual"
+.TH "MIRU\-DAEMON" "1" "2026\-10\-20" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
@@ -105,6 +105,7 @@ radius_step = 20\&.0
 
 [general]
 show_cursor = true
+status_badge = true
 
 [annotate]
 default = "rect"
@@ -144,6 +145,7 @@ default = "none"
 .RS 4
 \fBshow_cursor\fR — hide the hardware cursor while the overlay is active when
 false (compositor\-dependent).\&
+\fBstatus_badge\fR \- Choose to display the status badge (\fBtrue/false\fR)
 .PP
 .RE
 \fB[annotate]\fR
@@ -204,6 +206,11 @@ Adjust highlight radius.\&
 .RS 4
 Toggle annotate mode (pan frozen; orange frame).\&  
 \fBW\fR — arrow tool; \fBR\fR — rectangle; drag LMB — place; \fBCTRL+Z/Y\fR \- Undo/Redo; \fBC\fR — clear.\&
+.PP
+.RE
+\fBB\fR
+.RS 4
+Toggle Status Badge (Displays the zoom factor and the annotation tool chosen).\&
 .PP
 .RE
 \fBF\fR

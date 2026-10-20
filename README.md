@@ -483,6 +483,7 @@ radius_step = 20.0
 
 [general]
 show_cursor = true
+status_badge = true
 
 [annotate]
 default = "rect"
@@ -527,6 +528,9 @@ The currently active options are:
 * `general.show_cursor` — when `false`, hides the hardware cursor while the
   overlay is active (restoring a themed cursor when turning it back on may
   be limited depending on the compositor).
+* `general.status_badge` - shows a status badge which displays the zoom factor
+  and in annotate mode, it shows the annotation tool chosen. Works even in
+  `loupe` mode.
 * `annotate.default` - default tool when entering annotate mode:
   * `"arrow", "rect/rectangle", "line", "ellipse", or "text"`
 * `annotate.thickness` - stroke width for shapes (value ranges from `1` to `8`)
@@ -657,6 +661,7 @@ centered on your cursor when possible. While active:
   * **C** — clear all annotations
   * **Shift+A** again — leave annotate mode (shapes remain until overlay exit
     or clear)
+* **B**: Toggle the status badge.
 * **F**: Cycle between image filters (default, grayscale, inverted/negative,
   high contrast).
 * **Shift+H** or **?** — toggle the **help panel** (keybind cheat sheet).
@@ -755,6 +760,7 @@ click-through by design, see [What it does](#what-it-does) above.
 * [x] Configurable annotation defaults (`[annotate]` in `config.toml`)
 * [x] Configurable export format
 * [x] Image filters
+* [x] Add a Status badge
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely

@@ -794,9 +794,7 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (key == KEY_T && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_TEXT;
         ctx->ls->annotations.dragging = false;
-        // if (miru_debug_enabled()) {
-        //     fprintf(stderr, "annotate tool: text\n");
-        // }
+        ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: text");
 
         return;
@@ -804,12 +802,14 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
     if (key == KEY_L && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_LINE;
         ctx->ls->annotations.dragging = false;
+        ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: line");
         return;
     }
     if (key == KEY_O && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_ELLIPSE;
         ctx->ls->annotations.dragging = false;
+        ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: ellipse");
         return;
     }
@@ -858,19 +858,14 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
 
     if (key == KEY_R && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_RECT;
-
-        // if (miru_debug_enabled()) {
-        //     fprintf(stderr, "annotate tool: rect\n");
-        // }
+        ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: rect");
         return;
     }
 
     if (key == KEY_W && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_ARROW;
-        // if (miru_debug_enabled()) {
-        //     fprintf(stderr, "annotate tool: arrow\n");
-        // }
+        ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: arrow");
         return;
     }
@@ -902,6 +897,14 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         ctx->ls->color_filter = (ctx->ls->color_filter + 1) % 4;
         ctx->ls->dirty = true;
         MIRU_DBG("filter: %d", ctx->ls->color_filter);
+        return;
+    }
+
+    if (key == KEY_B && state == WL_KEYBOARD_KEY_STATE_PRESSED && ctx->ls && !ctx->ls->annotations.typing &&
+        !ctx->shift_held && !ctx->ctrl_held) {
+        ctx->ls->status_badge = !ctx->ls->status_badge;
+        ctx->ls->dirty = true;
+        MIRU_DBG("status badge: %s", ctx->ls->status_badge ? "ON" : "OFF");
         return;
     }
 

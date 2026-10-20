@@ -81,6 +81,7 @@ static int activate(
         .spotlight_animation_speed = (float)config->spotlight_animation_speed,
         .export_format = config->export_format,
         .color_filter = config->color_filter,
+        .status_badge = config->status_badge,
     };
 
     if (layer_surface_create(state, ls, capture, &ls_config) != 0) {
@@ -338,6 +339,7 @@ int main(int argc, char *argv[])
                         .has_initial_cursor = false,
                         .export_format = config.export_format,
                         .color_filter = config.color_filter,
+                        .status_badge = config.status_badge,
                     };
 
                     if (input_ctx.has_last_pointer) {
@@ -399,7 +401,7 @@ int main(int argc, char *argv[])
                     config.annotate_text_b != new_config.annotate_text_b ||
                     config.annotate_text_size != new_config.annotate_text_size ||
                     config.loupe_shape != new_config.loupe_shape || config.export_format != new_config.export_format ||
-                    config.color_filter != new_config.color_filter) {
+                    config.color_filter != new_config.color_filter || config.status_badge != new_config.status_badge) {
                     MIRU_LOG("config: change detected reloading");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
@@ -418,6 +420,7 @@ int main(int argc, char *argv[])
                             .spotlight_animation_speed = (float)config.spotlight_animation_speed,
                             .export_format = config.export_format,
                             .color_filter = config.color_filter,
+                            .status_badge = config.status_badge,
                         };
 
                         layer_surface_apply_config(&ls, &ls_config);

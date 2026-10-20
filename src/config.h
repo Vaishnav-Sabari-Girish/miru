@@ -37,6 +37,8 @@ struct miru_config {
     int export_format;
 
     int color_filter;
+
+    bool status_badge;
 };
 
 void config_load(struct miru_config *out);

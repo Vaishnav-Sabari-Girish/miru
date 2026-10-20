@@ -115,4 +115,13 @@ void gl_renderer_draw_standalone_spotlight(
     float dim
 );
 
+void gl_renderer_draw_status_badge(
+    struct miru_gl_renderer *r,
+    int viewport_w,
+    int viewport_h,
+    const char *text,
+    float cursor_buf_x,
+    float cursor_buf_y
+);
+
 #endif

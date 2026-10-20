@@ -167,6 +167,7 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "\n"
                                          "[general]\n"
                                          "show_cursor = true\n"
+                                         "status_badge = false\n"
                                          "\n"
                                          "[annotate]\n"
                                          "default = \"rect\"\n"
@@ -371,6 +372,8 @@ void config_load(struct miru_config *out)
 
     out->color_filter = 0;
 
+    out->status_badge = false;
+
     char config_dir[512];
     char config_path[512];
 
@@ -416,6 +419,7 @@ void config_load(struct miru_config *out)
     out->spotlight_radius_step = toml_get_double(t, "spotlight", "radius_step", out->spotlight_radius_step);
 
     out->show_cursor = toml_get_bool(t, "general", "show_cursor", out->show_cursor);
+    out->status_badge = toml_get_bool(t, "general", "status_badge", out->status_badge);
 
     out->annotate_default = parse_annotate_default(toml_get_string(t, "annotate", "default", "arrow"));
     out->annotate_thickness = toml_get_double(t, "annotate", "thickness", out->annotate_thickness);
