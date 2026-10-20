@@ -216,6 +216,8 @@ int layer_surface_create(
 
     ls->help_visible = false;
 
+    ls->status_badge = config->status_badge;
+
     annotation_state_init(&ls->annotations);
 
     ls->loupe = (struct miru_loupe){
@@ -340,6 +342,8 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
 
     if (config->color_filter >= 0 && config->color_filter <= 3)
         ls->color_filter = config->color_filter;
+
+    ls->status_badge = config->status_badge;
 
     ls->dirty = true;
 }
@@ -575,6 +579,27 @@ void layer_surface_render(struct miru_layer_surface *ls)
                 &ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
             );
 
+            if (ls->status_badge) {
+                char buf[32];
+                if (ls->annotations.mode) {
+                    static const char *const tools[] = {
+                        "Arrow", "Rect", "Text", "Line", "Ellipse",
+                    };
+
+                    int t = (int)ls->annotations.tool;
+                    if (t < 0 || t > 4)
+                        t = 0;
+
+                    snprintf(buf, sizeof(buf), "%s", tools[t]);
+                } else if (ls->loupe.active && ls->loupe.committed) {
+                    snprintf(buf, sizeof(buf), "%.2fx", ls->loupe.display_zoom);
+                } else {
+                    snprintf(buf, sizeof(buf), "%.2fx", ls->display_zoom);
+                }
+
+                gl_renderer_draw_status_badge(&ls->gl, ls->buffer_width, ls->buffer_height, buf);
+            }
+
         } else if (ls->loupe.selecting || ls->loupe.dragging) {
             gl_renderer_draw_loupe_outline(
                 &ls->gl, x0, y0, x1, y1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
@@ -680,6 +705,27 @@ void layer_surface_render(struct miru_layer_surface *ls)
     gl_renderer_draw_annotations(
         &ls->gl, &ls->annotations, src_left, src_top, src_w, src_h, ls->buffer_width, ls->buffer_height
     );
+
+    if (ls->status_badge) {
+        char buf[32];
+        if (ls->annotations.mode) {
+            static const char *const tools[] = {
+                "Arrow", "Rect", "Text", "Line", "Ellipse",
+            };
+
+            int t = (int)ls->annotations.tool;
+            if (t < 0 || t > 4)
+                t = 0;
+
+            snprintf(buf, sizeof(buf), "%s", tools[t]);
+        } else if (ls->loupe.active && ls->loupe.committed) {
+            snprintf(buf, sizeof(buf), "%.2fx", ls->loupe.display_zoom);
+        } else {
+            snprintf(buf, sizeof(buf), "%.2fx", ls->display_zoom);
+        }
+
+        gl_renderer_draw_status_badge(&ls->gl, ls->buffer_width, ls->buffer_height, buf);
+    }
 
     if (ls->help_visible) {
         gl_renderer_draw_help(&ls->gl, ls->buffer_width, ls->buffer_height);
