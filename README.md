@@ -7,7 +7,7 @@
 <br>
 <br>
 
-<p align="center"><a href="https://cli.masoko.net/tools/miru/"><img alt="miru on The Terminal Index" src="https://cli.masoko.net/badge/miru.svg"></a></p>
+<p align="center"><a href="https://cli.masoko.net/tools/miru/"><img src="https://cli.masoko.net/badge/miru.svg" alt="miru on The Terminal Index"></a></p>
 
 <br>
 
