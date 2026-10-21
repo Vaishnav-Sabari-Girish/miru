@@ -7,6 +7,10 @@
 <br>
 <br>
 
+<p align="center"><a href="https://cli.masoko.net/tools/miru/"><img alt="miru on The Terminal Index" src="https://cli.masoko.net/badge/miru.svg"></a></p>
+
+<br>
+
 > [!IMPORTANT]
 > Development is done on
 > [Codeberg](https://codeberg.org/Vaishnav-Sabari-Girish/miru) with a mirror in
