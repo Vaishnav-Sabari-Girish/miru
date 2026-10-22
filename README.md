@@ -275,6 +275,27 @@ brew tap Vaishnav-Sabari-Girish/taps https://codeberg.org/Vaishnav-Sabari-Girish
 brew install Vaishnav-Sabari-Girish/taps/miru
 ```
 
+#### Fedora (COPR)
+
+```bash
+sudo dnf copr enable vaishnavs/miru
+sudo dnf install miru
+```
+
+> **Note**
+>
+> The package does not ship a systemd service. After installing, start
+> `miru-daemon` from your compositor config or set up your own user service
+> (see [As a systemd user service](#as-a-systemd-user-service)).
+> Fedora's default desktop (GNOME) is not supported, so use a compositor
+> that provides `wlr-layer-shell` and `wlr-screencopy`, such as Sway or Niri.
+>
+> **Important**
+>
+> The COPR package has only been tested in a Fedora container (`distrobox`),
+> not on a full Fedora installation. If you run into any problems, please
+> [open an issue](https://codeberg.org/Vaishnav-Sabari-Girish/miru/issues).
+
 #### Gentoo (third-party overlay)
 
 Miru is available for Gentoo through
