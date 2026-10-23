@@ -26,8 +26,8 @@ void print_help()
 
     printf("Options: \n");
     printf("    -h, --help      Show this help message\n");
-    printf("    -v, --version   Show version information and exit\n\n");
-    printf("    --gen-config, --interactive   Interactive config.toml wizard\n");
+    printf("    -v, --version   Show version information and exit\n");
+    printf("    --gen-config, --interactive   Interactive config.toml wizard\n\n");
     printf("Description: \n");
     printf("    Starts the miru-daemon. Connects to the Wayland Compositor, opens a\n");
     printf("    control socket at $XDG_RUNTIME_DIR/miru.sock, and idles until \n");
