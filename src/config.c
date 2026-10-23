@@ -533,11 +533,11 @@ static int prompt_bool(const char *label, bool def, bool *out)
         *out = def;
         return 0;
     }
-    if (buf[0] == 'y' || buf[0] == 'Y' || strcmp(buf, "true") == 0 || strcmp(buf, "1") == 0)
+    if (buf[0] == 'y' || buf[0] == 'Y' || strcmp(buf, "true") == 0 || strcmp(buf, "1") == 0) {
         *out = true;
-    else if (buf[0] == 'n' || buf[0] == 'N' || strcmp(buf, "false") == 0 || strcmp(buf, "0") == 0)
+    } else if (buf[0] == 'n' || buf[0] == 'N' || strcmp(buf, "false") == 0 || strcmp(buf, "0") == 0) {
         *out = false;
-    else {
+    } else {
         fprintf(stderr, "  invalid, using default %s\n", def ? "y" : "n");
         *out = def;
     }
