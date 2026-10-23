@@ -27,6 +27,7 @@ void print_help()
     printf("Options: \n");
     printf("    -h, --help      Show this help message\n");
     printf("    -v, --version   Show version information and exit\n\n");
+    printf("    --gen-config, --interactive   Interactive config.toml wizard\n");
     printf("Description: \n");
     printf("    Starts the miru-daemon. Connects to the Wayland Compositor, opens a\n");
     printf("    control socket at $XDG_RUNTIME_DIR/miru.sock, and idles until \n");
@@ -184,6 +185,9 @@ int main(int argc, char *argv[])
     if (argc > 1 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
         print_version();
         return 0;
+    }
+    if (argc > 1 && (strcmp(argv[1], "--gen-config") == 0 || strcmp(argv[1], "--interactive") == 0)) {
+        return config_gen_interactive() == 0 ? 0 : 1;
     }
 
     struct miru_state state = { 0 };

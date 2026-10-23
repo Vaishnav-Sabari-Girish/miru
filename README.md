@@ -449,11 +449,12 @@ to toggle. Nothing else happens until a toggle command arrives (see
 Toggle the overlay on/off:
 
 ```bash
-./build/miru-daemon --version # prints version info + an ASCII logo, exits immediately
-./build/miructl toggle        # freezes + zooms the screen / returns it to normal
-./build/miructl loupe         # region loupe: drag a rectangle, then zoom that region only
-./build/miructl spotlight     # standalone dim-around-cursor (click-through; cursor follow is a WIP)
-./build/miructl quit          # tells the daemon to shut down
+./build/miru-daemon --version    # prints version info + an ASCII logo, exits immediately
+./build/miru-daemon --gen-config # walk through options and write $XDG_CONFIG_HOME/miru/config.toml. 
+./build/miructl toggle           # freezes + zooms the screen / returns it to normal
+./build/miructl loupe            # region loupe: drag a rectangle, then zoom that region only
+./build/miructl spotlight        # standalone dim-around-cursor (click-through; cursor follow is a WIP)
+./build/miructl quit             # tells the daemon to shut down
 ```
 
 ### Man pages

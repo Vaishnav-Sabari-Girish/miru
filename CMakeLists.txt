@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(
   miru
-  VERSION 0.13.0
+  VERSION 0.14.0
   LANGUAGES C
 )
 # set(CMAKE_C_STANDARD 11)
