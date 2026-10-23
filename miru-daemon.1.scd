@@ -28,7 +28,10 @@ be bound in the compositor to run *miructl toggle*.
 	Print usage and exit.
 
 *-v*, *--version*
-	Print version and ASCII logo, then exit.
+	Print version, then exit.
+
+*--gen-config*, *--interactive*
+	walk through options and write *$XDG_CONFIG_HOME/miru/config.toml*.
 
 # COMMANDS (via miructl)
 

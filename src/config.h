@@ -44,4 +44,6 @@ struct miru_config {
 void config_load(struct miru_config *out);
 
 int config_get_watch_paths(char *dir, size_t dir_size, char *filename, size_t filename_size);
+
+int config_gen_interactive(void);
 #endif // !CONFIG_H

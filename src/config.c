@@ -451,14 +451,6 @@ void config_load(struct miru_config *out)
 
     sanitize_config(out);
 
-    // fprintf(
-    //     stderr,
-    //     "config: loaded from %s (zoom factor=%.2f increment=%.2f max=%.2f)\n",
-    //     config_path,
-    //     out->zoom_factor,
-    //     out->zoom_increment,
-    //     out->zoom_max_factor
-    // );
     MIRU_LOG(
         "config: loaded from %s (zoom factor=%.2f increment=%.2f max=%.2f)\n",
         config_path,
@@ -466,4 +458,385 @@ void config_load(struct miru_config *out)
         out->zoom_increment,
         out->zoom_max_factor
     );
+}
+
+static void trim_newline(char *s)
+{
+    size_t n = strlen(s);
+    while (n > 0 && (s[n - 1] == '\n' || s[n - 1] == '\r'))
+        s[--n] = '\0';
+}
+
+/* Read a line; empty → keep *out unchanged. Returns 0, or -1 on EOF. */
+static int prompt_line(const char *label, char *buf, size_t buflen)
+{
+    fprintf(stdout, "%s", label);
+    fflush(stdout);
+    if (!fgets(buf, (int)buflen, stdin))
+        return -1;
+    trim_newline(buf);
+    return 0;
+}
+
+static int prompt_double(const char *label, double def, double *out)
+{
+    char buf[128];
+    char prompt[256];
+    snprintf(prompt, sizeof(prompt), "%s [%.4g]: ", label, def);
+    if (prompt_line(prompt, buf, sizeof(buf)) != 0)
+        return -1;
+    if (buf[0] == '\0') {
+        *out = def;
+        return 0;
+    }
+    char *end = NULL;
+    double v = strtod(buf, &end);
+    if (end == buf || *end != '\0' || !isfinite(v)) {
+        fprintf(stderr, "  invalid number, using default %.4g\n", def);
+        *out = def;
+        return 0;
+    }
+    *out = v;
+    return 0;
+}
+
+static int prompt_long(const char *label, long def, long *out)
+{
+    char buf[128];
+    char prompt[256];
+    snprintf(prompt, sizeof(prompt), "%s [%ld]: ", label, def);
+    if (prompt_line(prompt, buf, sizeof(buf)) != 0)
+        return -1;
+    if (buf[0] == '\0') {
+        *out = def;
+        return 0;
+    }
+    char *end = NULL;
+    long v = strtol(buf, &end, 10);
+    if (end == buf || *end != '\0') {
+        fprintf(stderr, "  invalid integer, using default %ld\n", def);
+        *out = def;
+        return 0;
+    }
+    *out = v;
+    return 0;
+}
+
+static int prompt_bool(const char *label, bool def, bool *out)
+{
+    char buf[64];
+    char prompt[256];
+    snprintf(prompt, sizeof(prompt), "%s [%s] (y/n): ", label, def ? "y" : "n");
+    if (prompt_line(prompt, buf, sizeof(buf)) != 0)
+        return -1;
+    if (buf[0] == '\0') {
+        *out = def;
+        return 0;
+    }
+    if (buf[0] == 'y' || buf[0] == 'Y' || strcmp(buf, "true") == 0 || strcmp(buf, "1") == 0) {
+        *out = true;
+    } else if (buf[0] == 'n' || buf[0] == 'N' || strcmp(buf, "false") == 0 || strcmp(buf, "0") == 0) {
+        *out = false;
+    } else {
+        fprintf(stderr, "  invalid, using default %s\n", def ? "y" : "n");
+        *out = def;
+    }
+    return 0;
+}
+
+/* options[0..n-1]; returns chosen index (default if empty/invalid). */
+static int prompt_choice(const char *label, const char *const *options, int n, int def)
+{
+    fprintf(stdout, "%s\n", label);
+    for (int i = 0; i < n; i++)
+        fprintf(stdout, "  %d) %s%s\n", i + 1, options[i], i == def ? "  (default)" : "");
+    char buf[64];
+    char prompt[64];
+    snprintf(prompt, sizeof(prompt), "Choice [%d]: ", def + 1);
+    if (prompt_line(prompt, buf, sizeof(buf)) != 0)
+        return def;
+    if (buf[0] == '\0')
+        return def;
+    char *end = NULL;
+    long v = strtol(buf, &end, 10);
+    if (end == buf || *end != '\0' || v < 1 || v > n) {
+        fprintf(stderr, "  invalid, using default\n");
+        return def;
+    }
+    return (int)v - 1;
+}
+
+static int prompt_hex_rgb(const char *label, const char *def_hex, float *r, float *g, float *b)
+{
+    char buf[64];
+    char prompt[128];
+    snprintf(prompt, sizeof(prompt), "%s [%s]: ", label, def_hex);
+    if (prompt_line(prompt, buf, sizeof(buf)) != 0)
+        return -1;
+    const char *s = buf[0] ? buf : def_hex;
+    if (parse_hex_rgb(s, r, g, b) != 0) {
+        fprintf(stderr, "  invalid hex, using %s\n", def_hex);
+        parse_hex_rgb(def_hex, r, g, b);
+    }
+    return 0;
+}
+
+static const char *upscale_name(int v)
+{
+    if (v == 0)
+        return "nearest";
+    if (v == 1)
+        return "linear";
+    return "bicubic";
+}
+
+static const char *annotate_name(int v)
+{
+    switch (v) {
+    case 1:
+        return "rect";
+    case 2:
+        return "text";
+    case 3:
+        return "line";
+    case 4:
+        return "ellipse";
+    default:
+        return "arrow";
+    }
+}
+
+static const char *loupe_name(int v)
+{
+    if (v == 1)
+        return "ellipse";
+    if (v == 2)
+        return "circle";
+    return "rect";
+}
+
+static const char *filter_name(int v)
+{
+    if (v == 1)
+        return "grayscale";
+    if (v == 2)
+        return "invert";
+    if (v == 3)
+        return "contrast";
+    return "none";
+}
+
+static int write_config_file(const char *path, const struct miru_config *c)
+{
+    FILE *f = fopen(path, "w");
+    if (!f) {
+        MIRU_LOG("config: failed to write %s: %s", path, strerror(errno));
+        return -1;
+    }
+
+    fprintf(
+        f,
+        "[zoom]\n"
+        "factor = %.4g\n"
+        "increment = %.4g\n"
+        "max_factor = %.4g\n"
+        "smooth = %s\n"
+        "animation_speed = %.4g\n"
+        "upscale = \"%s\"\n"
+        "\n"
+        "[spotlight]\n"
+        "radius = %ld\n"
+        "dim = %.4g\n"
+        "softness = %ld\n"
+        "animation_speed = %.4g\n"
+        "radius_step = %.4g\n"
+        "\n"
+        "[general]\n"
+        "show_cursor = %s\n"
+        "status_badge = %s\n"
+        "\n"
+        "[annotate]\n"
+        "default = \"%s\"\n"
+        "thickness = %.4g\n"
+        "color = \"%02x%02x%02x\"\n"
+        "text_color = \"%02x%02x%02x\"\n"
+        "text_size = %.4g\n"
+        "\n"
+        "[loupe]\n"
+        "shape = \"%s\"\n"
+        "\n"
+        "[export]\n"
+        "format = \"%s\"\n"
+        "\n"
+        "[filter]\n"
+        "default = \"%s\"\n",
+        c->zoom_factor,
+        c->zoom_increment,
+        c->zoom_max_factor,
+        c->zoom_smooth ? "true" : "false",
+        c->zoom_animation_speed,
+        upscale_name(c->zoom_upscale),
+        c->spotlight_radius,
+        c->spotlight_dim,
+        c->spotlight_softness,
+        c->spotlight_animation_speed,
+        c->spotlight_radius_step,
+        c->show_cursor ? "true" : "false",
+        c->status_badge ? "true" : "false",
+        annotate_name(c->annotate_default),
+        c->annotate_thickness,
+        (unsigned)(c->annotate_color_r * 255.0f + 0.5f),
+        (unsigned)(c->annotate_color_g * 255.0f + 0.5f),
+        (unsigned)(c->annotate_color_b * 255.0f + 0.5f),
+        (unsigned)(c->annotate_text_r * 255.0f + 0.5f),
+        (unsigned)(c->annotate_text_g * 255.0f + 0.5f),
+        (unsigned)(c->annotate_text_b * 255.0f + 0.5f),
+        c->annotate_text_size,
+        loupe_name(c->loupe_shape),
+        c->export_format == MIRU_EXPORT_BMP ? "bmp" : "png",
+        filter_name(c->color_filter)
+    );
+
+    if (fclose(f) != 0) {
+        unlink(path);
+        return -1;
+    }
+    return 0;
+}
+
+int config_gen_interactive(void)
+{
+    if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) {
+        fprintf(stderr, "config: --gen-config requires an interactive terminal\n");
+        return -1;
+    }
+
+    struct miru_config c;
+    memset(&c, 0, sizeof(c));
+    /* Start from built-in defaults (no file create side-effects). */
+    c.zoom_factor = 2.0;
+    c.zoom_increment = 0.25;
+    c.zoom_max_factor = 10.0;
+    c.zoom_smooth = false;
+    c.zoom_animation_speed = 14.0;
+    c.zoom_upscale = 2;
+    c.spotlight_radius = 250;
+    c.spotlight_dim = 0.65;
+    c.spotlight_softness = 20;
+    c.spotlight_animation_speed = 14.0;
+    c.spotlight_radius_step = 20.0;
+    c.show_cursor = true;
+    c.status_badge = false;
+    c.annotate_default = 1;
+    c.annotate_thickness = 4.0;
+    c.annotate_color_r = 1.0f;
+    c.annotate_color_g = 0.2f;
+    c.annotate_color_b = 0.2f;
+    c.annotate_text_r = 1.0f;
+    c.annotate_text_g = 0.85f;
+    c.annotate_text_b = 0.2f;
+    c.annotate_text_size = 1.0;
+    c.loupe_shape = 0;
+    c.export_format = MIRU_EXPORT_PNG;
+    c.color_filter = 0;
+
+    printf("Miru interactive config generator\n");
+    printf("Press Enter to keep the default shown in [brackets].\n\n");
+
+    printf("--- Zoom ---\n");
+    if (prompt_double("factor", c.zoom_factor, &c.zoom_factor) != 0)
+        return -1;
+    if (prompt_double("increment", c.zoom_increment, &c.zoom_increment) != 0)
+        return -1;
+    if (prompt_double("max_factor", c.zoom_max_factor, &c.zoom_max_factor) != 0)
+        return -1;
+    if (prompt_bool("smooth", c.zoom_smooth, &c.zoom_smooth) != 0)
+        return -1;
+    if (prompt_double("animation_speed", c.zoom_animation_speed, &c.zoom_animation_speed) != 0)
+        return -1;
+    {
+        static const char *const opts[] = { "nearest", "linear", "bicubic" };
+        c.zoom_upscale = prompt_choice("upscale", opts, 3, c.zoom_upscale);
+    }
+
+    printf("\n--- Spotlight ---\n");
+    if (prompt_long("radius", c.spotlight_radius, &c.spotlight_radius) != 0)
+        return -1;
+    if (prompt_double("dim (0–1)", c.spotlight_dim, &c.spotlight_dim) != 0)
+        return -1;
+    if (prompt_long("softness", c.spotlight_softness, &c.spotlight_softness) != 0)
+        return -1;
+    if (prompt_double("animation_speed", c.spotlight_animation_speed, &c.spotlight_animation_speed) != 0)
+        return -1;
+    if (prompt_double("radius_step", c.spotlight_radius_step, &c.spotlight_radius_step) != 0)
+        return -1;
+
+    printf("\n--- General ---\n");
+    if (prompt_bool("show_cursor", c.show_cursor, &c.show_cursor) != 0)
+        return -1;
+    if (prompt_bool("status_badge", c.status_badge, &c.status_badge) != 0)
+        return -1;
+
+    printf("\n--- Annotate ---\n");
+    {
+        static const char *const opts[] = { "arrow", "rect", "text", "line", "ellipse" };
+        c.annotate_default = prompt_choice("default tool", opts, 5, c.annotate_default);
+    }
+    if (prompt_double("thickness", c.annotate_thickness, &c.annotate_thickness) != 0)
+        return -1;
+    if (prompt_hex_rgb("color (RRGGBB)", "ff3333", &c.annotate_color_r, &c.annotate_color_g, &c.annotate_color_b) != 0)
+        return -1;
+    if (prompt_hex_rgb("text_color (RRGGBB)", "ffd933", &c.annotate_text_r, &c.annotate_text_g, &c.annotate_text_b) !=
+        0)
+        return -1;
+    if (prompt_double("text_size", c.annotate_text_size, &c.annotate_text_size) != 0)
+        return -1;
+
+    printf("\n--- Loupe ---\n");
+    {
+        static const char *const opts[] = { "rect", "ellipse", "circle" };
+        c.loupe_shape = prompt_choice("shape", opts, 3, c.loupe_shape);
+    }
+
+    printf("\n--- Export ---\n");
+    {
+        static const char *const opts[] = { "png", "bmp" };
+        int i = prompt_choice("format", opts, 2, c.export_format == MIRU_EXPORT_BMP ? 1 : 0);
+        c.export_format = (i == 1) ? MIRU_EXPORT_BMP : MIRU_EXPORT_PNG;
+    }
+
+    printf("\n--- Filter ---\n");
+    {
+        static const char *const opts[] = { "none", "grayscale", "invert", "contrast" };
+        c.color_filter = prompt_choice("default", opts, 4, c.color_filter);
+    }
+
+    sanitize_config(&c);
+
+    char config_dir[512];
+    char config_path[512];
+    if (get_config_path(config_dir, sizeof(config_dir), config_path, sizeof(config_path)) != 0) {
+        fprintf(stderr, "config: cannot resolve config path\n");
+        return -1;
+    }
+    if (ensure_dir(config_dir) != 0) {
+        fprintf(stderr, "config: cannot create %s: %s\n", config_dir, strerror(errno));
+        return -1;
+    }
+
+    if (access(config_path, F_OK) == 0) {
+        bool overwrite = false;
+        if (prompt_bool("Config already exists. Overwrite", false, &overwrite) != 0)
+            return -1;
+        if (!overwrite) {
+            printf("Aborted.\n");
+            return -1;
+        }
+    }
+
+    if (write_config_file(config_path, &c) != 0)
+        return -1;
+
+    printf("\nWrote %s\n", config_path);
+    return 0;
 }
