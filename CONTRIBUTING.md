@@ -138,8 +138,9 @@ protocol/      vendored protocol XML
 .githooks/     Git hooks (enable via core.hooksPath)
 ```
 
-See the [**Project Structure**](./README.md#project-structure) section in the
-**README** for a more detailed tree.
+See the [**Project Structure**](./PROJECT_STRUCTURE.md#project-structure)
+section in **[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) for a more detailed
+tree.
 
 ## LICENSE
 
