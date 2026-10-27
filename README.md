@@ -54,6 +54,7 @@ See [Roadmap](./ROADMAP.md) for the full picture.
 
 * [What it does](#what-it-does)
 * [Why](#why)
+* [Compositor Compatibility](./INSTALL.md#compositor-compatibility)
 * [Performance](#performance)
 * [A note on global hotkeys](#a-note-on-global-hotkeys)
 * [Requirements](./INSTALL.md#requirements)
