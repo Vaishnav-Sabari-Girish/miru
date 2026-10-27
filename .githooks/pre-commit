@@ -3,46 +3,70 @@ set -e
 # Ensure the script runs from the repository root
 cd "$(git rev-parse --show-toplevel)"
 
+# Staged files (added/copied/modified/renamed) matching the given pathspecs.
+# staged_z: NUL-separated, safe for xargs -0. has_staged: true if any match.
+staged_z() {
+  git diff --cached --name-only -z --diff-filter=ACMR -- "$@"
+}
+has_staged() {
+  [ -n "$(git diff --cached --name-only --diff-filter=ACMR -- "$@")" ]
+}
+
+# Pathspecs
+C_ALL="src/*.c src/*.h"
+C_SRC="src/*.c"
+CMAKE_SPECS="CMakeLists.txt cmake/*.cmake"
+MD_SPECS=":(glob)**/*.md :(exclude,glob)**/CHANGELOG.md :(exclude,glob)**/plan.md :(exclude,glob)**/next_thing.md"
+
+# Anything staged at all? If not, there is nothing to do.
+if [ -z "$(git diff --cached --name-only --diff-filter=ACMR)" ]; then
+  exit 0
+fi
+
 echo "Checking for typos..."
-typos
+git diff --cached --name-only -z --diff-filter=ACMR | xargs -0 typos --force-exclude
 
-echo "Formatting C code..."
-find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
-find src -type f \( -name "*.c" -o -name "*.h" \) -exec git add {} +
-
-echo "Formatting CMake files..."
-CMAKE_FILES="CMakeLists.txt"
-if [ -d cmake ]; then
-  for f in cmake/*.cmake; do
-    [ -f "$f" ] && CMAKE_FILES="$CMAKE_FILES $f"
-  done
-fi
+# --- C sources -------------------------------------------------------------
 # shellcheck disable=SC2086
-cmake-format -i $CMAKE_FILES
-# shellcheck disable=SC2086
-git add $CMAKE_FILES
-
-echo "Running clang-tidy..."
-if [ ! -f build/compile_commands.json ]; then
-  echo "error: build/compile_commands.json missing."
-  echo "Run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-  exit 1
+if has_staged $C_ALL; then
+  echo "Formatting C code..."
+  # shellcheck disable=SC2086
+  staged_z $C_ALL | xargs -0 clang-format -i
+  # shellcheck disable=SC2086
+  staged_z $C_ALL | xargs -0 git add
 fi
-# shellcheck disable=SC2046
-clang-tidy -p build --quiet $(find src -type f -name '*.c' | sort)
 
-echo "Fixing all markdown files..."
-find . -type d \( -name target -o -name .git \) -prune -o \
-  -type f -name "*.md" \
-  ! -name "CHANGELOG.md" \
-  ! -name "plan.md" \
-  ! -name "next_thing.md" \
-  -exec rumdl check --fix {} +
-find . -type d \( -name target -o -name .git \) -prune -o \
-  -type f -name "*.md" \
-  ! -name "CHANGELOG.md" \
-  ! -name "plan.md" \
-  ! -name "next_thing.md" \
-  -exec git add {} +
+# shellcheck disable=SC2086
+if has_staged $C_SRC; then
+  echo "Running clang-tidy..."
+  if [ ! -f build/compile_commands.json ]; then
+    echo "error: build/compile_commands.json missing."
+    echo "Run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+    exit 1
+  fi
+  # shellcheck disable=SC2086
+  staged_z $C_SRC | xargs -0 clang-tidy -p build --quiet
+fi
+
+# --- CMake files -----------------------------------------------------------
+# shellcheck disable=SC2086
+if has_staged $CMAKE_SPECS; then
+  echo "Formatting CMake files..."
+  # shellcheck disable=SC2086
+  staged_z $CMAKE_SPECS | xargs -0 cmake-format -i
+  # shellcheck disable=SC2086
+  staged_z $CMAKE_SPECS | xargs -0 git add
+fi
+
+# --- Markdown --------------------------------------------------------------
+# Word splitting on MD_SPECS is safe: none of the pathspecs contain spaces.
+# shellcheck disable=SC2086
+if has_staged $MD_SPECS; then
+  echo "Fixing markdown files..."
+  # shellcheck disable=SC2086
+  staged_z $MD_SPECS | xargs -0 rumdl check --fix
+  # shellcheck disable=SC2086
+  staged_z $MD_SPECS | xargs -0 git add
+fi
 
 exit 0
