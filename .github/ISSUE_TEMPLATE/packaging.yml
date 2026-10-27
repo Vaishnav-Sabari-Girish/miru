@@ -1,0 +1,86 @@
+name: Packaging
+description: Packaging issues for distros (AUR, Nix, COPR, ...) or offer to package miru for a new distro
+title: "Packaging: <distro> - <short description>"
+labels: ["packaging"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for issues with an existing **miru** package (AUR, Nix, COPR, etc.), to request a package for a distro, or to tell us you're ready to package/maintain miru for one (Gentoo, Void, ...).
+  - type: dropdown
+    id: packaging_type
+    attributes:
+      label: What is this about?
+      options:
+        - Problem with an existing package
+        - Request a package for a distro
+        - I am ready to package / maintain it
+        - Packaging-related change needed in miru (build system, license, deps, etc.)
+    validations:
+      required: true
+  - type: dropdown
+    id: distro
+    attributes:
+      label: Distro / package manager
+      options:
+        - Arch Linux (AUR)
+        - Nix / NixOS
+        - Fedora (COPR)
+        - Gentoo
+        - Void Linux
+        - Debian / Ubuntu
+        - openSUSE
+        - Alpine
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: distro_other
+    attributes:
+      label: Other distro (if selected above)
+    validations:
+      required: false
+  - type: input
+    id: package_link
+    attributes:
+      label: Package / recipe link
+      description: Link to the existing package, PKGBUILD, ebuild, template, spec, etc., if any
+    validations:
+      required: false
+  - type: input
+    id: miru_version
+    attributes:
+      label: miru version
+      description: Packaged version or version you are working with
+      placeholder: v0.x.x
+    validations:
+      required: false
+  - type: textarea
+    id: description
+    attributes:
+      label: Details
+      description: Describe the problem, request, or your packaging plans (including the repo/overlay/channel it would live in).
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / output
+      description: Build or install logs, if applicable. This will be rendered as a code block automatically.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: maintainer
+    attributes:
+      label: Maintenance
+      options:
+        - label: I am willing to maintain the package for this distro
+        - label: I already maintain a package and want it linked in the README / docs
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Dependency notes, patches needed, related issues, etc.
+    validations:
+      required: false

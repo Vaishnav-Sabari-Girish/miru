@@ -1,0 +1,74 @@
+name: 'CI/CD'
+about: 'Report a problem with or request a change to CI/CD workflows, runners, or release pipelines'
+title: 'CI: <short description>'
+labels:
+  - 'ci'
+body:
+  - type: 'markdown'
+    id: 'admonition'
+    attributes:
+      value: |
+        Use this template for problems or requests related to **miru**'s CI/CD: workflows, runners, build/release pipelines, and automation.
+      visible: ['form']
+  - type: 'dropdown'
+    id: 'ci_issue_type'
+    attributes:
+      label: 'Type of CI/CD issue'
+      options:
+        - 'Failing workflow'
+        - 'Flaky / intermittent failure'
+        - 'Release / publishing pipeline'
+        - 'Runner or environment problem'
+        - 'New workflow or automation request'
+        - 'Performance / caching improvement'
+    validations:
+      required: true
+  - type: 'input'
+    id: 'workflow'
+    attributes:
+      label: 'Workflow / job'
+      description: 'Workflow file and job name, if applicable'
+      placeholder: 'e.g. .forgejo/workflows/build.yml, job: test'
+    validations:
+      required: false
+  - type: 'input'
+    id: 'run_link'
+    attributes:
+      label: 'Link to run'
+      description: 'URL of the failing or relevant workflow run, if any'
+    validations:
+      required: false
+  - type: 'textarea'
+    id: 'description'
+    attributes:
+      label: 'Description'
+      description: 'What is happening, and what do you expect or want instead?'
+    validations:
+      required: true
+  - type: 'textarea'
+    id: 'logs'
+    attributes:
+      label: 'Relevant logs / output'
+      description: 'Paste the relevant part of the run log. This will be rendered as a code block automatically.'
+      render: 'shell'
+    validations:
+      required: false
+  - type: 'textarea'
+    id: 'proposed_fix'
+    attributes:
+      label: 'Proposed fix / approach'
+      description: 'Any ideas on how to solve it'
+    validations:
+      required: false
+  - type: 'checkboxes'
+    id: 'contribution'
+    attributes:
+      label: 'Are you willing to help fix this?'
+      options:
+        - label: 'Yes, I''d like to work on this'
+  - type: 'textarea'
+    id: 'notes'
+    attributes:
+      label: 'Additional context'
+    validations:
+      required: false

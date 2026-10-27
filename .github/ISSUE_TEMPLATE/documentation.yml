@@ -1,0 +1,56 @@
+name: Documentation
+description: Report missing, incorrect, or unclear documentation in miru
+title: "Docs: <short description>"
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the documentation of **miru**! Please describe what needs to change below.
+  - type: dropdown
+    id: doc_issue_type
+    attributes:
+      label: Type of documentation issue
+      options:
+        - Missing documentation
+        - Incorrect or outdated information
+        - Unclear or confusing explanation
+        - Typo or formatting problem
+        - Improvement / new section suggestion
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Where is the problem?
+      description: Link, file path, or section name (README, man page, wiki, config reference, etc.)
+      placeholder: 'e.g. README.md "Installation" section'
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What is wrong or missing?
+      description: Describe the problem as clearly as possible.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested change
+      description: If you have wording or content in mind, put it here.
+    validations:
+      required: false
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Are you willing to help fix this?
+      options:
+        - label: "Yes, I'd like to submit a documentation PR"
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Screenshots, related issues, etc.
+    validations:
+      required: false
