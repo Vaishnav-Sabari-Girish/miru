@@ -765,6 +765,26 @@ void gl_renderer_draw_annotations(
             float px_w = (src_w > 1.f) ? (cell / src_w) * 2.0f : 0.f;
             float px_h = (src_h > 1.f) ? (cell / src_h) * 2.0f : 0.f;
             draw_text_line(r, a->text, nx, ny, px_w, px_h, a->r, a->g, a->b, a->a);
+        } else if (a->type == MIRU_ANN_FREEHAND && a->npts >= 2) {
+            for (int i = 1; i < a->npts; i++) {
+                emit_line(
+                    r,
+                    a->pts_x[i - 1],
+                    a->pts_y[i - 1],
+                    a->pts_x[i],
+                    a->pts_y[i],
+                    src_left,
+                    src_top,
+                    src_w,
+                    src_h,
+                    a->r,
+                    a->g,
+                    a->b,
+                    a->a,
+                    a->thickness,
+                    viewport_w
+                );
+            }
         }
     }
 
@@ -798,6 +818,25 @@ void gl_renderer_draw_annotations(
                 px = qx;
                 py = qy;
             }
+        } else if (ann->tool == MIRU_ANN_FREEHAND) {
+            for (int i = 1; i < ann->freehand_n; i++)
+                emit_line(
+                    r,
+                    ann->freehand_x[i - 1],
+                    ann->freehand_y[i - 1],
+                    ann->freehand_x[i],
+                    ann->freehand_y[i],
+                    src_left,
+                    src_top,
+                    src_w,
+                    src_h,
+                    pr,
+                    pg,
+                    pb,
+                    1.f,
+                    pt,
+                    viewport_w
+                );
         } else {
             emit_line(r, x0, y0, x1, y0, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);
             emit_line(r, x1, y0, x1, y1, src_left, src_top, src_w, src_h, pr, pg, pb, 1.f, pt, viewport_w);

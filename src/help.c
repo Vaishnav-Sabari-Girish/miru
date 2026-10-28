@@ -22,6 +22,7 @@ static const char *const lines[] = {
     " L                Line",
     " O                Ellipse",
     " T                Text",
+    " P                Freehand",
     " Drag LMB         Place Shape",
     " Click + type     Place Text",
     "   Enter          Commit Text",

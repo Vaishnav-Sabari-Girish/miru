@@ -82,8 +82,10 @@ static int parse_annotate_default(const char *s)
         return 3;
     if (strcmp(s, "ellipse") == 0)
         return 4;
+    if (strcmp(s, "freehand") == 0 || strcmp(s, "free") == 0 || strcmp(s, "pen") == 0)
+        return 5;
 
-    return 0; // arrow
+    return 0;
 }
 
 static int parse_loupe_shape(const char *s)
@@ -315,7 +317,7 @@ static void sanitize_config(struct miru_config *c)
     if (!isfinite(c->zoom_animation_speed) || c->zoom_animation_speed <= 0)
         c->zoom_animation_speed = 14.0;
 
-    if (c->annotate_default < 0 || c->annotate_default > 4)
+    if (c->annotate_default < 0 || c->annotate_default > 5)
         c->annotate_default = 0;
 
     if (!isfinite(c->annotate_thickness) || c->annotate_thickness < 0.0)
@@ -601,6 +603,8 @@ static const char *annotate_name(int v)
         return "line";
     case 4:
         return "ellipse";
+    case 5:
+        return "freehand";
     default:
         return "arrow";
     }
@@ -779,8 +783,8 @@ int config_gen_interactive(void)
 
     printf("\n--- Annotate ---\n");
     {
-        static const char *const opts[] = { "arrow", "rect", "text", "line", "ellipse" };
-        c.annotate_default = prompt_choice("default tool", opts, 5, c.annotate_default);
+        static const char *const opts[] = { "arrow", "rect", "text", "line", "ellipse", "freehand" };
+        c.annotate_default = prompt_choice("default tool", opts, 6, c.annotate_default);
     }
     if (prompt_double("thickness", c.annotate_thickness, &c.annotate_thickness) != 0)
         return -1;

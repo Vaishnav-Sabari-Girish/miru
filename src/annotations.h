@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #define MIRU_MAX_ANNOTATIONS 64
+#define MIRU_ANN_FREEHAND_MAX 512
 
 enum miru_ann_type {
     MIRU_ANN_ARROW = 0,
@@ -14,6 +15,7 @@ enum miru_ann_type {
     MIRU_ANN_TEXT = 2,
     MIRU_ANN_LINE = 3,
     MIRU_ANN_ELLIPSE = 4,
+    MIRU_ANN_FREEHAND = 5,
 };
 
 struct miru_annotation {
@@ -23,6 +25,9 @@ struct miru_annotation {
     float r, g, b, a;
     float thickness;
     char text[MIRU_ANN_TEXT_MAX];
+    float pts_x[MIRU_ANN_FREEHAND_MAX];
+    float pts_y[MIRU_ANN_FREEHAND_MAX];
+    int npts;
 };
 
 struct miru_annotation_state {
@@ -39,6 +44,10 @@ struct miru_annotation_state {
     float drag_x0, drag_y0;
     float drag_x1, drag_y1;
     float hover_x, hover_y;
+
+    float freehand_x[MIRU_ANN_FREEHAND_MAX];
+    float freehand_y[MIRU_ANN_FREEHAND_MAX];
+    int freehand_n;
 
     bool typing;
     float text_x, text_y;
@@ -97,5 +106,7 @@ void annotation_state_set_style(
     float text_b,
     float text_size
 );
+
+bool annotation_add_freehand(struct miru_annotation_state *s, const float *xs, const float *ys, int n);
 
 #endif // !ANNOTATIONS_H

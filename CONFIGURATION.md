@@ -83,7 +83,7 @@ The currently active options are:
   and in annotate mode, it shows the annotation tool chosen. Works even in
   `loupe` mode.
 * `annotate.default` - default tool when entering annotate mode:
-  * `"arrow", "rect/rectangle", "line", "ellipse", or "text"`
+  * `"arrow", "rect/rectangle", "line", "ellipse", "freehand/free/pen", or "text"`
 * `annotate.thickness` - stroke width for shapes (value ranges from `1` to `8`)
 * `annotate.color` - has RGB hex for shapes (default value is `ff3333`)
 * `annotate.text_color` - has RGB hex for text (default value is `ffd933`)
