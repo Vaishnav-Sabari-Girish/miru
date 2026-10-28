@@ -765,27 +765,25 @@ void gl_renderer_draw_annotations(
             float px_w = (src_w > 1.f) ? (cell / src_w) * 2.0f : 0.f;
             float px_h = (src_h > 1.f) ? (cell / src_h) * 2.0f : 0.f;
             draw_text_line(r, a->text, nx, ny, px_w, px_h, a->r, a->g, a->b, a->a);
-        } else if (a->type == MIRU_ANN_FREEHAND) {
-            if (a->npts >= 2) {
-                for (int i = 1; i < a->npts; i++) {
-                    emit_line(
-                        r,
-                        a->pts_x[i - 1],
-                        a->pts_y[i - 1],
-                        a->pts_x[i],
-                        a->pts_y[i],
-                        src_left,
-                        src_top,
-                        src_w,
-                        src_h,
-                        a->r,
-                        a->g,
-                        a->b,
-                        a->a,
-                        a->thickness,
-                        viewport_w
-                    );
-                }
+        } else if (a->type == MIRU_ANN_FREEHAND && a->npts >= 2) {
+            for (int i = 1; i < a->npts; i++) {
+                emit_line(
+                    r,
+                    a->pts_x[i - 1],
+                    a->pts_y[i - 1],
+                    a->pts_x[i],
+                    a->pts_y[i],
+                    src_left,
+                    src_top,
+                    src_w,
+                    src_h,
+                    a->r,
+                    a->g,
+                    a->b,
+                    a->a,
+                    a->thickness,
+                    viewport_w
+                );
             }
         }
     }

@@ -88,6 +88,7 @@ centered on your cursor when possible. While active:
   * **R** — rectangle tool
   * **L** — line tool
   * **O** — ellipse tool (Shift + drag for circle)
+  * **P** — freehand draw tool (Click and drag to draw)
   * **Left-click drag** — place the current tool on the frozen frame
   * **T** - text tool
   * **Click + type** - start typing text from the clicked location (indicated by
