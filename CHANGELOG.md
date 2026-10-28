@@ -1,4 +1,42 @@
 
+## v0.14.0 - 2026-10-28
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(config)** Add freehand to config
+
+- **(annotate)** Add freehand drawing tool
+
+- **(config)** Interactive config generator
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## v0.13.0 - 2026-10-20
 
 
