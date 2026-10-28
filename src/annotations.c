@@ -34,7 +34,7 @@ void annotation_state_set_style(
     if (!s)
         return;
 
-    if (default_tool >= 0 && default_tool <= 4)
+    if (default_tool >= 0 && default_tool <= 5)
         s->tool = (enum miru_ann_type)default_tool;
 
     s->thickness = thickness > 0.f ? thickness : 4.0f;
@@ -73,6 +73,8 @@ bool annotation_add(struct miru_annotation_state *s, enum miru_ann_type type, fl
     a->g = s->shape_g;
     a->b = s->shape_b;
     a->a = 1.0f;
+
+    a->npts = 0;
 
     a->thickness = s->thickness;
     s->redo_count = 0;
@@ -243,5 +245,36 @@ bool annotation_redo(struct miru_annotation_state *s)
         return false;
 
     s->items[s->count++] = s->redo_stack[--s->redo_count];
+    return true;
+}
+
+bool annotation_add_freehand(struct miru_annotation_state *s, const float *xs, const float *ys, int n)
+{
+    if (!s || !xs || !ys || n < 2 || s->count >= MIRU_MAX_ANNOTATIONS)
+        return false;
+
+    if (n > MIRU_ANN_FREEHAND_MAX)
+        n = MIRU_ANN_FREEHAND_MAX;
+
+    struct miru_annotation *a = &s->items[s->count++];
+    memset(a, 0, sizeof(*a));
+
+    a->type = MIRU_ANN_FREEHAND;
+    a->x0 = xs[0];
+    a->x1 = xs[n - 1];
+    a->y0 = ys[0];
+    a->y1 = ys[n - 1];
+    a->r = s->shape_r;
+    a->g = s->shape_g;
+    a->b = s->shape_b;
+    a->a = 1.0f;
+
+    a->thickness = s->thickness > 0.f ? s->thickness : 4.0f;
+    a->npts = n;
+    for (int i = 0; i < n; i++) {
+        a->pts_x[i] = xs[i];
+        a->pts_y[i] = ys[i];
+    }
+    s->redo_count = 0;
     return true;
 }

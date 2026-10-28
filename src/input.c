@@ -211,10 +211,20 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
             ann->text_buf[0] = '\0';
             ann->dragging = false;
             ctx->ls->dirty = true;
-            // if (miru_debug_enabled()) {
-            //     fprintf(stderr, "annotate text: place at (%.0f, %.0f)\n", ann->text_x, ann->text_y);
-            // }
             MIRU_DBG("annotate text: place at (%.0f, %.0f)", ann->text_x, ann->text_y);
+            return;
+        }
+
+        if (ann->tool == MIRU_ANN_FREEHAND) {
+            ann->dragging = true;
+            ann->freehand_n = 0;
+            ann->freehand_x[0] = ann->hover_x;
+            ann->freehand_y[0] = ann->hover_y;
+            ann->freehand_n = 1;
+            ann->drag_x0 = ann->drag_x1 = ann->hover_x;
+            ann->drag_y0 = ann->drag_y1 = ann->hover_y;
+            ctx->ls->dirty = true;
+            MIRU_DBG("annotate freehand starts {%.0f, %.0f}", ann->hover_x, ann->hover_y);
             return;
         }
 
@@ -223,18 +233,18 @@ pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t
         ann->drag_y0 = ann->drag_y1 = ann->hover_y;
         ctx->ls->dirty = true;
 
-        // if (miru_debug_enabled()) {
-        //     fprintf(stderr, "annotate drag start (%0.f, %0.f)\n", ann->drag_x0, ann->drag_y0);
-        // }
         MIRU_DBG("annotate drag start (%0.f, %0.f)", ann->drag_x0, ann->drag_y0);
 
     } else if (state == WL_POINTER_BUTTON_STATE_RELEASED && ann->dragging) {
         ann->dragging = false;
-        annotation_add(ann, ann->tool, ann->drag_x0, ann->drag_y0, ann->drag_x1, ann->drag_y1);
+        if (ann->tool == MIRU_ANN_FREEHAND) {
+            if (ann->freehand_n >= 2)
+                annotation_add_freehand(ann, ann->freehand_x, ann->freehand_y, ann->freehand_n);
+            ann->freehand_n = 0;
+        } else {
+            annotation_add(ann, ann->tool, ann->drag_x0, ann->drag_y0, ann->drag_x1, ann->drag_y1);
+        }
         ctx->ls->dirty = true;
-        // if (miru_debug_enabled()) {
-        //     fprintf(stderr, "annotate commit tool = %d count = %d\n", ann->tool, ann->count);
-        // }
         MIRU_DBG("annotate commit tool = %d count = %d", ann->tool, ann->count);
     }
 }
@@ -383,11 +393,28 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
         );
         ctx->ls->annotations.hover_x = bx;
         ctx->ls->annotations.hover_y = by;
-        if (ctx->ls->annotations.dragging) {
+        if (ctx->ls->annotations.dragging && ctx->ls->annotations.tool == MIRU_ANN_FREEHAND) {
+            struct miru_annotation_state *ann = &ctx->ls->annotations;
+            if (ann->freehand_n >= MIRU_ANN_FREEHAND_MAX) {
+                annotation_add_freehand(ann, ann->freehand_x, ann->freehand_y, ann->freehand_n);
+                ann->freehand_x[0] = bx;
+                ann->freehand_y[0] = by;
+                ann->freehand_n = 1;
+            } else if (ann->freehand_n > 0) {
+                float lx = ann->freehand_x[ann->freehand_n - 1];
+                float ly = ann->freehand_y[ann->freehand_n - 1];
+                float dx = bx - lx;
+                float dy = by - ly;
+                if (dx * dx + dy * dy >= 16.0f) {
+                    ann->freehand_x[ann->freehand_n] = bx;
+                    ann->freehand_y[ann->freehand_n] = by;
+                    ann->freehand_n++;
+                }
+            }
+        } else if (ctx->ls->annotations.dragging) {
             ctx->ls->annotations.drag_x1 = bx;
             ctx->ls->annotations.drag_y1 = by;
 
-            // Create a circle when in ellpise mode and holding shift and dragging
             if (ctx->ls->annotations.tool == MIRU_ANN_ELLIPSE && ctx->shift_held) {
                 float dx = bx - ctx->ls->annotations.drag_x0;
                 float dy = by - ctx->ls->annotations.drag_y0;
@@ -450,11 +477,6 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
         return;
     }
 
-    // if (miru_debug_enabled()) {
-    //     fprintf(
-    //         stderr, "pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f\n", v, ctx->zoom_increment, ctx->ls->zoom
-    //     );
-    // }
     MIRU_DBG("pointer_axis: v=%.3f zoom_increment=%.3f zoom_before=%.3f", v, ctx->zoom_increment, ctx->ls->zoom);
 
     {
@@ -822,19 +844,12 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
             ctx->ls->annotations.typing = false;
             ctx->ls->annotations.text_len = 0;
             ctx->ls->annotations.text_buf[0] = '\0';
+            ctx->ls->annotations.freehand_n = 0;
         } else {
             ctx->ls->cursor_x = ctx->ls->display_cursor_x;
             ctx->ls->cursor_y = ctx->ls->display_cursor_y;
         }
 
-        // if (miru_debug_enabled()) {
-        //     fprintf(
-        //         stderr,
-        //         "annotate mode: %s (tools = %s)\n",
-        //         ctx->ls->annotations.mode ? "ON" : "OFF",
-        //         ctx->ls->annotations.tool == MIRU_ANN_RECT ? "rect" : "arrow"
-        //     );
-        // }
         MIRU_DBG(
             "annotate mode: %s (tools = %s)",
             ctx->ls->annotations.mode ? "ON" : "OFF",
@@ -870,6 +885,15 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (key == KEY_P && ctx->ls->annotations.mode) {
+        ctx->ls->annotations.tool = MIRU_ANN_FREEHAND;
+        ctx->ls->annotations.dragging = false;
+        ctx->ls->annotations.freehand_n = 0;
+        ctx->ls->dirty = true;
+        MIRU_DBG("annotate tool: freehand");
+        return;
+    }
+
     if (key == KEY_C && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         input_set_show_cursor(ctx, !ctx->show_cursor);
         // if (miru_debug_enabled())
@@ -881,6 +905,7 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
 
     if (key == KEY_C && ctx->ls->annotations.mode) {
         annotation_clear(&ctx->ls->annotations);
+        ctx->ls->annotations.freehand_n = 0;
         ctx->ls->dirty = true;
         return;
     }

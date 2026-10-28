@@ -579,15 +579,26 @@ void layer_surface_render(struct miru_layer_surface *ls)
                 &ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
             );
 
+            gl_renderer_draw_annotations(
+                &ls->gl,
+                &ls->annotations,
+                0.0f,
+                0.0f,
+                (float)ls->buffer_width,
+                (float)ls->buffer_height,
+                ls->buffer_width,
+                ls->buffer_height
+            );
+
             if (ls->status_badge) {
                 char buf[32];
                 if (ls->annotations.mode) {
                     static const char *const tools[] = {
-                        "Arrow", "Rect", "Text", "Line", "Ellipse",
+                        "Arrow", "Rect", "Text", "Line", "Ellipse", "Freehand",
                     };
 
                     int t = (int)ls->annotations.tool;
-                    if (t < 0 || t > 4)
+                    if (t < 0 || t > 5)
                         t = 0;
 
                     snprintf(buf, sizeof(buf), "%s", tools[t]);
@@ -718,11 +729,11 @@ void layer_surface_render(struct miru_layer_surface *ls)
         char buf[32];
         if (ls->annotations.mode) {
             static const char *const tools[] = {
-                "Arrow", "Rect", "Text", "Line", "Ellipse",
+                "Arrow", "Rect", "Text", "Line", "Ellipse", "Freehand",
             };
 
             int t = (int)ls->annotations.tool;
-            if (t < 0 || t > 4)
+            if (t < 0 || t > 5)
                 t = 0;
 
             snprintf(buf, sizeof(buf), "%s", tools[t]);
