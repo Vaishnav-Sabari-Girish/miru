@@ -20,11 +20,12 @@ struct miru_capture {
 };
 
 // blocks until the compositor delivers one full frame from `output`, returns -1 on failure
+// the frame is rotated/flipped to match how `output` is shown on screen, so it's always upright
 // cancel, if non-NULL, is checked between dispatch retries so shutdown can interrupt a stuck capture
 // zero-initializes *out itself, safe to pass an uninitialized struct
 int capture_output_frame(
     struct miru_state *state,
-    struct wl_output *output,
+    const struct miru_output *output,
     volatile sig_atomic_t *cancel,
     struct miru_capture *out
 );
@@ -33,7 +34,7 @@ void capture_frame_destroy(struct miru_capture *capture);
 
 int capture_refresh(
     struct miru_state *state,
-    struct wl_output *output,
+    const struct miru_output *output,
     volatile sig_atomic_t *cancel,
     struct miru_capture *c
 );
