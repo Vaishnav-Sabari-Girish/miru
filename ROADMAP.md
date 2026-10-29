@@ -34,9 +34,18 @@
 * [x] Configurable export format
 * [x] Image filters
 * [x] Add a Status badge
+* [x] Multi-monitor support
+      [#136](https://codeberg.org/Vaishnav-Sabari-Girish/miru/pulls/136)
+      (focused output) — thank you [@hosaka](https://codeberg.org/hosaka)
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
   Niri IPC or similar)
-* [ ] Multi-monitor support
 * [ ] Support compositors without `wlr-screencopy` / `wlr-layer-shell`
+
+> [!NOTE]
+> Multi-monitor support has only been tested on **niri**. I cannot verify other
+> compositors myself — please open an
+> [issue](https://codeberg.org/Vaishnav-Sabari-Girish/miru/issues/new) if it
+> misbehaves on yours.
+> This is a demo of Multi-monitor support <https://youtu.be/DDdnZMdoj84>
