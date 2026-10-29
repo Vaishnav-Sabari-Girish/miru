@@ -8,6 +8,14 @@
 #include "viewporter-client-protocol.h"
 #include "fractional-scale-v1-client-protocol.h"
 
+struct miru_output {
+    struct wl_list link;
+    struct wl_output *wl_output;
+    uint32_t global_name;
+    int scale;
+    char *name; // e.g. DP-1, NULL until wl_output sends it
+};
+
 struct miru_state {
     struct wl_display *display;
     struct wl_registry *registry;
@@ -15,14 +23,14 @@ struct miru_state {
     struct wl_compositor *compositor;
     struct wl_seat *seat;
     struct wl_shm *shm;
-    struct wl_output *output;
+    struct wl_list outputs;
     struct zwlr_layer_shell_v1 *layer_shell;
     struct zwlr_screencopy_manager_v1 *screencopy_manager;
     struct wp_cursor_shape_manager_v1 *cursor_shape_manager;
     struct wp_viewporter *viewporter;
     struct wp_fractional_scale_manager_v1 *fractional_scale_manager;
 
-    int output_scale;
+    struct miru_output *overlay_output;
     struct wl_pointer *pointer;
     struct wl_keyboard *keyboard;
     void *input_ctx;
@@ -37,6 +45,9 @@ int wayland_state_get_fd(struct miru_state *state);
 int wayland_state_prepare(struct miru_state *state, short *out_poll_events);
 int wayland_state_process(struct miru_state *state, short revents);
 void wayland_state_cancel_read(struct miru_state *state);
+
+// asks the compositor which output it would put a new overlay on, indicating current focus
+struct miru_output *wayland_state_focused_output(struct miru_state *state);
 
 void wayland_state_cleanup(struct miru_state *state);
 

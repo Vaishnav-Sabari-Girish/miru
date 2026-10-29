@@ -182,9 +182,15 @@ int layer_surface_create(
     const struct layer_surface_config *config
 )
 {
+    const struct miru_output *output = state->overlay_output;
+    if (!output) {
+        MIRU_LOG("no output to place the layer surface on");
+        return -1;
+    }
+
     ls->capture = capture;
-    ls->output_scale = state->output_scale;
-    ls->scale = state->output_scale > 0 ? (float)state->output_scale : 1.0f;
+    ls->output_scale = output->scale;
+    ls->scale = output->scale > 0 ? (float)output->scale : 1.0f;
     ls->viewport = NULL;
     ls->fractional_scale = NULL;
     ls->zoom_default = config->zoom_default;
@@ -264,7 +270,7 @@ int layer_surface_create(
     }
 
     ls->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
-        state->layer_shell, ls->surface, state->output, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "miru"
+        state->layer_shell, ls->surface, output->wl_output, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "miru"
     );
     if (!ls->layer_surface) {
         wl_surface_destroy(ls->surface);
