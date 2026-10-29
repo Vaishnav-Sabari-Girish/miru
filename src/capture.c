@@ -238,9 +238,102 @@ static const struct zwlr_screencopy_frame_v1_listener frame_listener = {
     .failed = handle_failed,
 };
 
+// maps a pixel of the on-screen image to its position in the screencopy buffer
+static void screen_to_buffer_coord(
+    int32_t transform,
+    uint32_t width,
+    uint32_t height,
+    uint32_t x,
+    uint32_t y,
+    uint32_t *bx,
+    uint32_t *by
+)
+{
+    switch (transform) {
+    case WL_OUTPUT_TRANSFORM_90:
+        *bx = y;
+        *by = width - 1 - x;
+        break;
+    case WL_OUTPUT_TRANSFORM_180:
+        *bx = width - 1 - x;
+        *by = height - 1 - y;
+        break;
+    case WL_OUTPUT_TRANSFORM_270:
+        *bx = height - 1 - y;
+        *by = x;
+        break;
+    case WL_OUTPUT_TRANSFORM_FLIPPED:
+        *bx = width - 1 - x;
+        *by = y;
+        break;
+    case WL_OUTPUT_TRANSFORM_FLIPPED_90:
+        *bx = y;
+        *by = x;
+        break;
+    case WL_OUTPUT_TRANSFORM_FLIPPED_180:
+        *bx = x;
+        *by = height - 1 - y;
+        break;
+    case WL_OUTPUT_TRANSFORM_FLIPPED_270:
+        *bx = height - 1 - y;
+        *by = width - 1 - x;
+        break;
+    default:
+        *bx = x;
+        *by = y;
+        break;
+    }
+}
+
+static int apply_output_transform(struct miru_state *state, struct miru_capture *capture, int32_t transform)
+{
+    if (transform == WL_OUTPUT_TRANSFORM_NORMAL)
+        return 0;
+
+    bool swap = (transform & 1) != 0; // 90, 270 and their flipped variants swap width/height
+    uint32_t width = swap ? capture->height : capture->width;
+    uint32_t height = swap ? capture->width : capture->height;
+
+    void *pixels = NULL;
+    size_t size = 0;
+    struct wl_buffer *buffer = shm_buffer_create(state->shm, (int)width, (int)height, capture->format, &pixels, &size);
+    if (!buffer) {
+        MIRU_LOG("capture: failed to allocate buffer for output transform %d", transform);
+        return -1;
+    }
+
+    uint8_t *dst = (uint8_t *)pixels;
+    const uint8_t *src = (const uint8_t *)capture->shm_data;
+    size_t dst_stride = (size_t)width * 4;
+
+    for (uint32_t y = 0; y < height; y++) {
+        uint8_t *dst_row = dst + ((size_t)y * dst_stride);
+        for (uint32_t x = 0; x < width; x++) {
+            uint32_t bx = 0;
+            uint32_t by = 0;
+
+            screen_to_buffer_coord(transform, width, height, x, y, &bx, &by);
+            if (capture->y_invert)
+                by = capture->height - 1 - by; // the result is stored top-down
+
+            memcpy(dst_row + ((size_t)x * 4), src + ((size_t)by * capture->stride) + ((size_t)bx * 4), 4);
+        }
+    }
+
+    capture_frame_destroy(capture);
+    capture->buffer = buffer;
+    capture->shm_data = pixels;
+    capture->shm_size = size;
+    capture->width = width;
+    capture->height = height;
+    capture->stride = (uint32_t)dst_stride;
+    capture->y_invert = false;
+    return 0;
+}
+
 int capture_output_frame(
     struct miru_state *state,
-    struct wl_output *output,
+    const struct miru_output *output,
     volatile sig_atomic_t *cancel,
     struct miru_capture *out
 )
@@ -253,10 +346,13 @@ int capture_output_frame(
         return -1;
     }
 
+    // the dispatch loop below can run a global_remove that frees `output` so read it now
+    int32_t transform = output->transform;
+
     struct capture_ctx ctx = { .state = state, .out = out, .done = false, .ok = false };
 
     struct zwlr_screencopy_frame_v1 *frame =
-        zwlr_screencopy_manager_v1_capture_output(state->screencopy_manager, 0, output);
+        zwlr_screencopy_manager_v1_capture_output(state->screencopy_manager, 0, output->wl_output);
     if (!frame) {
         // fprintf(stderr, "capture: failed to create screencopy frame\n");
         MIRU_LOG("capture: failed to create screencopy frame");
@@ -291,6 +387,11 @@ int capture_output_frame(
         capture_frame_destroy(out);
         return -1;
     }
+
+    if (apply_output_transform(state, out, transform) != 0) {
+        capture_frame_destroy(out);
+        return -1;
+    }
     return 0;
 }
 
@@ -309,7 +410,7 @@ void capture_frame_destroy(struct miru_capture *capture)
 
 int capture_refresh(
     struct miru_state *state,
-    struct wl_output *output,
+    const struct miru_output *output,
     volatile sig_atomic_t *cancel,
     struct miru_capture *c
 )

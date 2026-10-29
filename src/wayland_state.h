@@ -13,6 +13,7 @@ struct miru_output {
     struct wl_output *wl_output;
     uint32_t global_name;
     int scale;
+    int32_t transform; // WL_OUTPUT_TRANSFORM_*
     char *name; // e.g. DP-1, NULL until wl_output sends it
 };
 

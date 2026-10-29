@@ -27,7 +27,6 @@ static void handle_output_geometry(
     int32_t transform
 )
 {
-    (void)data;
     (void)wl_output;
     (void)x;
     (void)y;
@@ -36,7 +35,8 @@ static void handle_output_geometry(
     (void)subpixel;
     (void)make;
     (void)model;
-    (void)transform;
+    struct miru_output *output = data;
+    output->transform = transform;
 }
 
 static void handle_seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities)

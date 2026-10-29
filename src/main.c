@@ -68,7 +68,7 @@ static int activate(
         return -1;
     }
 
-    if (capture_output_frame(state, state->overlay_output->wl_output, &should_exit, capture) != 0) {
+    if (capture_output_frame(state, state->overlay_output, &should_exit, capture) != 0) {
         // fprintf(stderr, "toggle: capture failed, staying inactive\n");
         MIRU_LOG("toggle: capture failed, staying inactive");
         return -1;
@@ -157,7 +157,7 @@ static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls
         return -1;
     }
 
-    if (capture_refresh(state, state->overlay_output->wl_output, &should_exit, capture) != 0) {
+    if (capture_refresh(state, state->overlay_output, &should_exit, capture) != 0) {
         // fprintf(stderr, "refresh: capture failed\n");
         MIRU_LOG("refresh: capture failed");
         ls->dirty = true;
