@@ -37,6 +37,9 @@
 * [x] Multi-monitor support
       [#136](https://codeberg.org/Vaishnav-Sabari-Girish/miru/pulls/136)
       (focused output) — thank you [@hosaka](https://codeberg.org/hosaka)
+* [x] Output frame's orientation to match original frame's (When monitors are
+      rotated)
+      [#137](https://codeberg.org/Vaishnav-Sabari-Girish/miru/pulls/137).
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
