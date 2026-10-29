@@ -62,7 +62,13 @@ static int activate(
     struct miru_config *config
 )
 {
-    if (capture_output_frame(state, state->output, &should_exit, capture) != 0) {
+    state->overlay_output = wayland_state_focused_output(state);
+    if (!state->overlay_output) {
+        MIRU_LOG("toggle: no outputs, staying inactive");
+        return -1;
+    }
+
+    if (capture_output_frame(state, state->overlay_output->wl_output, &should_exit, capture) != 0) {
         // fprintf(stderr, "toggle: capture failed, staying inactive\n");
         MIRU_LOG("toggle: capture failed, staying inactive");
         return -1;
@@ -120,7 +126,7 @@ static void deactivate(struct miru_layer_surface *ls, struct miru_capture *captu
 
 static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls, struct miru_capture *capture)
 {
-    if (!state || !ls || !capture || !ls->surface || !state->compositor)
+    if (!state || !ls || !capture || !ls->surface || !state->compositor || !state->overlay_output)
         return -1;
 
     if (!state || !ls || !capture || !ls->surface || !state->compositor)
@@ -151,7 +157,7 @@ static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls
         return -1;
     }
 
-    if (capture_refresh(state, state->output, &should_exit, capture) != 0) {
+    if (capture_refresh(state, state->overlay_output->wl_output, &should_exit, capture) != 0) {
         // fprintf(stderr, "refresh: capture failed\n");
         MIRU_LOG("refresh: capture failed");
         ls->dirty = true;
@@ -353,6 +359,7 @@ int main(int argc, char *argv[])
                     }
 
                     memset(&ls, 0, sizeof(ls));
+                    state.overlay_output = wayland_state_focused_output(&state);
                     active = (layer_surface_create_spotlight(&state, &ls, &ls_config) == 0);
                     if (active) {
                         input_ctx.ls = &ls;
