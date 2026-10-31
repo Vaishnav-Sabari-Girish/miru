@@ -11,6 +11,7 @@
 #include "toml.h"
 #include "debug.h"
 #include "export.h"
+#include "keybinds.h"
 
 static int parse_color_filter(const char *s)
 {
@@ -187,13 +188,19 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "[filter]\n"
                                          "default = \"none\"\n";
 
-    if (fputs(default_config, f) == EOF) {
+    if (fputs(default_config, f) == EOF || fputc('\n', f) == EOF) {
         fclose(f);
         unlink(config_path);
         // fprintf(stderr, "config: failed writing default config to %s\n", config_path);
         MIRU_LOG("config: failed writing default config to %s", config_path);
         return -1;
     }
+
+    // The [keybinds] section is generated from the default keybinds
+    struct miru_keybinds default_keybinds;
+    keybind_defaults(&default_keybinds);
+    keybinds_write(f, &default_keybinds);
+
     if (fclose(f) != 0) {
         unlink(config_path); // catches a flush failure (e.g. disk full) that fputs alone wouldn't see
         // fprintf(stderr, "config: failed closing default config %s: %s\n", config_path, strerror(errno));
@@ -376,6 +383,8 @@ void config_load(struct miru_config *out)
 
     out->status_badge = false;
 
+    keybind_defaults(&out->keybinds);
+
     char config_dir[512];
     char config_path[512];
 
@@ -448,6 +457,8 @@ void config_load(struct miru_config *out)
     out->export_format = parse_export_format(toml_get_string(t, "export", "format", "png"));
 
     out->color_filter = parse_color_filter(toml_get_string(t, "filter", "default", "none"));
+
+    keybinds_load(&out->keybinds, t);
 
     toml_free(t);
 
@@ -701,6 +712,9 @@ static int write_config_file(const char *path, const struct miru_config *c)
         filter_name(c->color_filter)
     );
 
+    fputc('\n', f);
+    keybinds_write(f, &c->keybinds);
+
     if (fclose(f) != 0) {
         unlink(path);
         return -1;
@@ -743,6 +757,8 @@ int config_gen_interactive(void)
     c.loupe_shape = 0;
     c.export_format = MIRU_EXPORT_PNG;
     c.color_filter = 0;
+
+    keybind_defaults(&c.keybinds);
 
     printf("Miru interactive config generator\n");
     printf("Press Enter to keep the default shown in [brackets].\n\n");

@@ -86,7 +86,7 @@ radius_step = 20.0
 
 [general]
 show_cursor = true
-status_badge = true
+status_badge = false
 
 [annotate]
 default = "rect"
@@ -103,6 +103,34 @@ format = "png"
 
 [filter]
 default = "none"
+
+[keybinds]
+quit = "Esc"
+help = "SHIFT+H, SHIFT+Slash"
+export = "SHIFT+E"
+refresh = "SHIFT+R"
+toggle_cursor = "SHIFT+C"
+toggle_highlight = "Tab"
+annotate = "SHIFT+A"
+status_badge = "B"
+cycle_filter = "F"
+zoom_in = "Equal, SHIFT+Equal, KPPlus"
+zoom_out = "Minus, SHIFT+Minus, KPMinus"
+radius_up = "CTRL+Equal, CTRL+SHIFT+Equal, CTRL+KPPlus"
+radius_down = "CTRL+Minus, CTRL+SHIFT+Minus, CTRL+KPMinus"
+pan_left = "Left, A"
+pan_right = "Right, D"
+pan_up = "Up, W"
+pan_down = "Down, S"
+tool_arrow = "W"
+tool_ellipse = "O"
+tool_line = "L"
+tool_rect = "R"
+tool_text = "T"
+tool_freehand = "P"
+clear = "C"
+undo = "CTRL+Z"
+redo = "CTRL+Y, CTRL+SHIFT+Z"
 ```
 
 *[zoom]*
@@ -138,10 +166,21 @@ default = "none"
 *[filter]*
 	*default* - The default image filter to apply when the overlay is active.
 
+*[keybinds]*
+	Rebinds the keys used while the overlay is active, e.g.
+	*help* = *"SHIFT+T"* or *export = "E, CTRL+S"*. A value is comma-separated.
+	You can use upto 4 bindings for each action; each is an optional
+	*SHIFT+*/*CTRL+* prefix followed by a key name (*A*, *Esc*, *Tab*,
+	*Equal*...). Use *"none"* to unbind an action. These keys are unrelated to the
+	compositor-level keybinds used to toggle the overlay.
+
 Full detail:
 https://codeberg.org/Vaishnav-Sabari-Girish/miru#configuration
 
 # CONTROLS (while overlay is active)
+
+The keys below are the defaults and can be changed in the *[keybinds]* section
+of the config file.
 
 *Mouse move*
 	Pan.

@@ -34,7 +34,7 @@ radius_step = 20.0
 
 [general]
 show_cursor = true
-status_badge = true
+status_badge = false
 
 [annotate]
 default = "rect"
@@ -51,6 +51,35 @@ format = "png"
 
 [filter]
 default = "none"
+
+[keybinds]
+# default keybinds which can be changed (See "Keybinds" below)
+quit = "Esc"
+help = "SHIFT+H, SHIFT+Slash"
+export = "SHIFT+E"
+refresh = "SHIFT+R"
+toggle_cursor = "SHIFT+C"
+toggle_highlight = "Tab"
+annotate = "SHIFT+A"
+status_badge = "B"
+cycle_filter = "F"
+zoom_in = "Equal, SHIFT+Equal, KPPlus"
+zoom_out = "Minus, SHIFT+Minus, KPMinus"
+radius_up = "CTRL+Equal, CTRL+SHIFT+Equal, CTRL+KPPlus"
+radius_down = "CTRL+Minus, CTRL+SHIFT+Minus, CTRL+KPMinus"
+pan_left = "Left, A"
+pan_right = "Right, D"
+pan_up = "Up, W"
+pan_down = "Down, S"
+tool_arrow = "W"
+tool_ellipse = "O"
+tool_line = "L"
+tool_rect = "R"
+tool_text = "T"
+tool_freehand = "P"
+clear = "C"
+undo = "CTRL+Z"
+redo = "CTRL+Y, CTRL+SHIFT+Z"
 ````
 
 The currently active options are:
@@ -95,6 +124,8 @@ The currently active options are:
   * `"png", "bmp"`
 * `filter.default` - the default filter to add when zooming:
   * `"none", "invert/inverted/negative", "contrast/high-contrast", "gray/grey/grayscale"`
+* `keybinds` - allows you to set custom keybinds. See [Keybinds](#keybinds)
+  below.
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
 non-positive values where applicable, fall back to safe defaults. `zoom.factor`
@@ -116,6 +147,72 @@ different zoom level would be jarring rather than useful.
 
 `[annotate]` changes apply to **new** strokes after reload (or the next
 toggle-on). Existing annotations keep the color/size they were drawn with.
+
+## Keybinds
+
+The optional `[keybinds]` section lets you rebind the keys that are active while
+the overlay is shown. These are **not** the compositor-level keybinds used to
+toggle the overlay (see [KEYBINDS.md](./KEYBINDS.md))
+
+Each action takes a string with one or more bindings separated by a comma. You
+can have at most 4 keybinds for an action.
+
+```toml
+[keybinds]
+help = "SHIFT+T"
+export = "E, CTRL+S"    # Note the space after the comma
+clear = "none"          # Leaving it empty "" or "none" unbinds the action
+```
+
+A binding is optional `SHIFT+` / `CTRL+` prefix followed by a key name:
+
+* Letters and digits: `A`-`Z`, `0`-`9`, and function keys `F1`-`F12`.
+* `Esc`, `Tab`, `Enter`, `Space`, `Backspace`, `Delete`, `Insert`, `Home`,
+  `End`, `PageUp`, `PageDown`, `Left`, `Right`, `Up`, `Down`
+* punctuation: `Equal`, `Minus`, `Slash`, `Backlash`, `Comma`, `Period`,
+  `Semicolon`, `Apostrophe`, `Grave`, `LeftBracket`, `RightBracket` as well as
+  `KPPlus` and `KPMinus` on the numpad.
+
+Names are case-insensitive. Keys are matched by their physical position (US
+layout), and modifiers match exactly, so `E` and `SHIFT+E` are different
+bindings. `+` and `?` therefore have to be written as `Shift+Equal` and
+`Shift+Slash` respectively.
+
+> [!WARNING]
+> `Alt`, `Super` and `Mod` keys are not supported. An invalid value is logged
+> and the default binding for it is kept.
+
+| Action             | Default                                      |
+| ------------------ | -------------------------------------------- |
+| `quit`             | `Esc`                                        |
+| `help`             | `SHIFT+H, SHIFT+Slash`                       |
+| `export`           | `SHIFT+E`                                    |
+| `refresh`          | `SHIFT+R`                                    |
+| `toggle_cursor`    | `SHIFT+C`                                    |
+| `toggle_highlight` | `Tab`                                        |
+| `annotate`         | `SHIFT+A`                                    |
+| `status_badge`     | `B`                                          |
+| `cycle_filter`     | `F`                                          |
+| `zoom_in`          | `Equal, SHIFT+Equal, KPPlus`                 |
+| `zoom_out`         | `Minus, SHIFT+Minus, KPMinus`                |
+| `radius_up`        | `CTRL+Equal, CTRL+SHIFT+Equal, CTRL+KPPlus`  |
+| `radius_down`      | `CTRL+Minus, CTRL+SHIFT+Minus, CTRL+KPMinus` |
+| `pan_left`         | `Left, A`                                    |
+| `pan_right`        | `Right, D`                                   |
+| `pan_up`           | `Up, W`                                      |
+| `pan_down`         | `Down, S`                                    |
+| `tool_arrow`       | `W` (annotate mode)                          |
+| `tool_rect`        | `R` (annotate mode)                          |
+| `tool_line`        | `L` (annotate mode)                          |
+| `tool_ellipse`     | `O` (annotate mode)                          |
+| `tool_text`        | `T` (annotate mode)                          |
+| `tool_freehand`    | `P` (annotate mode)                          |
+| `clear`            | `C` (annotate mode)                          |
+| `undo`             | `CTRL+Z`                                     |
+| `redo`             | `CTRL+Y, CTRL+SHIFT+Z`                       |
+
+Keybind changes are picked up live, like the other options, and the help panel
+(`Shift+H`) always shows the keys currently in use.
 
 Additional input, zoom and texture-upload diagnostics can be enabled by
 setting `MIRU_DEBUG` to a non-zero value:

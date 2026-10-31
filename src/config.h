@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include "keybinds.h"
 
 struct miru_config {
     // Zoom
@@ -39,6 +40,8 @@ struct miru_config {
     int color_filter;
 
     bool status_badge;
+
+    struct miru_keybinds keybinds;
 };
 
 void config_load(struct miru_config *out);

@@ -104,6 +104,12 @@ centered on your cursor when possible. While active:
 * **Esc**, or pressing the toggle keybind again, to exit back to your normal
   desktop
 
+> [!NOTE]
+> The keys listed above are the defaults. Every in-overlay key can be changed in
+> the `[keybinds]` section of the config file. See
+> [CONFIGURATION.md](./CONFIGURATION.md#keybinds). They are unrelated to the
+> compositor-level keybinds that toggle the overlay.
+
 There's deliberately no continuous re-capture of the underlying screen while
 the overlay is visible: an earlier version tried that and hit a feedback loop
 where the overlay could end up capturing itself (e.g. during Alt+Tab), so the

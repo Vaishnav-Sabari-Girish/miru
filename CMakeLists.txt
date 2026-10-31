@@ -106,6 +106,7 @@ add_executable(
   src/ipc_server.c
   src/debug.c
   src/input.c
+  src/keybinds.c
   src/toml.c
   src/config.c
   src/config_watch.c
