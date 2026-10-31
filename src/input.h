@@ -5,6 +5,7 @@
 #include <signal.h>
 #include "wayland_state.h"
 #include "layer_surface.h"
+#include "keybinds.h"
 
 #define MIRU_MAX_REPEAT_KEYS 8
 
@@ -21,6 +22,8 @@ struct miru_input_ctx {
 
     float zoom_increment;
     float radius_step;
+
+    struct miru_keybinds keybinds;
 
     bool shift_held;
     bool ctrl_held;

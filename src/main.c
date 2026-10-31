@@ -227,7 +227,10 @@ int main(int argc, char *argv[])
         .zoom_increment = (float)config.zoom_increment,
         .radius_step = (float)config.spotlight_radius_step,
         .show_cursor = config.show_cursor,
+        .keybinds = config.keybinds,
     };
+
+    help_set_keybinds(&config.keybinds);
 
     input_setup(&state, &input_ctx);
 
@@ -412,11 +415,14 @@ int main(int argc, char *argv[])
                     config.annotate_text_b != new_config.annotate_text_b ||
                     config.annotate_text_size != new_config.annotate_text_size ||
                     config.loupe_shape != new_config.loupe_shape || config.export_format != new_config.export_format ||
-                    config.color_filter != new_config.color_filter || config.status_badge != new_config.status_badge) {
+                    config.color_filter != new_config.color_filter || config.status_badge != new_config.status_badge ||
+                    !keybinds_equal(&config.keybinds, &new_config.keybinds)) {
                     MIRU_LOG("config: change detected reloading");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
                     input_ctx.radius_step = (float)config.spotlight_radius_step;
+                    input_ctx.keybinds = config.keybinds;
+                    help_set_keybinds(&config.keybinds);
                     input_set_show_cursor(&input_ctx, config.show_cursor);
                     if (active) {
                         struct layer_surface_config ls_config = {

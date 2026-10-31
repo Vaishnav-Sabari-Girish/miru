@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-10\-28" "Miru" "miru\-daemon Manual"
+.TH "MIRU\-DAEMON" "1" "2026\-10\-31" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
@@ -110,7 +110,7 @@ radius_step = 20\&.0
 
 [general]
 show_cursor = true
-status_badge = true
+status_badge = false
 
 [annotate]
 default = "rect"
@@ -127,6 +127,34 @@ format = "png"
 
 [filter]
 default = "none"
+
+[keybinds]
+quit = "Esc"
+help = "SHIFT+H, SHIFT+Slash"
+export = "SHIFT+E"
+refresh = "SHIFT+R"
+toggle_cursor = "SHIFT+C"
+toggle_highlight = "Tab"
+annotate = "SHIFT+A"
+status_badge = "B"
+cycle_filter = "F"
+zoom_in = "Equal, SHIFT+Equal, KPPlus"
+zoom_out = "Minus, SHIFT+Minus, KPMinus"
+radius_up = "CTRL+Equal, CTRL+SHIFT+Equal, CTRL+KPPlus"
+radius_down = "CTRL+Minus, CTRL+SHIFT+Minus, CTRL+KPMinus"
+pan_left = "Left, A"
+pan_right = "Right, D"
+pan_up = "Up, W"
+pan_down = "Down, S"
+tool_arrow = "W"
+tool_ellipse = "O"
+tool_line = "L"
+tool_rect = "R"
+tool_text = "T"
+tool_freehand = "P"
+clear = "C"
+undo = "CTRL+Z"
+redo = "CTRL+Y, CTRL+SHIFT+Z"
 .fi
 .RE
 .PP
@@ -177,10 +205,23 @@ false (compositor\-dependent).\&
 \fBdefault\fR \- The default image filter to apply when the overlay is active.\&
 .PP
 .RE
+\fB[keybinds]\fR
+.RS 4
+Rebinds the keys used while the overlay is active, e.\&g.\&
+\fBhelp\fR = \fB"SHIFT+T"\fR or \fBexport = "E, CTRL+S"\fR.\& A value is comma\-separated.\&
+You can use upto 4 bindings for each action; each is an optional
+\fBSHIFT+\fR/\fBCTRL+\fR prefix followed by a key name (\fBA\fR, \fBEsc\fR, \fBTab\fR,
+\fBEqual\fR.\&.\&.\&).\& Use \fB"none"\fR to unbind an action.\& These keys are unrelated to the
+compositor\-level keybinds used to toggle the overlay.\&
+.PP
+.RE
 Full detail:
 https://codeberg.\&org/Vaishnav\-Sabari\-Girish/miru#configuration
 .PP
 .SH CONTROLS (while overlay is active)
+.PP
+The keys below are the defaults and can be changed in the \fB[keybinds]\fR section
+of the config file.\&
 .PP
 \fBMouse move\fR
 .RS 4

@@ -575,6 +575,16 @@ static void keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t f
     close(fd);
 }
 
+static uint8_t current_mods(const struct miru_input_ctx *ctx)
+{
+    return (ctx->shift_held ? MIRU_MOD_SHIFT : 0) | (ctx->ctrl_held ? MIRU_MOD_CTRL : 0);
+}
+
+static bool key_is(const struct miru_input_ctx *ctx, enum miru_action action, uint32_t key)
+{
+    return keybinds_match(&ctx->keybinds, action, key, current_mods(ctx));
+}
+
 static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
 {
     MIRU_DBG(
@@ -585,12 +595,17 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
         ctx->ls->zoom_max
     );
 
-    if (key == KEY_EQUAL || key == KEY_KPPLUS) {
-        if (ctx->ctrl_held) {
-            adjust_spotlight_radius(ctx->ls, ctx->radius_step);
-            return 1;
-        }
+    if (key_is(ctx, MIRU_ACT_RADIUS_UP, key)) {
+        adjust_spotlight_radius(ctx->ls, ctx->radius_step);
+        return 1;
+    }
 
+    if (key_is(ctx, MIRU_ACT_RADIUS_DOWN, key)) {
+        adjust_spotlight_radius(ctx->ls, -ctx->radius_step);
+        return 1;
+    }
+
+    if (key_is(ctx, MIRU_ACT_ZOOM_IN, key)) {
         if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
             ctx->ls->loupe.zoom_velocity += 6.0f * ctx->zoom_increment;
             ctx->ls->dirty = true;
@@ -598,12 +613,7 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
             layer_surface_add_zoom_impulse(ctx->ls, 6.0f * ctx->zoom_increment);
         }
 
-    } else if (key == KEY_MINUS || key == KEY_KPMINUS) {
-        if (ctx->ctrl_held) {
-            adjust_spotlight_radius(ctx->ls, -ctx->radius_step);
-            return 1;
-        }
-
+    } else if (key_is(ctx, MIRU_ACT_ZOOM_OUT, key)) {
         if (ctx->ls->loupe.active && ctx->ls->loupe.committed) {
             ctx->ls->loupe.zoom_velocity -= 6.0f * ctx->zoom_increment;
             ctx->ls->dirty = true;
@@ -611,25 +621,22 @@ static int handle_key_action(struct miru_input_ctx *ctx, uint32_t key)
             layer_surface_add_zoom_impulse(ctx->ls, -6.0f * ctx->zoom_increment);
         }
 
-    } else if (key == KEY_LEFT || key == KEY_A) {
+    } else if (key_is(ctx, MIRU_ACT_PAN_LEFT, key)) {
         ctx->ls->cursor_x -= pan_step(ctx->ls);
         clamp_pan(ctx->ls);
-    } else if (key == KEY_RIGHT || key == KEY_D) {
+    } else if (key_is(ctx, MIRU_ACT_PAN_RIGHT, key)) {
         ctx->ls->cursor_x += pan_step(ctx->ls);
         clamp_pan(ctx->ls);
-    } else if (key == KEY_UP || key == KEY_W) {
+    } else if (key_is(ctx, MIRU_ACT_PAN_UP, key)) {
         ctx->ls->cursor_y -= pan_step(ctx->ls);
         clamp_pan(ctx->ls);
-    } else if (key == KEY_DOWN || key == KEY_S) {
+    } else if (key_is(ctx, MIRU_ACT_PAN_DOWN, key)) {
         ctx->ls->cursor_y += pan_step(ctx->ls);
         clamp_pan(ctx->ls);
     } else {
         return 0;
     }
 
-    // if (miru_debug_enabled()) {
-    //     fprintf(stderr, "handle_key_action: zoom_after=%.3f\n", ctx->ls->zoom);
-    // }
     MIRU_DBG("handle_key_action: zoom_after=%.3f", ctx->ls->zoom);
 
     ctx->ls->dirty = true;
@@ -740,14 +747,18 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
-    if (key == KEY_ESC) {
+    // while text is being typed, ordinary keys must reach the text buffer even
+    // when they are bound to an action, only ESC keeps leaving the overlay
+    bool typing = ctx->ls->annotations.mode && ctx->ls->annotations.typing;
+
+    if (typing ? key == KEY_ESC : key_is(ctx, MIRU_ACT_QUIT, key)) {
         if (ctx->request_deactivate) {
             *ctx->request_deactivate = 1;
         }
         return;
     }
 
-    if (key == KEY_TAB) {
+    if (!typing && key_is(ctx, MIRU_ACT_TOGGLE_HIGHLIGHT, key)) {
         ctx->ls->spotlight_enabled = !ctx->ls->spotlight_enabled;
         ctx->ls->dirty = true;
         return;
@@ -795,25 +806,24 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
-    if (ctx->ctrl_held && state == WL_KEYBOARD_KEY_STATE_PRESSED && ctx->ls) {
-        if (key == KEY_Z && !ctx->shift_held) {
-            if (annotation_undo(&ctx->ls->annotations)) {
-                ctx->ls->dirty = true;
-                MIRU_DBG("annotate: undo count=%d redo=%d", ctx->ls->annotations.count, ctx->ls->annotations.redo_count);
-            }
-            return;
+    if (key_is(ctx, MIRU_ACT_UNDO, key)) {
+        if (annotation_undo(&ctx->ls->annotations)) {
+            ctx->ls->dirty = true;
+            MIRU_DBG("annotate: undo count = %d redo = %d", ctx->ls->annotations.count, ctx->ls->annotations.redo_count);
         }
 
-        if (key == KEY_Y || (key == KEY_Z && ctx->shift_held)) {
-            if (annotation_redo(&ctx->ls->annotations)) {
-                ctx->ls->dirty = true;
-                MIRU_DBG("annotate: redo count=%d redo=%d", ctx->ls->annotations.count, ctx->ls->annotations.redo_count);
-            }
-            return;
-        }
+        return;
     }
 
-    if (key == KEY_T && ctx->ls->annotations.mode) {
+    if (key_is(ctx, MIRU_ACT_REDO, key)) {
+        if (annotation_redo(&ctx->ls->annotations)) {
+            ctx->ls->dirty = true;
+            MIRU_DBG("annotate: redo count = %d redo = %d", ctx->ls->annotations.count, ctx->ls->annotations.redo_count);
+        }
+        return;
+    }
+
+    if (key_is(ctx, MIRU_ACT_ANN_TEXT, key) && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_TEXT;
         ctx->ls->annotations.dragging = false;
         ctx->ls->dirty = true;
@@ -821,21 +831,21 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
 
         return;
     }
-    if (key == KEY_L && ctx->ls->annotations.mode) {
+    if (key_is(ctx, MIRU_ACT_ANN_LINE, key) && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_LINE;
         ctx->ls->annotations.dragging = false;
         ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: line");
         return;
     }
-    if (key == KEY_O && ctx->ls->annotations.mode) {
+    if (key_is(ctx, MIRU_ACT_ANN_ELLIPSE, key) && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_ELLIPSE;
         ctx->ls->annotations.dragging = false;
         ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: ellipse");
         return;
     }
-    if (key == KEY_A && ctx->shift_held) {
+    if (key_is(ctx, MIRU_ACT_TOGGLE_ANNOTATE, key)) {
         ctx->ls->annotations.mode = !ctx->ls->annotations.mode;
         if (!ctx->ls->annotations.mode)
             ctx->ls->annotations.dragging = false;
@@ -860,32 +870,30 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
-    if (key == KEY_R && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+    if (key_is(ctx, MIRU_ACT_REFRESH, key)) {
         if (ctx->ls && ctx->ls->configured && ctx->request_refresh)
             *ctx->request_refresh = 1;
 
-        // if (miru_debug_enabled())
-        //     fprintf(stderr, "refresh: requested\n");
         MIRU_DBG("refresh: requested");
 
         return;
     }
 
-    if (key == KEY_R && ctx->ls->annotations.mode) {
+    if (key_is(ctx, MIRU_ACT_ANN_RECT, key) && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_RECT;
         ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: rect");
         return;
     }
 
-    if (key == KEY_W && ctx->ls->annotations.mode) {
+    if (key_is(ctx, MIRU_ACT_ANN_ARROW, key) && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_ARROW;
         ctx->ls->dirty = true;
         MIRU_DBG("annotate tool: arrow");
         return;
     }
 
-    if (key == KEY_P && ctx->ls->annotations.mode) {
+    if (key_is(ctx, MIRU_ACT_ANN_FREEHAND, key) && ctx->ls->annotations.mode) {
         ctx->ls->annotations.tool = MIRU_ANN_FREEHAND;
         ctx->ls->annotations.dragging = false;
         ctx->ls->annotations.freehand_n = 0;
@@ -894,46 +902,42 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
-    if (key == KEY_C && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+    if (key_is(ctx, MIRU_ACT_TOGGLE_CURSOR, key)) {
         input_set_show_cursor(ctx, !ctx->show_cursor);
-        // if (miru_debug_enabled())
-        //     fprintf(stderr, "cursor: %s\n", ctx->show_cursor ? "shown" : "hidden");
         MIRU_DBG("cursor: %s", ctx->show_cursor ? "shown" : "hidden");
 
         return;
     }
 
-    if (key == KEY_C && ctx->ls->annotations.mode) {
+    if (key_is(ctx, MIRU_ACT_ANN_CLEAR, key) && ctx->ls->annotations.mode) {
         annotation_clear(&ctx->ls->annotations);
         ctx->ls->annotations.freehand_n = 0;
         ctx->ls->dirty = true;
         return;
     }
 
-    if (key == KEY_E && ctx->shift_held && state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+    if (key_is(ctx, MIRU_ACT_EXPORT, key)) {
         ctx->ls->export_pending = true;
         ctx->ls->dirty = true;
         MIRU_DBG("export: requested");
         return;
     }
 
-    if (key == KEY_F && state == WL_KEYBOARD_KEY_STATE_PRESSED && ctx->ls && !ctx->ls->annotations.typing &&
-        !ctx->shift_held && !ctx->ctrl_held) {
+    if (key_is(ctx, MIRU_ACT_CYCLE_FILTER, key)) {
         ctx->ls->color_filter = (ctx->ls->color_filter + 1) % 4;
         ctx->ls->dirty = true;
         MIRU_DBG("filter: %d", ctx->ls->color_filter);
         return;
     }
 
-    if (key == KEY_B && state == WL_KEYBOARD_KEY_STATE_PRESSED && ctx->ls && !ctx->ls->annotations.typing &&
-        !ctx->shift_held && !ctx->ctrl_held) {
+    if (key_is(ctx, MIRU_ACT_TOGGLE_BADGE, key)) {
         ctx->ls->status_badge = !ctx->ls->status_badge;
         ctx->ls->dirty = true;
         MIRU_DBG("status badge: %s", ctx->ls->status_badge ? "ON" : "OFF");
         return;
     }
 
-    if ((key == KEY_H && ctx->shift_held) || (key == KEY_SLASH && ctx->shift_held)) {
+    if (key_is(ctx, MIRU_ACT_HELP, key)) {
         ctx->ls->help_visible = !ctx->ls->help_visible;
         ctx->ls->dirty = true;
         // if (miru_debug_enabled())
