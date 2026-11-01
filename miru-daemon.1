@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "MIRU\-DAEMON" "1" "2026\-10\-31" "Miru" "miru\-daemon Manual"
+.TH "MIRU\-DAEMON" "1" "2026\-11\-01" "Miru" "miru\-daemon Manual"
 .PP
 .SH NAME
 .PP
@@ -128,6 +128,12 @@ format = "png"
 [filter]
 default = "none"
 
+[pip]
+enabled = false
+corner = "bottom\-right"
+size = 0\&.2
+margin = 16
+
 [keybinds]
 quit = "Esc"
 help = "SHIFT+H, SHIFT+Slash"
@@ -136,6 +142,7 @@ refresh = "SHIFT+R"
 toggle_cursor = "SHIFT+C"
 toggle_highlight = "Tab"
 annotate = "SHIFT+A"
+toggle_pip = "SHIFT+P"
 status_badge = "B"
 cycle_filter = "F"
 zoom_in = "Equal, SHIFT+Equal, KPPlus"
@@ -160,34 +167,63 @@ redo = "CTRL+Y, CTRL+SHIFT+Z"
 .PP
 \fB[zoom]\fR
 .RS 4
+.PD 0
+.IP \(bu 4
 \fBfactor\fR — initial zoom on each toggle\-on (min 1.\&0).\&  
+.IP \(bu 4
 \fBincrement\fR — zoom step for keys/scroll.\&  
+.IP \(bu 4
 \fBmax_factor\fR — maximum zoom.\&  
+.IP \(bu 4
 \fBsmooth\fR — interpolate zoom/pan when true.\&
+.IP \(bu 4
 \fBupscale\fR \- Choose between \fBlinear\fR/\fBnormal\fR/\fBbicubic\fR for upscaling
+.PD
 .PP
 .RE
 \fB[spotlight]\fR (Cursor Highlight while magnifier is active, toggled with Tab)
 .RS 4
+.PD 0
+.IP \(bu 4
 \fBradius\fR, \fBdim\fR, \fBsoftness\fR — circle size, outside darkness, edge feather.\&  
+.IP \(bu 4
 \fBanimation_speed\fR — ease in/out speed for Tab.\&  
+.IP \(bu 4
 \fBradius_step\fR — step for Shift+Plus/Minus and Ctrl+scroll.\&
+.PD
 .PP
 .RE
 \fB[general]\fR
 .RS 4
+.PD 0
+.IP \(bu 4
 \fBshow_cursor\fR — hide the hardware cursor while the overlay is active when
+.RS 4
+.PD
+.RE
+.RE
 false (compositor\-dependent).\&
+.RS 4
+.PD 0
+.IP \(bu 4
 \fBstatus_badge\fR \- Choose to display the status badge (\fBtrue/false\fR)
+.PD
 .PP
 .RE
 \fB[annotate]\fR
 .RS 4
+.PD 0
+.IP \(bu 4
 \fBdefault\fR \- Default shape when entering annotation mode.\&
+.IP \(bu 4
 \fBthickness\fR \- Thickness of the stroke (1\-8).\&
+.IP \(bu 4
 \fBcolor\fR \- Hex RGB for annotation.\&
+.IP \(bu 4
 \fBtext_size\fR \- Size of annotation text (0.\&25 \- 8.\&0).\&
+.IP \(bu 4
 \fBtext_color\fR \- Hex RGB for annotation text.\&
+.PD
 .PP
 .RE
 \fB[loupe]\fR
@@ -203,6 +239,20 @@ false (compositor\-dependent).\&
 \fB[filter]\fR
 .RS 4
 \fBdefault\fR \- The default image filter to apply when the overlay is active.\&
+.PP
+.RE
+\fB[pip]\fR
+.RS 4
+.PD 0
+.IP \(bu 4
+\fBenabled\fR \- Shows the PIP minimap when the overlay opens (\fBtrue/false\fR).\&
+.IP \(bu 4
+\fBcorner\fR \- \fBtop\-left, top\-right, bottom\-left, bottom\-right\fR.\&
+.IP \(bu 4
+\fBsize\fR \- Width of the minimap as a fraction of the screen Width (0.\&05 \- 0.\&5).\&
+.IP \(bu 4
+\fBmargin\fR \- Distance from the screen edge in pixels.\&
+.PD
 .PP
 .RE
 \fB[keybinds]\fR
@@ -257,6 +307,12 @@ Toggle annotate mode (pan frozen; orange frame).\&
 \fBB\fR
 .RS 4
 Toggle Status Badge (Displays the zoom factor and the annotation tool chosen).\&
+.PP
+.RE
+\fBShift+P\fR
+.RS 4
+Toggle the PIP minimap; a small unzoomed copy of the captured screen with the
+visible area outlined and the pointer marked.\&
 .PP
 .RE
 \fBF\fR

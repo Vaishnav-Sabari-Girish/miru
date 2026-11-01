@@ -97,6 +97,10 @@ centered on your cursor when possible. While active:
   * **Shift+A** again — leave annotate mode (shapes remain until overlay exit
     or clear)
 * **B**: Toggle the status badge.
+* **Shift+P** - Toggle the **PIP Minimap**, a small unzoomed copy of the
+  captured screen in a corner with an outline around the part you're zooming
+  into and a dot at the pointer. Position and size are configurable. See
+  [CONFIGURATION.md](./CONFIGURATION.md).
 * **F**: Cycle between image filters (default, grayscale, inverted/negative,
   high contrast).
 * **Shift+H** or **?** — toggle the **help panel** (keybind cheat sheet).
