@@ -930,6 +930,13 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (key_is(ctx, MIRU_ACT_TOGGLE_PIP, key)) {
+        ctx->ls->pip_enabled = !ctx->ls->pip_enabled;
+        ctx->ls->dirty = true;
+        MIRU_DBG("pip minimap: %s", ctx->ls->pip_enabled ? "ON" : "OFF");
+        return;
+    }
+
     if (key_is(ctx, MIRU_ACT_TOGGLE_BADGE, key)) {
         ctx->ls->status_badge = !ctx->ls->status_badge;
         ctx->ls->dirty = true;

@@ -30,6 +30,24 @@ static int parse_color_filter(const char *s)
     return 0;
 }
 
+static int parse_pip_corner(const char *s)
+{
+    if (!s)
+        return 3;
+
+    if (strcmp(s, "top-left") == 0 || strcmp(s, "top_left") == 0)
+        return 0;
+    if (strcmp(s, "top-right") == 0 || strcmp(s, "top_right") == 0)
+        return 1;
+    if (strcmp(s, "bottom-left") == 0 || strcmp(s, "bottom_left") == 0)
+        return 2;
+    if (strcmp(s, "bottom-right") == 0 || strcmp(s, "bottom_right") == 0)
+        return 3;
+
+    MIRU_LOG("config: unknown pip.corner '%s', using bottom-right", s);
+    return 3;
+}
+
 static int parse_export_format(const char *s)
 {
     if (!s)
@@ -186,7 +204,13 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "format = \"png\"\n"
                                          "\n"
                                          "[filter]\n"
-                                         "default = \"none\"\n";
+                                         "default = \"none\"\n"
+                                         "\n"
+                                         "[pip]\n"
+                                         "enabled = false\n"
+                                         "corner = \"bottom-right\"\n"
+                                         "size = 0.2\n"
+                                         "margin = 16\n";
 
     if (fputs(default_config, f) == EOF || fputc('\n', f) == EOF) {
         fclose(f);
@@ -345,6 +369,27 @@ static void sanitize_config(struct miru_config *c)
 
     if (c->color_filter < 0 || c->color_filter > 3)
         c->color_filter = 0;
+
+    if (c->pip_corner < 0 || c->pip_corner > 3)
+        c->pip_corner = 3;
+    if (!isfinite(c->pip_size) || c->pip_size <= 0.0) {
+        MIRU_LOG("config: invalid pip.size (must be positive). falling back to default");
+        c->pip_size = 0.2;
+    } else if (c->pip_size > 0.5) {
+        MIRU_LOG("config: pip.size exceeds 0.5, clamping");
+        c->pip_size = 0.5;
+    } else if (c->pip_size < 0.05) {
+        MIRU_LOG("config: pip.size is below 0.05, clamping");
+        c->pip_size = 0.05;
+    }
+
+    if (c->pip_margin < 0) {
+        MIRU_LOG("config: invalid pip.margin, falling back to default");
+        c->pip_margin = 16;
+    } else if (c->pip_margin > 500) {
+        MIRU_LOG("config: pip.margin exceeds 500, clamping");
+        c->pip_margin = 500;
+    }
 }
 
 void config_load(struct miru_config *out)
@@ -382,6 +427,11 @@ void config_load(struct miru_config *out)
     out->color_filter = 0;
 
     out->status_badge = false;
+
+    out->pip_enabled = false;
+    out->pip_size = 0.2;
+    out->pip_corner = 3;
+    out->pip_margin = 16;
 
     keybind_defaults(&out->keybinds);
 
@@ -457,6 +507,11 @@ void config_load(struct miru_config *out)
     out->export_format = parse_export_format(toml_get_string(t, "export", "format", "png"));
 
     out->color_filter = parse_color_filter(toml_get_string(t, "filter", "default", "none"));
+
+    out->pip_enabled = toml_get_bool(t, "pip", "enabled", out->pip_enabled);
+    out->pip_corner = parse_pip_corner(toml_get_string(t, "pip", "corner", "bottom-right"));
+    out->pip_size = toml_get_double(t, "pip", "size", out->pip_size);
+    out->pip_margin = toml_get_int(t, "pip", "margin", out->pip_margin);
 
     keybinds_load(&out->keybinds, t);
 
@@ -641,6 +696,22 @@ static const char *filter_name(int v)
     return "none";
 }
 
+static const char *pip_corner_name(int v)
+{
+    switch (v) {
+    case 0:
+        return "top-left";
+    case 1:
+        return "top-right";
+    case 2:
+        return "bottom-left";
+    case 3:
+        return "bottom-right";
+    default:
+        return "bottom-right";
+    }
+}
+
 static int write_config_file(const char *path, const struct miru_config *c)
 {
     FILE *f = fopen(path, "w");
@@ -684,7 +755,13 @@ static int write_config_file(const char *path, const struct miru_config *c)
         "format = \"%s\"\n"
         "\n"
         "[filter]\n"
-        "default = \"%s\"\n",
+        "default = \"%s\"\n"
+        "\n"
+        "[pip]\n"
+        "enabled = %s\n"
+        "corner = \"%s\"\n"
+        "size = %.4g\n"
+        "margin = %ld\n",
         c->zoom_factor,
         c->zoom_increment,
         c->zoom_max_factor,
@@ -709,7 +786,11 @@ static int write_config_file(const char *path, const struct miru_config *c)
         c->annotate_text_size,
         loupe_name(c->loupe_shape),
         c->export_format == MIRU_EXPORT_BMP ? "bmp" : "png",
-        filter_name(c->color_filter)
+        filter_name(c->color_filter),
+        c->pip_enabled ? "true" : "false",
+        pip_corner_name(c->pip_corner),
+        c->pip_size,
+        c->pip_margin
     );
 
     fputc('\n', f);
@@ -757,6 +838,10 @@ int config_gen_interactive(void)
     c.loupe_shape = 0;
     c.export_format = MIRU_EXPORT_PNG;
     c.color_filter = 0;
+    c.pip_enabled = false;
+    c.pip_corner = 3;
+    c.pip_size = 0.2;
+    c.pip_margin = 16;
 
     keybind_defaults(&c.keybinds);
 
@@ -830,6 +915,18 @@ int config_gen_interactive(void)
         static const char *const opts[] = { "none", "grayscale", "invert", "contrast" };
         c.color_filter = prompt_choice("default", opts, 4, c.color_filter);
     }
+
+    printf("\n--- PIP Minimap ---\n");
+    if (prompt_bool("enabled", c.pip_enabled, &c.pip_enabled) != 0)
+        return -1;
+    {
+        static const char *const opts[] = { "top-left", "top-right", "bottom-left", "bottom-right" };
+        c.pip_corner = prompt_choice("corner", opts, 4, c.pip_corner);
+    }
+    if (prompt_double("size (0.05 - 0.5 of screen width)", c.pip_size, &c.pip_size) != 0)
+        return -1;
+    if (prompt_long("margin", c.pip_margin, &c.pip_margin) != 0)
+        return -1;
 
     sanitize_config(&c);
 

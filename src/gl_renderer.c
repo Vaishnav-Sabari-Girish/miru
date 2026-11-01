@@ -1104,6 +1104,127 @@ void gl_renderer_draw_loupe_outline(
     emit_line(r, x0, y1, x0, y0, L, T, W, H, 1.f, 0.5f, 0.f, 1.f, t, buf_w);
 }
 
+static void emit_px_rect(
+    struct miru_gl_renderer *r,
+    int buf_w,
+    int buf_h,
+    float x0,
+    float y0,
+    float x1,
+    float y1,
+    float cr,
+    float cg,
+    float cb,
+    float ca
+)
+{
+    if (x1 <= x0 || y1 <= y0)
+        return;
+
+    float nx0 = (x0 / (float)buf_w) * 2.0f - 1.0f;
+    float nx1 = (x1 / (float)buf_w) * 2.0f - 1.0f;
+    float ny0 = 1.0f - (y0 / (float)buf_h) * 2.0f;
+    float ny1 = 1.0f - (y1 / (float)buf_h) * 2.0f;
+
+    emit_solid_quad(r, nx0, ny0, nx1, ny1, cr, cg, cb, ca);
+}
+
+static void emit_px_frame(
+    struct miru_gl_renderer *r,
+    int buf_w,
+    int buf_h,
+    float x0,
+    float y0,
+    float x1,
+    float y1,
+    float t,
+    float cr,
+    float cg,
+    float cb,
+    float ca
+)
+{
+    emit_px_rect(r, buf_w, buf_h, x0, y0, x1, y0 + t, cr, cg, cb, ca);
+    emit_px_rect(r, buf_w, buf_h, x0, y1 - t, x1, y1, cr, cg, cb, ca);
+    emit_px_rect(r, buf_w, buf_h, x0, y0 + t, x0 + t, y1 - t, cr, cg, cb, ca);
+    emit_px_rect(r, buf_w, buf_h, x1 - t, y0 + t, x1, y1 - t, cr, cg, cb, ca);
+}
+
+void gl_renderer_draw_pip(
+    struct miru_gl_renderer *r,
+    int buf_w,
+    int buf_h,
+    float dst_x0,
+    float dst_y0,
+    float dst_x1,
+    float dst_y1,
+    float view_left,
+    float view_top,
+    float view_w,
+    float view_h,
+    float cursor_x,
+    float cursor_y,
+    int y_invert,
+    int color_filter
+)
+{
+    if (!r || buf_w <= 0 || buf_h <= 0)
+        return;
+
+    float pw = dst_x1 - dst_x0;
+    float ph = dst_y1 - dst_y0;
+    if (pw < 16.0f || ph < 16.0f)
+        return;
+
+    gl_renderer_draw_loupe(
+        r, 0.0f, 0.0f, (float)buf_w, (float)buf_h, dst_x0, dst_y0, dst_x1, dst_y1, buf_w, buf_h, y_invert, 0, color_filter
+    );
+
+    glUseProgram(r->line_program);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    float vx0 = dst_x0 + (view_left / (float)buf_w) * pw;
+    float vy0 = dst_y0 + (view_top / (float)buf_h) * ph;
+    float vx1 = vx0 + (view_w / (float)buf_w) * pw;
+    float vy1 = vy0 + (view_h / (float)buf_h) * ph;
+
+    if (vx0 < dst_x0)
+        vx0 = dst_x0;
+    if (vy0 < dst_y0)
+        vy0 = dst_y0;
+    if (vx1 > dst_x1)
+        vx1 = dst_x1;
+    if (vy1 > dst_y1)
+        vy1 = dst_y1;
+
+    const float dim = 0.55f;
+    emit_px_rect(r, buf_w, buf_h, dst_x0, dst_y0, dst_x1, vy0, 0.0f, 0.0f, 0.0f, dim);
+    emit_px_rect(r, buf_w, buf_h, dst_x0, vy1, dst_x1, dst_y1, 0.0f, 0.0f, 0.0f, dim);
+    emit_px_rect(r, buf_w, buf_h, dst_x0, vy0, vx0, vy1, 0.0f, 0.0f, 0.0f, dim);
+    emit_px_rect(r, buf_w, buf_h, vx1, vy0, dst_x1, vy1, 0.0f, 0.0f, 0.0f, dim);
+
+    emit_px_frame(r, buf_w, buf_h, vx0, vy0, vx1, vy1, 2.0f, 1.0f, 0.5f, 0.0f, 1.0f);
+
+    float cx = dst_x0 + (cursor_x / (float)buf_w) * pw;
+    float cy = dst_y0 + (cursor_y / (float)buf_h) * ph;
+    if (cx < dst_x0)
+        cx = dst_x0;
+    if (cy < dst_y0)
+        cy = dst_y0;
+    if (cx > dst_x1)
+        cx = dst_x1;
+    if (cy > dst_y1)
+        cy = dst_y1;
+
+    emit_px_rect(r, buf_w, buf_h, cx - 4.0f, cy - 4.0f, cx + 4.0f, cy + 4.0f, 0.0f, 0.0f, 0.0f, 0.9f);
+    emit_px_rect(r, buf_w, buf_h, cx - 3.0f, cy - 3.0f, cx + 3.0f, cy + 3.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    emit_px_frame(
+        r, buf_w, buf_h, dst_x0 - 2.0f, dst_y0 - 2.0f, dst_x1 + 2.0f, dst_y1 + 2.0f, 2.f, 0.08f, 0.08f, 0.10f, 0.95f
+    );
+}
+
 void gl_renderer_draw_standalone_spotlight(
     struct miru_gl_renderer *r,
     float cursor_px_x,

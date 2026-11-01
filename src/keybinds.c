@@ -20,6 +20,7 @@ static const struct action_info actions[MIRU_ACT_COUNT] = {
     [MIRU_ACT_TOGGLE_CURSOR] = { "toggle_cursor", "SHIFT+C" },
     [MIRU_ACT_TOGGLE_HIGHLIGHT] = { "toggle_highlight", "TAB" },
     [MIRU_ACT_TOGGLE_ANNOTATE] = { "annotate", "SHIFT+A" },
+    [MIRU_ACT_TOGGLE_PIP] = { "toggle_pip", "SHIFT+P" },
     [MIRU_ACT_TOGGLE_BADGE] = { "status_badge", "B" },
     [MIRU_ACT_CYCLE_FILTER] = { "cycle_filter", "F" },
     [MIRU_ACT_ZOOM_IN] = { "zoom_in", "EQUAL, SHIFT+EQUAL, KPPLUS" },

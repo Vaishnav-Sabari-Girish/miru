@@ -224,6 +224,11 @@ int layer_surface_create(
 
     ls->status_badge = config->status_badge;
 
+    ls->pip_enabled = config->pip_enabled;
+    ls->pip_corner = config->pip_corner;
+    ls->pip_size = config->pip_size;
+    ls->pip_margin = config->pip_margin;
+
     annotation_state_init(&ls->annotations);
 
     ls->loupe = (struct miru_loupe){
@@ -351,6 +356,11 @@ void layer_surface_apply_config(struct miru_layer_surface *ls, const struct laye
 
     ls->status_badge = config->status_badge;
 
+    ls->pip_enabled = config->pip_enabled;
+    ls->pip_corner = config->pip_corner;
+    ls->pip_size = config->pip_size;
+    ls->pip_margin = config->pip_margin;
+
     ls->dirty = true;
 }
 
@@ -403,11 +413,63 @@ bool layer_surface_is_animating(const struct miru_layer_surface *ls)
     return false;
 }
 
+#define PIP_MIN_ZOOM 1.01f
+
+static void pip_rect(const struct miru_layer_surface *ls, int corner, float *x0, float *y0, float *x1, float *y1)
+{
+    float bw = (float)ls->buffer_width;
+    float bh = (float)ls->buffer_height;
+    float scale = ls->scale > 1.0f ? ls->scale : 1.0f;
+
+    float w = ls->pip_size * bw;
+    float h = w * bh / bw;
+    float margin = ls->pip_margin * scale;
+
+    bool right = corner == 1 || corner == 3;
+    bool bottom = corner == 2 || corner == 3;
+
+    *x0 = right ? bw - margin - w : margin;
+    *x1 = *x0 + w;
+    *y0 = bottom ? bh - margin - h : margin;
+    *y1 = *y0 + h;
+}
+
+static void
+pip_draw(struct miru_layer_surface *ls, float src_left, float src_top, float src_w, float src_h, int y_invert)
+{
+    float x0, y0, x1, y1;
+
+    pip_rect(ls, ls->pip_corner, &x0, &y0, &x1, &y1);
+
+    // when the pointer runs into the minimap,
+    // hop to the other side so it never covers what you're pointing
+    const float slack = 24.0f;
+    float px = (float)ls->cursor_x;
+    float py = (float)ls->cursor_y;
+    if (px > x0 - slack && px < x1 + slack && py > y0 - slack && py < y1 + slack)
+        pip_rect(ls, ls->pip_corner ^ 1, &x0, &y0, &x1, &y1);
+
+    gl_renderer_draw_pip(
+        &ls->gl,
+        ls->buffer_width,
+        ls->buffer_height,
+        x0,
+        y0,
+        x1,
+        y1,
+        src_left,
+        src_top,
+        src_w,
+        src_h,
+        px,
+        py,
+        y_invert,
+        ls->color_filter
+    );
+}
+
 void layer_surface_render(struct miru_layer_surface *ls)
 {
-    // glClearColor(0.f, 0.f, 0.f, 1.f);
-    // glClear(GL_COLOR_BUFFER_BIT);
-
     if (!ls->configured || !ls->egl.egl_window)
         return;
 
@@ -582,7 +644,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
             );
 
             gl_renderer_draw_loupe_outline(
-                &ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
+                &ls->gl, dy0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
             );
 
             gl_renderer_draw_annotations(
@@ -605,6 +667,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
 
                     int t = (int)ls->annotations.tool;
                     if (t < 0 || t > 5)
+
                         t = 0;
 
                     snprintf(buf, sizeof(buf), "%s", tools[t]);
@@ -731,6 +794,12 @@ void layer_surface_render(struct miru_layer_surface *ls)
         &ls->gl, &ls->annotations, src_left, src_top, src_w, src_h, ls->buffer_width, ls->buffer_height
     );
 
+    // Keep the minimap out of exported images; it is redrawn after the export
+    bool pip_wanted = ls->pip_enabled && ls->display_zoom > PIP_MIN_ZOOM;
+    bool pip_drawn = pip_wanted && !ls->export_pending;
+    if (pip_drawn)
+        pip_draw(ls, src_left, src_top, src_w, src_h, y_invert);
+
     if (ls->status_badge) {
         char buf[32];
         if (ls->annotations.mode) {
@@ -770,7 +839,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
     }
 
     egl_swap_buffers(&ls->egl);
-    ls->dirty = false;
+    ls->dirty = pip_wanted && !pip_drawn;
 }
 
 void layer_surface_add_zoom_impulse(struct miru_layer_surface *ls, float delta)
