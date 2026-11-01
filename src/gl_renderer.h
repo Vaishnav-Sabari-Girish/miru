@@ -115,6 +115,24 @@ void gl_renderer_draw_standalone_spotlight(
     float dim
 );
 
+void gl_renderer_draw_pip(
+    struct miru_gl_renderer *r,
+    int buf_w,
+    int buf_h,
+    float dst_x0,
+    float dst_y0,
+    float dst_x1,
+    float dst_y1,
+    float view_left,
+    float view_top,
+    float view_w,
+    float view_h,
+    float cursor_x,
+    float cursor_y,
+    int y_invert,
+    int color_filter
+);
+
 void gl_renderer_draw_status_badge(
     struct miru_gl_renderer *r,
     int viewport_w,

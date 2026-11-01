@@ -29,6 +29,11 @@ struct layer_surface_config {
     int color_filter;
 
     bool status_badge;
+
+    bool pip_enabled;
+    int pip_corner;
+    float pip_size;
+    float pip_margin;
 };
 
 struct miru_loupe {
@@ -92,6 +97,11 @@ struct miru_layer_surface {
     int color_filter; /* 0 = None, 1 = grayscale, 2 = invert, 3 = contrast */
 
     bool status_badge;
+
+    bool pip_enabled;
+    int pip_corner;
+    float pip_size;
+    float pip_margin;
 };
 
 int layer_surface_create(

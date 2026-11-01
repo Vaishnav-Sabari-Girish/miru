@@ -42,6 +42,11 @@ struct miru_config {
     bool status_badge;
 
     struct miru_keybinds keybinds;
+
+    bool pip_enabled;
+    int pip_corner; // 0 - top-left, 1 - top-right, 2 - bottom-left, 3 - bottom-right
+    double pip_size; // width of the minimap as a fraction of the screen width
+    long pip_margin; // distance from the screen edge, in logical pixels
 };
 
 void config_load(struct miru_config *out);

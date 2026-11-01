@@ -52,8 +52,13 @@ format = "png"
 [filter]
 default = "none"
 
+[pip]
+enabled = false
+corner = "bottom-right"
+size = 0.2
+margin = 16
+
 [keybinds]
-# default keybinds which can be changed (See "Keybinds" below)
 quit = "Esc"
 help = "SHIFT+H, SHIFT+Slash"
 export = "SHIFT+E"
@@ -61,6 +66,7 @@ refresh = "SHIFT+R"
 toggle_cursor = "SHIFT+C"
 toggle_highlight = "Tab"
 annotate = "SHIFT+A"
+toggle_pip = "SHIFT+P"
 status_badge = "B"
 cycle_filter = "F"
 zoom_in = "Equal, SHIFT+Equal, KPPlus"
@@ -124,8 +130,24 @@ The currently active options are:
   * `"png", "bmp"`
 * `filter.default` - the default filter to add when zooming:
   * `"none", "invert/inverted/negative", "contrast/high-contrast", "gray/grey/grayscale"`
+* `pip.enabled` - whether the PIP minimap is shown when the overlay opens. It
+  can be toggled at any time with `SHIFT+P`.
+* `pip.corner` - where the minimap sits.
+  * `"top-left/top_left", "top-right/top_right", "bottom-left/bottom_left", "bottom-right/bottom_right"`
+    (default)
+* `pip.size` - width of the minimap as a fraction of the screen width. (`0.05` -
+  `0.5`; default is `0.2`). The height follows the screen's aspect ratio.
+* `pip.margin` - distance, in pixels between the minimap and the screen edge
+  (`0` - `500`; default is `16`).
 * `keybinds` - allows you to set custom keybinds. See [Keybinds](#keybinds)
   below.
+
+The PIP (picture-in-picture) minimap is a small, unzoomed copy of the captured
+screen. The part of it you're currently looking at is outlined in orange, the
+rest is dimmed, and a white dot marks the pointer. It only appears when the view
+is zoomed in, it does not appear on exported images. It also hops to the
+opposite side of the screen while the pointer is over it to avoid it blocking
+any view.
 
 Invalid numeric values, including malformed, overflowing, non-finite, and
 non-positive values where applicable, fall back to safe defaults. `zoom.factor`
@@ -191,6 +213,7 @@ bindings. `+` and `?` therefore have to be written as `Shift+Equal` and
 | `toggle_cursor`    | `SHIFT+C`                                    |
 | `toggle_highlight` | `Tab`                                        |
 | `annotate`         | `SHIFT+A`                                    |
+| `toggle_pip`       | `SHIFT+P`                                    |
 | `status_badge`     | `B`                                          |
 | `cycle_filter`     | `F`                                          |
 | `zoom_in`          | `Equal, SHIFT+Equal, KPPlus`                 |

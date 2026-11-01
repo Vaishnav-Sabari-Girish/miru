@@ -104,6 +104,12 @@ format = "png"
 [filter]
 default = "none"
 
+[pip]
+enabled = false
+corner = "bottom-right"
+size = 0.2
+margin = 16
+
 [keybinds]
 quit = "Esc"
 help = "SHIFT+H, SHIFT+Slash"
@@ -112,6 +118,7 @@ refresh = "SHIFT+R"
 toggle_cursor = "SHIFT+C"
 toggle_highlight = "Tab"
 annotate = "SHIFT+A"
+toggle_pip = "SHIFT+P"
 status_badge = "B"
 cycle_filter = "F"
 zoom_in = "Equal, SHIFT+Equal, KPPlus"
@@ -134,28 +141,28 @@ redo = "CTRL+Y, CTRL+SHIFT+Z"
 ```
 
 *[zoom]*
-	*factor* — initial zoom on each toggle-on (min 1.0).  
-	*increment* — zoom step for keys/scroll.  
-	*max_factor* — maximum zoom.  
-	*smooth* — interpolate zoom/pan when true.
-	*upscale* - Choose between *linear*/*normal*/*bicubic* for upscaling
+	- *factor* — initial zoom on each toggle-on (min 1.0).  
+	- *increment* — zoom step for keys/scroll.  
+	- *max_factor* — maximum zoom.  
+	- *smooth* — interpolate zoom/pan when true.
+	- *upscale* - Choose between *linear*/*normal*/*bicubic* for upscaling
 
 *[spotlight]* (Cursor Highlight while magnifier is active, toggled with Tab)
-	*radius*, *dim*, *softness* — circle size, outside darkness, edge feather.  
-	*animation_speed* — ease in/out speed for Tab.  
-	*radius_step* — step for Shift+Plus/Minus and Ctrl+scroll.
+	- *radius*, *dim*, *softness* — circle size, outside darkness, edge feather.  
+	- *animation_speed* — ease in/out speed for Tab.  
+	- *radius_step* — step for Shift+Plus/Minus and Ctrl+scroll.
 
 *[general]*
-	*show_cursor* — hide the hardware cursor while the overlay is active when
-	false (compositor-dependent).
-	*status_badge* - Choose to display the status badge (*true/false*)
+	- *show_cursor* — hide the hardware cursor while the overlay is active when
+		false (compositor-dependent).
+	- *status_badge* - Choose to display the status badge (*true/false*)
 
 *[annotate]*
-	*default* - Default shape when entering annotation mode.
-	*thickness* - Thickness of the stroke (1-8).
-	*color* - Hex RGB for annotation.
-	*text_size* - Size of annotation text (0.25 - 8.0).
-	*text_color* - Hex RGB for annotation text.
+	- *default* - Default shape when entering annotation mode.
+	- *thickness* - Thickness of the stroke (1-8).
+	- *color* - Hex RGB for annotation.
+	- *text_size* - Size of annotation text (0.25 - 8.0).
+	- *text_color* - Hex RGB for annotation text.
 
 *[loupe]*
 	*shape* - Default shape when entering loupe mode
@@ -165,6 +172,12 @@ redo = "CTRL+Y, CTRL+SHIFT+Z"
 
 *[filter]*
 	*default* - The default image filter to apply when the overlay is active.
+
+*[pip]*
+	- *enabled* - Shows the PIP minimap when the overlay opens (*true/false*).
+	- *corner* - *top-left, top-right, bottom-left, bottom-right*.
+	- *size* - Width of the minimap as a fraction of the screen Width (0.05 - 0.5).
+	- *margin* - Distance from the screen edge in pixels.
 
 *[keybinds]*
 	Rebinds the keys used while the overlay is active, e.g.
@@ -203,6 +216,10 @@ of the config file.
 
 *B*
 	Toggle Status Badge (Displays the zoom factor and the annotation tool chosen).
+
+*Shift+P*
+	Toggle the PIP minimap; a small unzoomed copy of the captured screen with the
+	visible area outlined and the pointer marked.
 
 *F*
 	Shift between different image filters (Normal, Grayscale, Inverted/Negative,

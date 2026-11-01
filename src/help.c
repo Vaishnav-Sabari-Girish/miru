@@ -47,6 +47,7 @@ static const struct help_row rows[] = {
     {.indent = 1, .act = {MIRU_ACT_ANN_CLEAR}, .nact = 1, .desc = "Clear Annotations"},
     {.act = {MIRU_ACT_EXPORT}, .nact = 1, .desc = NULL},
     {.act = {MIRU_ACT_TOGGLE_BADGE}, .nact = 1, .desc = "Toggle Status Badge"},
+    {.act = {MIRU_ACT_TOGGLE_PIP}, .nact = 1, .desc = "Toggle PIP Minimap"},
     {.act = {MIRU_ACT_CYCLE_FILTER}, .nact = 1, .desc = "Cycle Color Filters"},
     {.act = {MIRU_ACT_HELP}, .nact = 1, .all_binds = true, .desc = "Toggle this help"},
     {.act = {MIRU_ACT_QUIT}, .nact = 1, .desc = "Close Help / Exit"},

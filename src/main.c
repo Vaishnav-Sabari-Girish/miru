@@ -89,6 +89,10 @@ static int activate(
         .export_format = config->export_format,
         .color_filter = config->color_filter,
         .status_badge = config->status_badge,
+        .pip_enabled = config->pip_enabled,
+        .pip_size = (float)config->pip_size,
+        .pip_corner = config->pip_corner,
+        .pip_margin = (float)config->pip_margin,
     };
 
     if (layer_surface_create(state, ls, capture, &ls_config) != 0) {
@@ -353,6 +357,10 @@ int main(int argc, char *argv[])
                         .export_format = config.export_format,
                         .color_filter = config.color_filter,
                         .status_badge = config.status_badge,
+                        .pip_enabled = config.pip_enabled,
+                        .pip_size = (float)config.pip_size,
+                        .pip_corner = config.pip_corner,
+                        .pip_margin = (float)config.pip_margin,
                     };
 
                     if (input_ctx.has_last_pointer) {
@@ -416,7 +424,9 @@ int main(int argc, char *argv[])
                     config.annotate_text_size != new_config.annotate_text_size ||
                     config.loupe_shape != new_config.loupe_shape || config.export_format != new_config.export_format ||
                     config.color_filter != new_config.color_filter || config.status_badge != new_config.status_badge ||
-                    !keybinds_equal(&config.keybinds, &new_config.keybinds)) {
+                    !keybinds_equal(&config.keybinds, &new_config.keybinds) ||
+                    config.pip_enabled != new_config.pip_enabled || config.pip_corner != new_config.pip_corner ||
+                    config.pip_size != new_config.pip_size || config.pip_margin != new_config.pip_margin) {
                     MIRU_LOG("config: change detected reloading");
                     config = new_config;
                     input_ctx.zoom_increment = (float)config.zoom_increment;
@@ -438,6 +448,10 @@ int main(int argc, char *argv[])
                             .export_format = config.export_format,
                             .color_filter = config.color_filter,
                             .status_badge = config.status_badge,
+                            .pip_enabled = config.pip_enabled,
+                            .pip_size = (float)config.pip_size,
+                            .pip_corner = config.pip_corner,
+                            .pip_margin = (float)config.pip_margin,
                         };
 
                         layer_surface_apply_config(&ls, &ls_config);
