@@ -40,6 +40,7 @@
 * [x] Output frame's orientation to match original frame's (When monitors are
       rotated)
       [#137](https://codeberg.org/Vaishnav-Sabari-Girish/miru/pulls/137).
+* [x] Configurable Keybinds. Check [Keybinds](./CONFIGURATION.md#keybinds)
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
 * [ ] Cursor tracking for Spotlight mode without stealing input (likely
