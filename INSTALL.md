@@ -32,6 +32,8 @@ alternative capture and overlay mechanisms.
 
 ## Installing
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/miru-zoom.svg)](https://repology.org/project/miru-zoom/versions)
+
 ### Arch Linux (AUR)
 
 ````bash
