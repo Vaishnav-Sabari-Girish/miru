@@ -122,6 +122,8 @@ brew install Vaishnav-Sabari-Girish/taps/miru
 
 ### Fedora (COPR)
 
+[![Copr build status](https://copr.fedorainfracloud.org/coprs/vaishnavs/miru/package/miru/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/vaishnavs/miru/package/miru/)
+
 ````bash
 sudo dnf copr enable vaishnavs/miru
 sudo dnf install miru
