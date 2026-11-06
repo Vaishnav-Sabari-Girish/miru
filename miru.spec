@@ -1,5 +1,5 @@
 Name:           miru
-Version:        0.14.0
+Version:        0.15.0
 Release:        1%{?dist}
 Summary:        Wayland-native screen magnifier and zooming daemon
 
@@ -49,6 +49,9 @@ KDE Plasma (KWin) are not supported.
 %{_mandir}/man1/miructl.1*
 
 %changelog
+* Fri Nov 06 2026 Vaishnav Sabari Girish <vaishnav.sabari.girish@gmail.com> - 0.15.0-1
+- Update to 0.15.0
+
 * Wed Oct 28 2026 Vaishnav Sabari Girish <vaishnav.sabari.girish@gmail.com> - 0.14.0-1
 - Update to 0.14.0 
 
