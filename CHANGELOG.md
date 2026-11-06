@@ -1,4 +1,49 @@
 
+## v0.15.0 - 2026-11-06
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(pip)** Add a minimap (picture-in-picture)
+
+- **(keybinds_configurable)** Made keybinds configurable
+
+- **(output)** Open the overlay on the focused output
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(capture)** Rotate frames to match the output transform
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### :tada: New Contributors
+- @hosaka made their first contribution
 ## v0.14.0 - 2026-10-28
 
 
