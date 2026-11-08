@@ -163,7 +163,7 @@ sudo emerge --ask app-eselect/eselect-repository
 1. Enable the overlay:
 
 ````bash
-sudo eselect repository add acooliodude-overlay git https://codeberg.org/ACoolioDude/acooliodude-overlay
+sudo eselect repository enable acooliodude-overlay
 ````
 
 1. Sync the overlay (either command works):
