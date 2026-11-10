@@ -4,7 +4,7 @@ version = "2"
 silent = true
 description = "Remove build artifacts"
 language = "shell"
-run = "rm -rf build/"
+run = "rm -rf build/ build-asan build-valgrind/ build-analyzer/"
 
 [sigil.build]
 silent = true
@@ -27,3 +27,33 @@ silent = true
 description = "Run miru-daemon locally"
 language = "shell"
 run = "./build/miru-daemon"
+
+[sigil.sanitize]
+silent = true
+description = "Memory-safety checks; ASan + UBSan and GCC static analyzer"
+language = "shell"
+run = "bash scripts/sanitize.sh check"
+
+[sigil.asan]
+silent = true
+description = "Build with ASan + UBSan and run the smoke tests"
+language = "shell"
+run = "bash scripts/sanitize.sh asan"
+
+[sigil.analyze]
+silent = true
+description = "Build with GCC -fanalyzer and report findings"
+language = "shell"
+run = "bash scripts/sanitize.sh analyzer"
+
+[sigil.valgrind]
+silent = true
+description = "Run the smoke tests under Valgrind Memcheck"
+language = "shell"
+run = "bash scripts/sanitize.sh valgrind"
+
+[sigil.sanitize-all]
+silent = true
+description = "Run every Memory-safety check (ASan, UBSan, GCC analyzer, Valgrind)"
+language = "shell"
+run = "bash scripts/sanitize.sh all"
