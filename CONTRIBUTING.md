@@ -50,6 +50,9 @@ Install these so local checks match the CI
 | `clang-tidy` | For linting the C code |
 | `typos` | Spell-check |
 | `rumdl` | Markdown lint/format |
+| `gcc` (>= 13) | Compiler for the ASan/UBSan builds and the `-fanalyzer` static analysis |
+| `valgrind` | Optional: Extra memory diagnostics (leaks, invalid accesses) |
+| `fzf` | The pre-commit hook uses it to ask whether to run the memory-safety checks |
 
 The CI (Woodpecker) runs the same checks using the above tools (Check
 `.woodpecker/` directory)
@@ -64,6 +67,60 @@ cmake -S . -B build -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build build
 clang-tidy -p build --quiet $(find src -type f -name '*.c' | sort)
 ```
+
+### Memory-safety checks
+
+`scripts/sanitize.sh` runs the memory-safety and static-analysis checks. Each
+stage builds it's own directory (`build-asan/`, `build-valgrind/`,
+`build-analyzer/`), so the regular `build/` directory and the release pipeline
+are not affected.
+
+| Stage   | What it does    |
+|--------------- | --------------- |
+| `asan`   | Builds with AddressSanitizer + UndefinedBehaviourSanitizer (leak detection included) and runs the smoke tests   |
+| `analyzer`   | Builds with GCC's `-fanalyzer` and fails on any finding   |
+| `valgrind`   | Plain debug build, smoke tests run under Valgrind Memcheck (Optional)   |
+| `check`   | `asan` + `analyzer`. This is the default one run by the `pre-commit` hook and the CI   |
+| `all`   | `check` + `valgrind` (Valgrind is skipped if not installed)   |
+
+```bash
+./scripts/sanitize.sh check      # ASan + UBSan + analyzer
+./scripts/sanitize.sh asan       # A single stage
+./scripts/sanitize.sh valgrind
+./scripts/sanitize.sh clean      # Remove the build-* directories
+```
+
+Or using Grimoire
+
+```bash
+grim cast sanitize        # asan + analyzer
+grim cast asan
+grim cast analyze
+grim cast valgrind
+grim cast sanitize-all
+```
+
+The script exits non-zero (and prints the sanitizer and analyzer report) when it
+finds a genuine problem. A few things worth knowing:
+
+- `miru-daemon` needs a Wayland compositor, which these checks do not have. The
+  smoke tests cover argument handling, config creation and parsing (including
+  malformed files) and the failure paths taken when no compositor or daemon is
+  reachable. To exercise capture, annotations, export and rendering, run the
+  instrumented daemon on a real compositor:
+
+```bash
+./build-asan/miru-daemon
+```
+
+- The analyzer needs GCC 13 or newer (14 is much better). Pick a specific
+  compiler with `ANALYZER_CC=gcc-14`. Three analyzer checks (`fd-leak`,
+  `out-of-bounds` and `use-of-uninitialized-value`) are off by default because
+  they report false positives. `MIRU_ANALYZER_STRICT=1` turns them on.
+- LeakSanitizer needs `ptrace`. In a restricted container, use
+  `ASAN_OPTIONS=detect_leaks=0`.
+- `MIRU_VERBOSE=1` streams the build output instead of showing it only when a
+  step fails. `CC=clang` selects another compiler for the `asan` stage.
 
 ### Git Hooks
 
@@ -83,6 +140,15 @@ The pre-commit hook typically:
 - runs `rumdl` on Markdown (Excluding a few files)
 
 And stages all the above changes
+
+When C code or CMake files are staged, the hook then asks (using `fzf`) whether
+to run the [memory-safety checks](#memory-safety-checks). Choose **Yes** to run
+`./scripts/sanitize.sh check`. If it finds a problem, the commit is aborted, so
+you can fix it and commit again. Choose **No** (or press `ESC`) to commit
+straight away. The prompt is skipped if `fzf` or a terminal is not available.
+
+Set `MIRU_PRECOMMIT_CHECKS=yes` to always run the checks without asking, or
+`MIRU_PRECOMMIT_CHECKS=no` to never run them (The default is `ask`)
 
 Make the hook executable (If needed)
 
@@ -117,6 +183,7 @@ MIRU_DEBUG=1 ./build/miru-daemon
 3. Exercise the paths you touched (e.g: `miructl toggle` / `loupe` / `quit`,
    annotate, help, refresh, cursor toggle)
 4. Confirm formatting/linting hooks pass before opening a PR.
+5. Run the [memory-safety checks](#memory-safety-checks) if you touched C code.
 
 ## Pull Requests
 
@@ -125,13 +192,14 @@ MIRU_DEBUG=1 ./build/miru-daemon
 3. Keep the diff limited to the feature/fix.
 4. Update **`README`**, `man` pages (`.scd`), or **help** text when behavior or
    keybinds are changed.
-5. CI should not fail (format, spell-check, markdown)
+5. CI should not fail (format, spell-check, markdown, memory-safety checks)
 
 ## Project Layout (Where to look)
 
 ```text
 src/           daemon sources (Wayland, GL, input, config, annotations, …)
 ctl/           miructl client
+scripts/       helper scripts (sanitize.sh: memory-safety checks)
 cmake/         CMake helpers (e.g. WaylandScanner.cmake)
 protocol/      vendored protocol XML
 .woodpecker/   CI pipelines

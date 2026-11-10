@@ -1,0 +1,35 @@
+# Memory-safety and static-analysis checks: ASan, UBSan, GCC -fanalyzer and
+# (non-blocking) Valgrind. Separate from release.yml, which only runs on tags.
+#
+# All the logic lives in scripts/sanitize.sh so CI, the pre-commit hook and
+# Grimoire run exactly the same checks. See CONTRIBUTING.md to run them locally.
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+
+steps:
+  static-analysis:
+    image: debian:trixie-slim
+    environment:
+      WAYLAND_PROTOCOLS_DIR: /opt/wayland-protocols
+      commands:
+        - apt-get update -qq
+          - apt-get install -y -qq
+          build-essential
+          cmake
+          pkg-config
+          git
+          ca-certificates
+          valgrind
+          libwayland-dev
+          libpng-dev
+          libnotify-dev
+          libegl-dev
+          libgles-dev
+          libwayland-egl1
+          wayland-protocols          # ← add this
+        # The clone block can be removed (or kept only as a fallback)
+        - bash scripts/sanitize.sh check
+        - |
+          bash scripts/sanitize.sh valgrind || echo "WARNING - valgrind reported issues (non-blocking)"

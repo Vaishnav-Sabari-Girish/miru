@@ -18,6 +18,8 @@
 │   ├── capture.h/.c                  # one-shot screen capture via wlr-screencopy
 │   ├── shm_buffer.h/.c               # shared-memory pixel buffer allocation helper
 │   ├── egl_context.h/.c              # EGL display / context / window-surface setup
+│   ├── export.c/h                    # export to BMP/PNG 
+│   ├── keybinds.c/h                  # custom keybinds 
 │   ├── gl_renderer.h/.c              # OpenGL ES 2 shaders, texture upload, spotlight, annotations, help
 │   ├── ipc_server.h/.c               # Unix socket server, parses toggle/loupe/quit commands
 │   ├── input.h/.c                    # pointer/keyboard: pan, zoom, Tab, annotate, help, key-repeat, Esc
@@ -25,9 +27,10 @@
 │   ├── config_watch.h/.c             # inotify-based watch on the config directory, drives hot-reload
 │   ├── toml.h/.c                     # minimal TOML parser used by the config loader
 │   ├── version.h.in                  # CMake-configured version string (git describe)
-│   ├── logo.h                        # ASCII logo module interface
-│   └── logo.c                        # ASCII logo data and printing implementation
+│   └── logo.c/h                      # ASCII logo 
 ├── ctl/
 │   └── miructl.c                     # thin socket client, no Wayland dependency
+├── scripts/
+│   └── sanitize.sh                   # ASan/UBSan, GCC analyzer and Valgrind checks (hook, CI, Grimoire) 
 └── Grimoire.toml                     # dev task runner (build/run/install/clean)
 ````

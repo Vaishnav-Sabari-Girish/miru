@@ -69,4 +69,55 @@ if has_staged $MD_SPECS; then
   staged_z $MD_SPECS | xargs -0 git add
 fi
 
+# --- Memory Safety Checks (Optional) -----
+# Offered only when C or build files are staged, and after the formatters
+# above so the sanitizers see the final code. Choosing "No" (or ESC) commits straight away
+# A failing check aborts the commit
+C_CHECK_SPECS="src/*.c src/*.h ctl/*.c CMakeLists.txt cmake/*.cmake"
+
+ask_run_checks() {
+  RUN_CHECKS=no
+  case "${MIRU_PRECOMMIT_CHECKS:-ask}" in
+  yes | 1)
+    RUN_CHECKS=yes
+    return 0
+    ;;
+  no | 0)
+    return 0
+    ;;
+  esac
+
+  if ! command -v fzf >/dev/null 2>&1; then
+    echo "note: fzf not found, skipping memory-safe check prompt"
+    return 0
+  fi
+
+  if ! (: </dev/tty) 2>/dev/null; then
+    echo "note: No terminal available, skipping memory-safe check prompt"
+    return 0
+  fi
+
+  answer=$(printf 'Yes\nNo\n' | fzf --height=8 --reverse --no-multi --cycle \
+    --prompt='Run memory-safety checks (ASan/UBSan + GCC Analyzer)? ' \
+    --header='Enter: select, Esc: Skip') || answer=No
+
+  if [ "$answer" = "Yes" ]; then
+    RUN_CHECKS=yes
+  fi
+}
+
+# shellcheck disable=SC2086
+if has_staged $C_CHECK_SPECS; then
+  ask_run_checks
+  if [ "$RUN_CHECKS" = "yes" ]; then
+    echo "Running memory-safety checks (ASan/UBSan + GCC Analyzer)..."
+    if ! bash scripts/sanitize.sh check; then
+      echo
+      echo "error: memory-safety checks failed, commit aborted"
+      echo "Fix the issues above and commit again (or run: grim cast sanitize)"
+      exit 1
+    fi
+  fi
+fi
+
 exit 0

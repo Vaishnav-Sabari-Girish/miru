@@ -1,6 +1,6 @@
 plan.md
 .ccls-cache
 build/
-next_thing.md
+build-*/
 result
 result*
