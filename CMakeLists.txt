@@ -95,6 +95,39 @@ wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-
 pkg_check_modules(EGL REQUIRED egl)
 pkg_check_modules(GLESV2 REQUIRED glesv2)
 pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
+
+# Contributors
+set(MIRU_CONTRIBUTORS_TEXT "")
+if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+  find_program(SH_EXECUTABLE sh)
+  if(SH_EXECUTABLE)
+    execute_process(
+      COMMAND ${SH_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/gen-contributors.sh
+      OUTPUT_VARIABLE MIRU_CONTRIBUTORS_TEXT
+      RESULT_VARIABLE MIRU_CONTRIBUTORS_RESULT
+      ERROR_QUIET
+    )
+    if(NOT MIRU_CONTRIBUTORS_RESULT EQUAL 0)
+      set(MIRU_CONTRIBUTORS_TEXT "")
+    endif()
+  endif()
+endif()
+
+if(MIRU_CONTRIBUTORS_TEXT STREQUAL "" AND EXISTS "${CMAKE_SOURCE_DIR}/CONTRIBUTORS")
+  file(READ "${CMAKE_SOURCE_DIR}/CONTRIBUTORS" MIRU_CONTRIBUTORS_TEXT)
+endif()
+
+set_property(
+  DIRECTORY
+  APPEND
+  PROPERTY CMAKE_CONFIG_DEPENDS "${CMAKE_SOURCE_DIR}/CONTRIBUTORS"
+)
+string(REPLACE "\\" "\\\\" MIRU_CONTRIBUTORS_C "${MIRU_CONTRIBUTORS_TEXT}")
+string(REPLACE "\"" "\\\"" MIRU_CONTRIBUTORS_C "${MIRU_CONTRIBUTORS_C}")
+string(REPLACE "\n" "\\n\"\n    \"" MIRU_CONTRIBUTORS_C "${MIRU_CONTRIBUTORS_C}")
+set(MIRU_CONTRIBUTORS_C "\"${MIRU_CONTRIBUTORS_C}\"")
+configure_file(${CMAKE_SOURCE_DIR}/src/contributors.c.in ${CMAKE_BINARY_DIR}/generated/contributors.c @ONLY)
+
 add_executable(
   miru-daemon
   src/main.c
@@ -115,6 +148,7 @@ add_executable(
   src/annotations.c
   src/export.c
   src/help.c
+  ${CMAKE_BINARY_DIR}/generated/contributors.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}

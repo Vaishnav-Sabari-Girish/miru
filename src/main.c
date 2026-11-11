@@ -15,6 +15,7 @@
 #include "config_watch.h"
 #include "debug.h"
 #include "annotations.h"
+#include "contributors.h"
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
@@ -28,6 +29,8 @@ void print_help()
     printf("    -h, --help      Show this help message\n");
     printf("    -v, --version   Show version information and exit\n");
     printf("    --gen-config, --interactive   Interactive config.toml wizard\n\n");
+    printf("Commands: \n");
+    printf("    contributors    Print the names of everyone who has contributed to miru\n\n");
     printf("Description: \n");
     printf("    Starts the miru-daemon. Connects to the Wayland Compositor, opens a\n");
     printf("    control socket at $XDG_RUNTIME_DIR/miru.sock, and idles until \n");
@@ -45,6 +48,11 @@ void print_version()
     printf("miru-daemon %s\n", MIRU_VERSION);
     printf("\nCombined Distribution subject to MIT license\n");
     printf("\nWritten by Vaishnav Sabari Girish\n");
+}
+
+static void print_contributors()
+{
+    fputs(miru_contributors_text, stdout);
 }
 
 static volatile sig_atomic_t should_exit = 0;
@@ -198,6 +206,11 @@ int main(int argc, char *argv[])
     }
     if (argc > 1 && (strcmp(argv[1], "--gen-config") == 0 || strcmp(argv[1], "--interactive") == 0)) {
         return config_gen_interactive() == 0 ? 0 : 1;
+    }
+
+    if (argc > 1 && (strcmp(argv[1], "contributors") == 0 || strcmp(argv[1], "--contributors") == 0)) {
+        print_contributors();
+        return 0;
     }
 
     struct miru_state state = { 0 };
