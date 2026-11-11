@@ -120,4 +120,6 @@ if has_staged $C_CHECK_SPECS; then
   fi
 fi
 
+bash scripts/gen-contributors.sh && echo "Contributors file updated"
+
 exit 0
