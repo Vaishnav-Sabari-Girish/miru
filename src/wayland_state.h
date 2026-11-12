@@ -7,6 +7,8 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "viewporter-client-protocol.h"
 #include "fractional-scale-v1-client-protocol.h"
+#include "ext-image-capture-source-v1-client-protocol.h"
+#include "ext-image-copy-capture-v1-client-protocol.h"
 
 struct miru_output {
     struct wl_list link;
@@ -30,6 +32,8 @@ struct miru_state {
     struct wp_cursor_shape_manager_v1 *cursor_shape_manager;
     struct wp_viewporter *viewporter;
     struct wp_fractional_scale_manager_v1 *fractional_scale_manager;
+    struct ext_output_image_capture_source_manager_v1 *capture_source_manager;
+    struct ext_image_copy_capture_manager_v1 *copy_capture_manager;
 
     struct miru_output *overlay_output;
     struct wl_pointer *pointer;

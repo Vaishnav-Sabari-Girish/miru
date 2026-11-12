@@ -121,8 +121,14 @@ See [Roadmap](./ROADMAP.md) for the full picture.
   work rather than only inside a Magnifier session. This is a different, harder
   problem than Cursor Highlight above: it needs cursor tracking without stealing
   pointer/keyboard focus, which Cursor Highlight sidesteps entirely by already
-  owning input while Magnifier is active. **Work In Progress. (Mode is
-  implemented, but cursor follow through is a WIP)**
+  owning input while Magnifier is active. **Work In Progress.**
+
+Cursor follow uses the `ext-image-copy-capture-v1` cursor sessions (the
+same thing [`wlpp`](https://github.com/cornservant/wlpp) uses), so it needs
+a compositor that supports `ext-image-capture-source-v1` and
+`ext-image-copy-capture-v1` (`niri-git` does). Without it the circle stays
+centered. **Esc** closes Spotlight (set `spotlight.esc_quit = false` to keep
+keyboard input going to your apps instead).
 
 ### Why
 

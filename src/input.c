@@ -747,6 +747,12 @@ keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t
         return;
     }
 
+    if (ctx->ls->standalone_spotlight) {
+        if (key_is(ctx, MIRU_ACT_QUIT, key) && ctx->request_deactivate)
+            *ctx->request_deactivate = 1;
+        return;
+    }
+
     // while text is being typed, ordinary keys must reach the text buffer even
     // when they are bound to an action, only ESC keeps leaving the overlay
     bool typing = ctx->ls->annotations.mode && ctx->ls->annotations.typing;

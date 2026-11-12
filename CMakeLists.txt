@@ -83,6 +83,13 @@ set(EXT_FOREIGN_TOPLEVEL_XML
 if(NOT EXISTS ${EXT_FOREIGN_TOPLEVEL_XML})
   message(FATAL_ERROR "ext-foreign-toplevel-list-v1.xml not found at ${EXT_FOREIGN_TOPLEVEL_XML}")
 endif()
+
+# ext-image-copy-capture-v1 provides the cursor sessions used to follow the pointer in spotlight mode
+set(EXT_COPY_CAPTURE_XML "${WAYLAND_PROTOCOLS_DIR}/staging/ext-image-copy-capture/ext-image-copy-capture-v1.xml")
+if(NOT EXISTS ${EXT_COPY_CAPTURE_XML})
+  message(FATAL_ERROR "ext-image-copy-capture-v1.xml not found at ${EXT_COPY_CAPTURE_XML}")
+endif()
+
 wayland_generate_protocol(${SCREENCOPY_XML} wlr-screencopy-unstable-v1)
 wayland_generate_protocol(${LAYER_SHELL_XML} wlr-layer-shell-unstable-v1)
 wayland_generate_protocol(${XDG_SHELL_XML} xdg-shell)
@@ -92,6 +99,7 @@ wayland_generate_protocol(${VIEWPORTER_XML} viewporter)
 wayland_generate_protocol(${FRACTIONAL_SCALE_XML} fractional-scale-v1)
 wayland_generate_protocol(${EXT_CAPTURE_SOURCE_XML} ext-image-capture-source-v1)
 wayland_generate_protocol(${EXT_FOREIGN_TOPLEVEL_XML} ext-foreign-toplevel-list-v1)
+wayland_generate_protocol(${EXT_COPY_CAPTURE_XML} ext-image-copy-capture-v1)
 pkg_check_modules(EGL REQUIRED egl)
 pkg_check_modules(GLESV2 REQUIRED glesv2)
 pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
@@ -148,6 +156,7 @@ add_executable(
   src/annotations.c
   src/export.c
   src/help.c
+  src/pointer_track.c
   ${CMAKE_BINARY_DIR}/generated/contributors.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
@@ -163,6 +172,12 @@ add_executable(
   ${viewporter_HEADER}
   ${fractional-scale-v1_SOURCE}
   ${fractional-scale-v1_HEADER}
+  ${ext-image-capture-source-v1_SOURCE}
+  ${ext-image-capture-source-v1_HEADER}
+  ${ext-foreign-toplevel-list-v1_SOURCE}
+  ${ext-foreign-toplevel-list-v1_HEADER}
+  ${ext-image-copy-capture-v1_SOURCE}
+  ${ext-image-copy-capture-v1_HEADER}
 )
 add_executable(miructl ctl/miructl.c src/logo.c)
 target_include_directories(
