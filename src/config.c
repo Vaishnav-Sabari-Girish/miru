@@ -185,6 +185,7 @@ static int create_default_config(const char *config_dir, const char *config_path
                                          "softness = 20\n"
                                          "animation_speed = 14.0\n"
                                          "radius_step = 20.0\n"
+                                         "esc_quit = true\n"
                                          "\n"
                                          "[general]\n"
                                          "show_cursor = true\n"
@@ -407,6 +408,7 @@ void config_load(struct miru_config *out)
     out->spotlight_softness = 20;
     out->spotlight_animation_speed = 14.0;
     out->spotlight_radius_step = 20.0;
+    out->spotlight_esc_quit = true;
 
     out->show_cursor = true;
 
@@ -478,6 +480,7 @@ void config_load(struct miru_config *out)
     out->spotlight_softness = toml_get_int(t, "spotlight", "softness", out->spotlight_softness);
     out->spotlight_animation_speed = toml_get_double(t, "spotlight", "animation_speed", out->spotlight_animation_speed);
     out->spotlight_radius_step = toml_get_double(t, "spotlight", "radius_step", out->spotlight_radius_step);
+    out->spotlight_esc_quit = toml_get_bool(t, "spotlight", "esc_quit", out->spotlight_esc_quit);
 
     out->show_cursor = toml_get_bool(t, "general", "show_cursor", out->show_cursor);
     out->status_badge = toml_get_bool(t, "general", "status_badge", out->status_badge);

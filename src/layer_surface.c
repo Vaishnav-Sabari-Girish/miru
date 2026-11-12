@@ -293,7 +293,9 @@ int layer_surface_create(
     // );
     if (ls->standalone_spotlight) {
         zwlr_layer_surface_v1_set_keyboard_interactivity(
-            ls->layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE
+            ls->layer_surface,
+            config->spotlight_esc_quit ? ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE :
+                                         ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE
         );
 
         {

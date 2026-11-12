@@ -23,6 +23,7 @@ struct layer_surface_config {
     bool has_initial_cursor;
     bool smooth_enabled;
     bool standalone_spotlight;
+    bool spotlight_esc_quit;
 
     int export_format;
 

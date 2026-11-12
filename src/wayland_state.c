@@ -185,6 +185,11 @@ registry_global(void *data, struct wl_registry *registry, uint32_t name, const c
     } else if (strcmp(interface, wp_fractional_scale_manager_v1_interface.name) == 0) {
         state->fractional_scale_manager =
             wl_registry_bind(registry, name, &wp_fractional_scale_manager_v1_interface, 1);
+    } else if (strcmp(interface, ext_output_image_capture_source_manager_v1_interface.name) == 0) {
+        state->capture_source_manager =
+            wl_registry_bind(registry, name, &ext_output_image_capture_source_manager_v1_interface, 1);
+    } else if (strcmp(interface, ext_image_copy_capture_manager_v1_interface.name) == 0) {
+        state->copy_capture_manager = wl_registry_bind(registry, name, &ext_image_copy_capture_manager_v1_interface, 1);
     }
 }
 

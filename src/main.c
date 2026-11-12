@@ -16,6 +16,8 @@
 #include "debug.h"
 #include "annotations.h"
 #include "contributors.h"
+#include "pointer_track.h"
+#include <math.h>
 
 #define RECAPTURE_INTERVAL_MS 200 // 5 recaptures/sec
 
@@ -56,6 +58,7 @@ static void print_contributors()
 }
 
 static volatile sig_atomic_t should_exit = 0;
+static struct miru_pointer_track pointer_track;
 
 static void handle_sigint(int sig)
 {
@@ -133,7 +136,24 @@ static void deactivate(struct miru_layer_surface *ls, struct miru_capture *captu
     layer_surface_destroy(ls);
     *ls = (struct miru_layer_surface){ 0 };
     capture_frame_destroy(capture);
+    pointer_track_stop(&pointer_track);
     MIRU_LOG("toggle: deactivated");
+}
+
+static void update_spotlight_pointer(struct miru_layer_surface *ls)
+{
+    if (!pointer_track.has || ls->width <= 0 || ls->height <= 0)
+        return;
+
+    double bx = pointer_track.x;
+    double by = pointer_track.y;
+
+    if (fabs(bx - ls->display_cursor_x) < 0.5 && fabs(by - ls->display_cursor_y) < 0.5)
+        return;
+
+    ls->cursor_x = ls->display_cursor_x = bx;
+    ls->cursor_y = ls->display_cursor_y = by;
+    ls->dirty = true;
 }
 
 static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls, struct miru_capture *capture)
@@ -310,6 +330,8 @@ int main(int argc, char *argv[])
 
         if (active) {
             input_process_repeats(&input_ctx);
+            if (ls.standalone_spotlight && ls.configured)
+                update_spotlight_pointer(&ls);
             if (ls.dirty || layer_surface_is_animating(&ls)) {
                 layer_surface_render(&ls);
             }
@@ -366,6 +388,7 @@ int main(int argc, char *argv[])
                         .spotlight_animation_speed = (float)config.spotlight_animation_speed,
                         .smooth_enabled = config.zoom_smooth,
                         .standalone_spotlight = true,
+                        .spotlight_esc_quit = config.spotlight_esc_quit,
                         .has_initial_cursor = false,
                         .export_format = config.export_format,
                         .color_filter = config.color_filter,
@@ -388,13 +411,15 @@ int main(int argc, char *argv[])
                     if (active) {
                         input_ctx.ls = &ls;
                         MIRU_LOG("spotlight: standalone on");
+                        struct wl_output *wl_output = state.overlay_output ? state.overlay_output->wl_output : NULL;
+                        if (!pointer_track_start(&pointer_track, &state, wl_output))
+                            MIRU_LOG("spotlight: cannot follow the pointer, the circle stays where it is");
                     } else {
                         MIRU_LOG("spotlight: failed to create surface");
                     }
                 } else {
                     deactivate(&ls, &capture);
                     input_reset_repeat(&input_ctx);
-                    input_ctx.ls = NULL;
                     active = 0;
                     MIRU_LOG("spotlight: off");
                 }
@@ -425,6 +450,7 @@ int main(int argc, char *argv[])
                     config.spotlight_softness != new_config.spotlight_softness ||
                     config.spotlight_animation_speed != new_config.spotlight_animation_speed ||
                     config.spotlight_radius_step != new_config.spotlight_radius_step ||
+                    config.spotlight_esc_quit != new_config.spotlight_esc_quit ||
                     config.show_cursor != new_config.show_cursor ||
                     config.annotate_default != new_config.annotate_default ||
                     config.annotate_thickness != new_config.annotate_thickness ||
@@ -522,6 +548,7 @@ int main(int argc, char *argv[])
     }
 
     capture_frame_destroy(&capture);
+    pointer_track_stop(&pointer_track);
     ipc_server_cleanup(&ipc);
     config_watch_cleanup(&config_watch);
     wayland_state_cleanup(&state);
