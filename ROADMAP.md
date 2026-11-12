@@ -43,9 +43,10 @@
 * [x] Configurable Keybinds. Check [Keybinds](./CONFIGURATION.md#keybinds)
 * [ ] 🚧 Spotlight mode: standalone, click-through overlay (no Magnifier
   freeze, works alongside normal desktop use)
-* [x] Cursor tracking for Spotlight mode through the
+  * [x] Cursor tracking for Spotlight mode through the
   `ext-image-copy-capture-v1` cursor sessions (`niri-git` supports it)
-* [ ] Cursor tracking for Spotlight mode on compositors without cursor sessions
+  * [ ] Cursor tracking for Spotlight mode on compositors without cursor
+        sessions
 * [ ] Support compositors without `wlr-screencopy` / `wlr-layer-shell`
 
 > [!NOTE]
