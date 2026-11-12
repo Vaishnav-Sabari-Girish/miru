@@ -83,6 +83,7 @@ dim = 0.65
 softness = 20
 animation_speed = 14.0
 radius_step = 20.0
+esc_quit = true
 
 [general]
 show_cursor = true
@@ -151,6 +152,7 @@ redo = "CTRL+Y, CTRL+SHIFT+Z"
 	- *radius*, *dim*, *softness* — circle size, outside darkness, edge feather.  
 	- *animation_speed* — ease in/out speed for Tab.  
 	- *radius_step* — step for Shift+Plus/Minus and Ctrl+scroll.
+	- *esc_quit* - uses *ESC* for quitting standalone spotlight mode.
 
 *[general]*
 	- *show_cursor* — hide the hardware cursor while the overlay is active when

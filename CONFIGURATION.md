@@ -31,6 +31,7 @@ dim = 0.65
 softness = 20
 animation_speed = 14.0
 radius_step = 20.0
+esc_quit = true
 
 [general]
 show_cursor = true
@@ -111,6 +112,11 @@ The currently active options are:
   in and out when toggling Tab. Higher is faster.
 * `spotlight.radius_step` — step size when adjusting the highlight radius
   with Shift+Plus/Minus or Ctrl+scroll.
+* `spotlight.esc_quit` - when `true` (default), standalone Spotlight Mode
+  (`miructl spotlight`) takes the keyboard so that Esc closes it. While it is
+  on, typing does not reach your other windows. Set it to `false` to keep
+  Spotlight fully click-through (Mouse works even when `true`) and close it with
+  `miructl spotlight` again.
 * `general.show_cursor` — when `false`, hides the hardware cursor while the
   overlay is active (restoring a themed cursor when turning it back on may
   be limited depending on the compositor).
