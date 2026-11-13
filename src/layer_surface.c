@@ -593,6 +593,21 @@ void layer_surface_render(struct miru_layer_surface *ls)
             float sel_w = ls->loupe.sel_w > 1.f ? ls->loupe.sel_w : (x1 - x0);
             float sel_h = ls->loupe.sel_h > 1.f ? ls->loupe.sel_h : (y1 - y0);
 
+            float half_w = sel_w * 0.5f;
+            float half_h = sel_h * 0.5f;
+
+            if (cx > (float)ls->buffer_width - half_w)
+                cx = (float)ls->buffer_width - half_w;
+
+            if (cx < half_w)
+                cx = half_w;
+
+            if (cy > (float)ls->buffer_height - half_h)
+                cy = (float)ls->buffer_height - half_h;
+
+            if (cy < half_h)
+                cy = half_h;
+
             float dx0 = cx - sel_w * 0.5f;
             float dy0 = cy - sel_h * 0.5f;
             float dx1 = cx + sel_w * 0.5f;
@@ -646,7 +661,7 @@ void layer_surface_render(struct miru_layer_surface *ls)
             );
 
             gl_renderer_draw_loupe_outline(
-                &ls->gl, dy0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
+                &ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
             );
 
             gl_renderer_draw_annotations(
