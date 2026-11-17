@@ -11,6 +11,7 @@
 #include <wayland-client-protocol.h>
 #include "help.h"
 #include "font8x8_basic.h"
+#include "shaders.h"
 
 #ifndef GL_BGRA_EXT
 #define GL_BGRA_EXT 0x80E1
@@ -19,127 +20,127 @@
 #define DRM_FORMAT_ARGB8888 0x34325241
 #define DRM_FORMAT_XRGB8888 0x34325258
 
-static const char *vertex_shader_src = "attribute vec2 a_position;\n"
-                                       "attribute vec2 a_texcoord;\n"
-                                       "varying vec2 v_texcoord;\n"
-                                       "void main() {\n"
-                                       "    v_texcoord = a_texcoord;\n"
-                                       "    gl_Position = vec4(a_position, 0.0, 1.0);\n"
-                                       "}\n";
-
-static const char *fragment_shader_src = "precision mediump float;\n"
-                                         "varying vec2 v_texcoord;\n"
-                                         "uniform sampler2D u_texture;\n"
-                                         "uniform vec2 u_crop_origin;\n"
-                                         "uniform vec2 u_crop_scale;\n"
-                                         "uniform float u_y_invert;\n"
-                                         "uniform vec2 u_cursor_px;\n"
-                                         "uniform vec2 u_resolution;\n"
-                                         "uniform float u_spotlight_enabled;\n"
-                                         "uniform float u_spotlight_radius;\n"
-                                         "uniform float u_spotlight_softness;\n"
-                                         "uniform float u_spotlight_dim;\n"
-                                         "uniform vec2 u_texel_size;\n"
-                                         "uniform float u_upscale;\n"
-                                         "uniform float u_ellipse_mask;\n"
-                                         "uniform float u_filter;\n"
-                                         "\n"
-                                         "vec4 cubic(float v) {\n"
-                                         "    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;\n"
-                                         "    vec4 s = n * n * n;\n"
-                                         "    float x = s.x;\n"
-                                         "    float y = s.y - 4.0 * s.x;\n"
-                                         "    float z = s.z - 4.0 * s.y + 6.0 * s.x;\n"
-                                         "    float w = 6.0 - x - y - z;\n"
-                                         "    return vec4(x, y, z, w) * (1.0 / 6.0);\n"
-                                         "}\n"
-                                         "\n"
-                                         "vec3 textureBicubic(sampler2D tex, vec2 uv) {\n"
-                                         "    vec2 texSize = 1.0 / u_texel_size;\n"
-                                         "    vec2 invTexSize = u_texel_size;\n"
-                                         "    uv = uv * texSize - 0.5;\n"
-                                         "    vec2 fxy = fract(uv);\n"
-                                         "    uv -= fxy;\n"
-                                         "    vec4 xcubic = cubic(fxy.x);\n"
-                                         "    vec4 ycubic = cubic(fxy.y);\n"
-                                         "    vec4 c = uv.xxyy + vec2(-0.5, 1.5).xyxy;\n"
-                                         "    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);\n"
-                                         "    vec4 offset = c + vec4(xcubic.yw, ycubic.yw) / s;\n"
-                                         "    offset *= invTexSize.xxyy;\n"
-                                         "    vec4 sample0 = texture2D(tex, offset.xz);\n"
-                                         "    vec4 sample1 = texture2D(tex, offset.yz);\n"
-                                         "    vec4 sample2 = texture2D(tex, offset.xw);\n"
-                                         "    vec4 sample3 = texture2D(tex, offset.yw);\n"
-                                         "    float sx = s.x / (s.x + s.y);\n"
-                                         "    float sy = s.z / (s.z + s.w);\n"
-                                         "    return mix(mix(sample3.rgb, sample2.rgb, sx),\n"
-                                         "               mix(sample1.rgb, sample0.rgb, sx), sy);\n"
-                                         "}\n"
-                                         "\n"
-                                         "void main() {\n"
-                                         "    vec2 uv = v_texcoord;\n"
-                                         "    if (u_ellipse_mask > 0.5) {\n"
-                                         "        vec2 p = (v_texcoord - vec2(0.5)) * 2.0;\n"
-                                         "        if (dot(p, p) > 1.0) discard;\n"
-                                         "    }\n"
-                                         "    if (u_y_invert > 0.5) { uv.y = 1.0 - uv.y; }\n"
-                                         "    vec2 sample_uv = u_crop_origin + uv * u_crop_scale;\n"
-                                         "    vec3 color;\n"
-                                         "    if (u_upscale > 1.5) {\n"
-                                         "        color = textureBicubic(u_texture, sample_uv);\n"
-                                         "    } else {\n"
-                                         "        color = texture2D(u_texture, sample_uv).rgb;\n"
-                                         "    }\n"
-                                         "    if (u_filter > 2.5) {\n"
-                                         "          color = clamp((color - 0.5) * 1.8 + 0.5, 0.0, 1.0);\n"
-                                         "    } else if (u_filter > 1.5) {\n"
-                                         "          color = 1.0 - color;\n"
-                                         "    } else if (u_filter > 0.5) {\n"
-                                         "          float g = dot(color, vec3(0.299, 0.587, 0.114));\n"
-                                         "          color = vec3(g);\n"
-                                         "    }\n"
-                                         "    if (u_spotlight_enabled > 0.5) {\n"
-                                         "        vec2 frag_px = gl_FragCoord.xy;\n"
-                                         "        float dist = distance(frag_px, u_cursor_px);\n"
-                                         "        float inner = max(u_spotlight_radius - u_spotlight_softness, 0.0);\n"
-                                         "        float outer = u_spotlight_radius + u_spotlight_softness;\n"
-                                         "        float t = smoothstep(inner, outer, dist);\n"
-                                         "        color *= (1.0 - u_spotlight_dim * t);\n"
-                                         "    }\n"
-                                         "    gl_FragColor = vec4(color, 1.0);\n"
-                                         "}\n";
-
-static const char *line_vs = "attribute vec2 a_position;\n"
-                             "void main() {\n"
-                             "   gl_Position = vec4(a_position, 0.0, 1.0);\n"
-                             "}\n";
-
-static const char *line_fs = "precision mediump float;\n"
-                             "uniform vec4 u_color;\n"
-                             "void main() {\n"
-                             "   gl_FragColor = u_color;\n"
-                             "}\n";
-
-static const char *spotlight_vs = "attribute vec2 a_position;\n"
-                                  "void main() {\n"
-                                  "     gl_Position = vec4(a_position, 0.0, 1.0);\n"
-                                  "}\n";
-
-static const char *spotlight_fs = "precision mediump float;\n"
-                                  "uniform vec2 u_cursor;\n"
-                                  "uniform vec2 u_resolution;\n"
-                                  "uniform float u_radius;\n"
-                                  "uniform float u_softness;\n"
-                                  "uniform float u_dim;\n"
-                                  "void main() {\n"
-                                  "     float dist = distance(gl_FragCoord.xy, u_cursor);\n"
-                                  "     float soft = max(u_softness, 1.0);\n"
-                                  "     float inner = max(u_radius - soft, 0.0);\n"
-                                  "     float outer = u_radius + soft;\n"
-                                  "     float t = smoothstep(inner, outer, dist);\n"
-                                  "     float a = u_dim * t;\n"
-                                  "     gl_FragColor = vec4(0.0, 0.0, 0.0, a);\n"
-                                  "}\n";
+// static const char *vertex_shader_src = "attribute vec2 a_position;\n"
+//                                        "attribute vec2 a_texcoord;\n"
+//                                        "varying vec2 v_texcoord;\n"
+//                                        "void main() {\n"
+//                                        "    v_texcoord = a_texcoord;\n"
+//                                        "    gl_Position = vec4(a_position, 0.0, 1.0);\n"
+//                                        "}\n";
+//
+// static const char *fragment_shader_src = "precision mediump float;\n"
+//                                          "varying vec2 v_texcoord;\n"
+//                                          "uniform sampler2D u_texture;\n"
+//                                          "uniform vec2 u_crop_origin;\n"
+//                                          "uniform vec2 u_crop_scale;\n"
+//                                          "uniform float u_y_invert;\n"
+//                                          "uniform vec2 u_cursor_px;\n"
+//                                          "uniform vec2 u_resolution;\n"
+//                                          "uniform float u_spotlight_enabled;\n"
+//                                          "uniform float u_spotlight_radius;\n"
+//                                          "uniform float u_spotlight_softness;\n"
+//                                          "uniform float u_spotlight_dim;\n"
+//                                          "uniform vec2 u_texel_size;\n"
+//                                          "uniform float u_upscale;\n"
+//                                          "uniform float u_ellipse_mask;\n"
+//                                          "uniform float u_filter;\n"
+//                                          "\n"
+//                                          "vec4 cubic(float v) {\n"
+//                                          "    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;\n"
+//                                          "    vec4 s = n * n * n;\n"
+//                                          "    float x = s.x;\n"
+//                                          "    float y = s.y - 4.0 * s.x;\n"
+//                                          "    float z = s.z - 4.0 * s.y + 6.0 * s.x;\n"
+//                                          "    float w = 6.0 - x - y - z;\n"
+//                                          "    return vec4(x, y, z, w) * (1.0 / 6.0);\n"
+//                                          "}\n"
+//                                          "\n"
+//                                          "vec3 textureBicubic(sampler2D tex, vec2 uv) {\n"
+//                                          "    vec2 texSize = 1.0 / u_texel_size;\n"
+//                                          "    vec2 invTexSize = u_texel_size;\n"
+//                                          "    uv = uv * texSize - 0.5;\n"
+//                                          "    vec2 fxy = fract(uv);\n"
+//                                          "    uv -= fxy;\n"
+//                                          "    vec4 xcubic = cubic(fxy.x);\n"
+//                                          "    vec4 ycubic = cubic(fxy.y);\n"
+//                                          "    vec4 c = uv.xxyy + vec2(-0.5, 1.5).xyxy;\n"
+//                                          "    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);\n"
+//                                          "    vec4 offset = c + vec4(xcubic.yw, ycubic.yw) / s;\n"
+//                                          "    offset *= invTexSize.xxyy;\n"
+//                                          "    vec4 sample0 = texture2D(tex, offset.xz);\n"
+//                                          "    vec4 sample1 = texture2D(tex, offset.yz);\n"
+//                                          "    vec4 sample2 = texture2D(tex, offset.xw);\n"
+//                                          "    vec4 sample3 = texture2D(tex, offset.yw);\n"
+//                                          "    float sx = s.x / (s.x + s.y);\n"
+//                                          "    float sy = s.z / (s.z + s.w);\n"
+//                                          "    return mix(mix(sample3.rgb, sample2.rgb, sx),\n"
+//                                          "               mix(sample1.rgb, sample0.rgb, sx), sy);\n"
+//                                          "}\n"
+//                                          "\n"
+//                                          "void main() {\n"
+//                                          "    vec2 uv = v_texcoord;\n"
+//                                          "    if (u_ellipse_mask > 0.5) {\n"
+//                                          "        vec2 p = (v_texcoord - vec2(0.5)) * 2.0;\n"
+//                                          "        if (dot(p, p) > 1.0) discard;\n"
+//                                          "    }\n"
+//                                          "    if (u_y_invert > 0.5) { uv.y = 1.0 - uv.y; }\n"
+//                                          "    vec2 sample_uv = u_crop_origin + uv * u_crop_scale;\n"
+//                                          "    vec3 color;\n"
+//                                          "    if (u_upscale > 1.5) {\n"
+//                                          "        color = textureBicubic(u_texture, sample_uv);\n"
+//                                          "    } else {\n"
+//                                          "        color = texture2D(u_texture, sample_uv).rgb;\n"
+//                                          "    }\n"
+//                                          "    if (u_filter > 2.5) {\n"
+//                                          "          color = clamp((color - 0.5) * 1.8 + 0.5, 0.0, 1.0);\n"
+//                                          "    } else if (u_filter > 1.5) {\n"
+//                                          "          color = 1.0 - color;\n"
+//                                          "    } else if (u_filter > 0.5) {\n"
+//                                          "          float g = dot(color, vec3(0.299, 0.587, 0.114));\n"
+//                                          "          color = vec3(g);\n"
+//                                          "    }\n"
+//                                          "    if (u_spotlight_enabled > 0.5) {\n"
+//                                          "        vec2 frag_px = gl_FragCoord.xy;\n"
+//                                          "        float dist = distance(frag_px, u_cursor_px);\n"
+//                                          "        float inner = max(u_spotlight_radius - u_spotlight_softness, 0.0);\n"
+//                                          "        float outer = u_spotlight_radius + u_spotlight_softness;\n"
+//                                          "        float t = smoothstep(inner, outer, dist);\n"
+//                                          "        color *= (1.0 - u_spotlight_dim * t);\n"
+//                                          "    }\n"
+//                                          "    gl_FragColor = vec4(color, 1.0);\n"
+//                                          "}\n";
+//
+// static const char *line_vs = "attribute vec2 a_position;\n"
+//                              "void main() {\n"
+//                              "   gl_Position = vec4(a_position, 0.0, 1.0);\n"
+//                              "}\n";
+//
+// static const char *line_fs = "precision mediump float;\n"
+//                              "uniform vec4 u_color;\n"
+//                              "void main() {\n"
+//                              "   gl_FragColor = u_color;\n"
+//                              "}\n";
+//
+// static const char *spotlight_vs = "attribute vec2 a_position;\n"
+//                                   "void main() {\n"
+//                                   "     gl_Position = vec4(a_position, 0.0, 1.0);\n"
+//                                   "}\n";
+//
+// static const char *spotlight_fs = "precision mediump float;\n"
+//                                   "uniform vec2 u_cursor;\n"
+//                                   "uniform vec2 u_resolution;\n"
+//                                   "uniform float u_radius;\n"
+//                                   "uniform float u_softness;\n"
+//                                   "uniform float u_dim;\n"
+//                                   "void main() {\n"
+//                                   "     float dist = distance(gl_FragCoord.xy, u_cursor);\n"
+//                                   "     float soft = max(u_softness, 1.0);\n"
+//                                   "     float inner = max(u_radius - soft, 0.0);\n"
+//                                   "     float outer = u_radius + soft;\n"
+//                                   "     float t = smoothstep(inner, outer, dist);\n"
+//                                   "     float a = u_dim * t;\n"
+//                                   "     gl_FragColor = vec4(0.0, 0.0, 0.0, a);\n"
+//                                   "}\n";
 
 static GLuint compile_shader(GLenum type, const char *src)
 {
@@ -167,8 +168,8 @@ int gl_renderer_init(struct miru_gl_renderer *r)
 {
     memset(r, 0, sizeof(*r));
 
-    GLuint vs = compile_shader(GL_VERTEX_SHADER, vertex_shader_src);
-    GLuint fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
+    GLuint vs = compile_shader(GL_VERTEX_SHADER, miru_shader_quad_vert);
+    GLuint fs = compile_shader(GL_FRAGMENT_SHADER, miru_shader_quad_frag);
 
     if (!vs || !fs)
         return -1;
@@ -227,8 +228,8 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    GLuint lvs = compile_shader(GL_VERTEX_SHADER, line_vs);
-    GLuint lfs = compile_shader(GL_FRAGMENT_SHADER, line_fs);
+    GLuint lvs = compile_shader(GL_VERTEX_SHADER, miru_shader_line_vert);
+    GLuint lfs = compile_shader(GL_FRAGMENT_SHADER, miru_shader_line_frag);
 
     if (!lvs || !lfs) {
         return -1;
@@ -251,8 +252,8 @@ int gl_renderer_init(struct miru_gl_renderer *r)
     r->line_u_color = glGetUniformLocation(r->line_program, "u_color");
     glGenBuffers(1, &r->line_vbo);
 
-    GLuint svs = compile_shader(GL_VERTEX_SHADER, spotlight_vs);
-    GLuint sfs = compile_shader(GL_FRAGMENT_SHADER, spotlight_fs);
+    GLuint svs = compile_shader(GL_VERTEX_SHADER, miru_shader_spotlight_vert);
+    GLuint sfs = compile_shader(GL_FRAGMENT_SHADER, miru_shader_spotlight_frag);
 
     if (!svs || !sfs)
         return -1;

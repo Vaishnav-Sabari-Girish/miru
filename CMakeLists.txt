@@ -136,6 +136,18 @@ string(REPLACE "\n" "\\n\"\n    \"" MIRU_CONTRIBUTORS_C "${MIRU_CONTRIBUTORS_C}"
 set(MIRU_CONTRIBUTORS_C "\"${MIRU_CONTRIBUTORS_C}\"")
 configure_file(${CMAKE_SOURCE_DIR}/src/contributors.c.in ${CMAKE_BINARY_DIR}/generated/contributors.c @ONLY)
 
+# GLSL sources in shaders/ are embedded as C strings (generated/shaders.{c,h})
+include(cmake/EmbedShaders.cmake)
+miru_embed_shaders(
+  ${CMAKE_BINARY_DIR}/generated
+  shaders/quad.vert
+  shaders/quad.frag
+  shaders/line.vert
+  shaders/line.frag
+  shaders/spotlight.vert
+  shaders/spotlight.frag
+)
+
 add_executable(
   miru-daemon
   src/main.c
@@ -158,6 +170,7 @@ add_executable(
   src/help.c
   src/pointer_track.c
   ${CMAKE_BINARY_DIR}/generated/contributors.c
+  ${CMAKE_BINARY_DIR}/generated/shaders.c
   ${wlr-layer-shell-unstable-v1_SOURCE}
   ${wlr-layer-shell-unstable-v1_HEADER}
   ${xdg-shell_SOURCE}

@@ -200,7 +200,8 @@ MIRU_DEBUG=1 ./build/miru-daemon
 src/           daemon sources (Wayland, GL, input, config, annotations, …)
 ctl/           miructl client
 scripts/       helper scripts (sanitize.sh: memory-safety checks)
-cmake/         CMake helpers (e.g. WaylandScanner.cmake)
+cmake/         CMake helpers (e.g. WaylandScanner.cmake, EmbedShaders.cmake)
+shaders/       The OpenGL shader files (`.vert` and `.frag`)
 protocol/      vendored protocol XML
 .woodpecker/   CI pipelines
 .githooks/     Git hooks (enable via core.hooksPath)
