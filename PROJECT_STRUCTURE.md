@@ -30,6 +30,10 @@
 │   └── logo.c/h                      # ASCII logo 
 ├── ctl/
 │   └── miructl.c                     # thin socket client, no Wayland dependency
+├── shaders/
+│   ├── quad.vert/.frag               # The vertical/fragment shaders for the main quad.
+│   ├── line.vert/.frag               # The vertical/fragment shaders for the line texture.
+│   └── spotlight.vert/.frag          # The vertical/fragment shaders for the spotlight 
 ├── scripts/
 │   └── sanitize.sh                   # ASan/UBSan, GCC analyzer and Valgrind checks (hook, CI, Grimoire) 
 └── Grimoire.toml                     # dev task runner (build/run/install/clean)
