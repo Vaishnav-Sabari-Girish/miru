@@ -49,6 +49,8 @@ Substitute your AUR helper of choice — `yay`, `paru`, or a manual
 
 ### Nix / NixOS
 
+[![nixpkgs unstable package](https://repology.org/badge/version-for-repo/nix_unstable/miru.svg)](https://repology.org/project/miru/versions)
+
 Miru is packaged in
 [nixpkgs](https://search.nixos.org/packages?channel=unstable&query=miru&show=miru)
 (attribute `miru`). Prefer that over the project flake when you want a normal
@@ -112,6 +114,39 @@ sudo nix-channel --update
 nix run git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
 nix develop git+https://codeberg.org/Vaishnav-Sabari-Girish/miru
 ````
+
+### Alpine Linux
+
+[![Alpine Linux Edge package](https://repology.org/badge/version-for-repo/alpine_edge/miru.svg)](https://repology.org/project/miru/versions)
+
+Miru is packaged in Alpine's
+[`testing`](https://pkgs.alpinelinux.org/package/edge/testing/x86_64/miru)
+repository (x86_64 only).
+
+**Edge:**
+
+````bash
+echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" | sudo tee -a /etc/apk/repositories
+sudo apk update
+sudo apk add miru
+````
+
+**Stable release** (pins `testing` so only Miru is pulled from it):
+
+````bash
+echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" | sudo tee -a /etc/apk/repositories
+sudo apk update
+sudo apk add miru@testing
+````
+
+> [!NOTE]
+> Packages in `testing` are built against edge, so on a stable release apk may
+> report dependency conflicts (e.g. newer Wayland libraries). If that happens,
+> switch to edge.
+>
+> Start `miru-daemon` from your compositor config (see
+> [Setting up a keybind](./KEYBINDS.md#setting-up-a-keybind)). Use a compositor
+> that provides `wlr-layer-shell` and `wlr-screencopy`, such as Sway or Niri.
 
 ### Homebrew (Linuxbrew)
 
