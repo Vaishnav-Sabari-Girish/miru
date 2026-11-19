@@ -59,6 +59,7 @@ static void print_contributors()
 
 static volatile sig_atomic_t should_exit = 0;
 static struct miru_pointer_track pointer_track;
+static bool pointer_coords_physical;
 
 static void handle_sigint(int sig)
 {
@@ -145,8 +146,14 @@ static void update_spotlight_pointer(struct miru_layer_surface *ls)
     if (!pointer_track.has || ls->width <= 0 || ls->height <= 0)
         return;
 
-    double bx = pointer_track.x;
-    double by = pointer_track.y;
+    if (pointer_track.x > ls->width || pointer_track.y > ls->height)
+        pointer_coords_physical = true;
+
+    double kx = pointer_coords_physical ? 1.0 : (double)ls->buffer_width / ls->width;
+    double ky = pointer_coords_physical ? 1.0 : (double)ls->buffer_height / ls->height;
+
+    double bx = pointer_track.x * kx;
+    double by = pointer_track.y * ky;
 
     if (fabs(bx - ls->display_cursor_x) < 0.5 && fabs(by - ls->display_cursor_y) < 0.5)
         return;
@@ -154,6 +161,15 @@ static void update_spotlight_pointer(struct miru_layer_surface *ls)
     ls->cursor_x = ls->display_cursor_x = bx;
     ls->cursor_y = ls->display_cursor_y = by;
     ls->dirty = true;
+    MIRU_DBG(
+        "pointer_track=%.0f,%.0f buf=%dx%d logical=%dx%d",
+        bx,
+        by,
+        ls->buffer_width,
+        ls->buffer_height,
+        ls->width,
+        ls->height
+    );
 }
 
 static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls, struct miru_capture *capture)
