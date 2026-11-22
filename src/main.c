@@ -28,8 +28,8 @@ void print_help()
     printf("Usage: miru-daemon [OPTIONS]\n\n");
 
     printf("Options: \n");
-    printf("    -h, --help      Show this help message\n");
-    printf("    -v, --version   Show version information and exit\n");
+    printf("    -h, --help                    Show this help message\n");
+    printf("    -v, --version                 Show version information and exit\n");
     printf("    --gen-config, --interactive   Interactive config.toml wizard\n\n");
     printf("Commands: \n");
     printf("    contributors    Print the names of everyone who has contributed to miru\n\n");
@@ -229,6 +229,17 @@ static int refresh_frame(struct miru_state *state, struct miru_layer_surface *ls
     return 0;
 }
 
+static bool begin_spotlight_fade(struct miru_layer_surface *ls)
+{
+    if (!ls->standalone_spotlight || !ls->configured || ls->closing)
+        return false;
+
+    ls->closing = true;
+    ls->spotlight_enabled = false;
+    ls->dirty = true;
+    return true;
+}
+
 int main(int argc, char *argv[])
 
 {
@@ -351,6 +362,12 @@ int main(int argc, char *argv[])
             if (ls.dirty || layer_surface_is_animating(&ls)) {
                 layer_surface_render(&ls);
             }
+            if (ls.closing && !layer_surface_is_animating(&ls)) {
+                deactivate(&ls, &capture);
+                input_reset_repeat(&input_ctx);
+                active = 0;
+                MIRU_LOG("spotlight: off");
+            }
         }
 
         if (pfds[1].revents & POLLIN) {
@@ -434,10 +451,12 @@ int main(int argc, char *argv[])
                         MIRU_LOG("spotlight: failed to create surface");
                     }
                 } else {
-                    deactivate(&ls, &capture);
-                    input_reset_repeat(&input_ctx);
-                    active = 0;
-                    MIRU_LOG("spotlight: off");
+                    if (!begin_spotlight_fade(&ls)) {
+                        deactivate(&ls, &capture);
+                        input_reset_repeat(&input_ctx);
+                        active = 0;
+                        MIRU_LOG("spotlight: off");
+                    }
                 }
             } else if (cmd == MIRU_IPC_QUIT) {
                 // fprintf(stderr, "received quit command\n");
@@ -545,10 +564,13 @@ int main(int argc, char *argv[])
         }
 
         if (active && request_deactivate) {
-            deactivate(&ls, &capture);
-            input_reset_repeat(&input_ctx);
-            active = 0;
             request_deactivate = 0;
+            if (!begin_spotlight_fade(&ls)) {
+                deactivate(&ls, &capture);
+                input_reset_repeat(&input_ctx);
+                active = 0;
+                request_deactivate = 0;
+            }
         }
 
         if (active && request_refresh) {

@@ -23,6 +23,7 @@ struct layer_surface_config {
     bool has_initial_cursor;
     bool smooth_enabled;
     bool standalone_spotlight;
+    bool closing;
     bool spotlight_esc_quit;
 
     int export_format;
@@ -82,6 +83,7 @@ struct miru_layer_surface {
     float spotlight_radius, spotlight_dim, spotlight_softness;
     bool spotlight_enabled;
     bool standalone_spotlight;
+    bool closing;
     float display_spotlight_radius;
     float display_spotlight_dim;
     float spotlight_animation_speed;
