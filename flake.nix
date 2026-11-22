@@ -32,7 +32,7 @@
 
         miru = pkgs.stdenv.mkDerivation {
           pname = "miru";
-          version = "0.15.0";
+          version = "0.16.0";
           src = ./.;
 
           nativeBuildInputs = nativeDeps;
