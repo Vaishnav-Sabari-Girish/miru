@@ -1,4 +1,54 @@
 
+## v0.16.0 - 2026-11-22
+
+
+
+
+
+
+
+### :rocket: New features
+
+- **(spotlight)** Cursor follow for spotlight added
+
+- **(contributors)** Add contributors command
+
+- **(memory_safety)** Add memory-safety checks (ASan/UBSan+analyzer)
+
+
+
+
+
+
+### :bug: Bug fixes
+
+- **(hyprland)** Hyprland standalone spotlight bug
+
+- **(loupe)** Loupe mode left-edge bug
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### :art: Styling
+
+- **(shaders)** Moved shaders to separate files
+
+
+
+
+
+
+
 ## v0.15.0 - 2026-11-06
 
 
