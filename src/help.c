@@ -1,4 +1,5 @@
 #include "help.h"
+#include "version.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -20,7 +21,8 @@ struct help_row {
 
 // clang-format off
 static const struct help_row rows[] = {
-    {.raw = "Miru - controls"},
+    {.raw = "Miru (" MIRU_VERSION ") - controls"},
+    {.raw = ""},
     {.raw = "LMB = Left Mouse Button"},
     {.raw = ""},
     {.label = "Mouse Move", .desc = "Pan"},
