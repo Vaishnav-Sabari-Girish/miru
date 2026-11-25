@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/file.h>
-// #include <sys/time.h>
+#include <sys/time.h>
 #include <poll.h>
 #include <errno.h>
 #include <sys/socket.h>
@@ -17,11 +17,13 @@
 static int build_socket_path(char *out, size_t out_size)
 {
     const char *runtime_dir = getenv("XDG_RUNTIME_DIR");
-    if (!runtime_dir) {
-        runtime_dir = "/tmp"; // just in case
-    }
+    int n;
 
-    int n = snprintf(out, out_size, "%s/miru.sock", runtime_dir);
+    if (runtime_dir && *runtime_dir)
+        n = snprintf(out, out_size, "%s/miru.sock", runtime_dir);
+    else
+        n = snprintf(out, out_size, "/tmp/miru-%d.sock", (int)getuid());
+
     if (n < 0 || (size_t)n >= out_size) {
         // fprintf(stderr, "ipc_server : socket path too long\n");
         MIRU_LOG("ipc_server : socket path too long");
@@ -104,19 +106,10 @@ static int acquire_instance_lock(struct miru_ipc_server *srv)
 
     int fd = open(lock_path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0644);
     if (fd < 0) {
-        if (errno == ELOOP) {
-            // fprintf(
-            //     stderr, "ipc_server: refusing to open %s, it is a symlink (possible attack or leftover)\n", lock_path
-            // );
+        if (errno == ELOOP || errno == EMLINK ||
+            errno == O_NOFOLLOW) { // FreeBSD supports EMLINK or O_NOFOLLOW on symlinks
             MIRU_LOG("ipc_server: refusing to open %s, it is a symlink (possible attack or leftover)", lock_path);
         } else if (errno == EACCES) {
-            // fprintf(
-            //     stderr,
-            //     "ipc_server: cannot open lockfile %s (permission denied) - a file at this path "
-            //     "may already be owned by another user; If XDG_RUNTIME_DIR is unset, set it or "
-            //     "ensure a proper per-user runtime directory exists\n",
-            //     lock_path
-            // );
             MIRU_LOG(
                 "ipc_server: cannot open lockfile %s (permission denied) - a file at this path "
                 "may already be owned by another user; If XDG_RUNTIME_DIR is unset, set it or "
@@ -124,7 +117,6 @@ static int acquire_instance_lock(struct miru_ipc_server *srv)
                 lock_path
             );
         } else {
-            // fprintf(stderr, "ipc_server: failed to open lockfile %s: %s\n", lock_path, strerror(errno));
             MIRU_LOG("ipc_server: failed to open lockfile %s: %s", lock_path, strerror(errno));
         }
         return -1;

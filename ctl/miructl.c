@@ -42,12 +42,14 @@ int main(int argc, char *argv[])
     }
 
     const char *runtime_dir = getenv("XDG_RUNTIME_DIR");
-    if (!runtime_dir) {
-        runtime_dir = "/tmp";
-    }
 
+    int n;
     char socket_path[256];
-    int n = snprintf(socket_path, sizeof(socket_path), "%s/miru.sock", runtime_dir);
+    if (runtime_dir && *runtime_dir)
+        n = snprintf(socket_path, sizeof(socket_path), "%s/miru.sock", runtime_dir);
+    else 
+        n = snprintf(socket_path, sizeof(socket_path), "/tmp/miru-%d.sock", (int)getuid());
+
     if (n < 0 || (size_t)n >= sizeof(socket_path)) {
         // fprintf(stderr, "socket path is too long\n");
         MIRU_LOG("socket path is too long");

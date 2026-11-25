@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <time.h>
-#include <linux/input-event-codes.h>
+#include "evdev_keys.h"
 #include "input.h"
 #include "layer_surface.h"
 #include <wayland-client-protocol.h>

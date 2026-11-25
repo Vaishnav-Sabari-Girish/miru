@@ -215,6 +215,20 @@ target_link_libraries(
           ${LIBNOTIFY_LIBRARIES}
           m
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  # Ports live under /usr/local, which is not on the default linker path
+  target_link_directories(miru-daemon PRIVATE /usr/local/lib)
+  target_link_directories(miru-daemon PRIVATE /usr/local/include)
+  # FreeBSD 15+ has native inotify; older releases need devel/libinotify
+  pkg_check_modules(INOTIFY libinotify)
+  if(INOTIFY_FOUND)
+    target_include_directories(miru-daemon PRIVATE ${INOTIFY_INCLUDE_DIRS})
+    target_link_directories(miru-daemon PRIVATE ${INOTIFY_LIBRARY_DIRS})
+    target_link_libraries(miru-daemon PRIVATE ${INOTIFY_LIBRARIES})
+  endif()
+endif()
+
 target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER} ${PNG_CFLAGS_OTHER} ${LIBNOTIFY_CFLAGS_OTHER})
 include(GNUInstallDirs)
 install(TARGETS miru-daemon miructl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

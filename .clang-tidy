@@ -49,3 +49,4 @@ Checks: >
   -readability-identifier-naming,
   -readability-avoid-nested-conditional-operator,
   -clang-diagnostic-error
+  -readability-use-concise-preprocessor-directives

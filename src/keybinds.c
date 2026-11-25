@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <linux/input-event-codes.h>
+#include "evdev_keys.h"
 #include "keybinds.h"
 #include "debug.h"
 #include "toml.h"
