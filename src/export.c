@@ -185,8 +185,58 @@ static int write_png_rbga(const char *path, int width, int height, const uint8_t
     return 0;
 }
 
-int miru_export_framebuffer(int width, int height, int format)
+static void mask_outside_ellipse(
+    uint8_t *rgba,
+    int x,
+    int y,
+    int width,
+    int height,
+    float cx,
+    float cy,
+    float rx,
+    float ry,
+    int format
+)
 {
+    if (rx <= 0.0f || ry <= 0.0f)
+        return;
+
+    for (int r = 0; r < height; r++) {
+        float ny = (y + (height - 1 - r) + 0.5f - cy) / ry;
+        for (int c = 0; c < width; c++) {
+            float nx = ((float)(x + c) + 0.5f - cx) / rx;
+            if (nx * nx + ny * ny <= 1.0f)
+                continue;
+
+            uint8_t *p = rgba + ((size_t)r * (size_t)width + (size_t)c) * 4;
+            p[0] = p[1] = p[2] = 0;
+            p[3] = (format == MIRU_EXPORT_PNG) ? 0 : 0xFF;
+        }
+    }
+}
+
+int miru_export_framebuffer_region(int fb_w, int fb_h, int x, int y, int width, int height, int format, int ellipse)
+{
+    if (fb_w <= 0 || fb_h <= 0 || width <= 0 || height <= 0)
+        return -1;
+
+    float ecx = (float)x + (float)width * 0.5f;
+    float ecy = (float)y + (float)height * 0.5f;
+    float erx = (float)width * 0.5f;
+    float ery = (float)height * 0.5f;
+
+    if (x < 0) {
+        width += x;
+        x = 0;
+    }
+    if (y < 0) {
+        height += y;
+        y = 0;
+    }
+    if (x + width > fb_w)
+        width = fb_w - x;
+    if (y + height > fb_h)
+        height = fb_h - y;
     if (width <= 0 || height <= 0)
         return -1;
 
@@ -200,13 +250,16 @@ int miru_export_framebuffer(int width, int height, int format)
     }
 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    glReadPixels(x, fb_h - y - height, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
         MIRU_LOG("export: glReadPixels failed glerr=0x%x", (unsigned)err);
         free(rgba);
         return -1;
     }
+
+    if (ellipse)
+        mask_outside_ellipse(rgba, x, y, width, height, ecx, ecy, erx, ery, format);
 
     const char *home = getenv("HOME");
     if (!home)
@@ -254,4 +307,9 @@ int miru_export_framebuffer(int width, int height, int format)
     MIRU_LOG("export: wrote %s", path);
     notify_export(path);
     return 0;
+}
+
+int miru_export_framebuffer(int width, int height, int format)
+{
+    return miru_export_framebuffer_region(width, height, 0, 0, width, height, format, 0);
 }

@@ -660,10 +660,6 @@ void layer_surface_render(struct miru_layer_surface *ls)
                 ls->color_filter
             );
 
-            gl_renderer_draw_loupe_outline(
-                &ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
-            );
-
             gl_renderer_draw_annotations(
                 &ls->gl,
                 &ls->annotations,
@@ -673,6 +669,24 @@ void layer_surface_render(struct miru_layer_surface *ls)
                 (float)ls->buffer_height,
                 ls->buffer_width,
                 ls->buffer_height
+            );
+
+            if (ls->export_pending) {
+                ls->export_pending = false;
+                miru_export_framebuffer_region(
+                    ls->buffer_width,
+                    ls->buffer_height,
+                    (int)lroundf(dx0),
+                    (int)lroundf(dy0),
+                    (int)lroundf(dx1 - dx0),
+                    (int)lroundf(dy1 - dy0),
+                    ls->export_format,
+                    ls->loupe.shape != 0
+                );
+            }
+
+            gl_renderer_draw_loupe_outline(
+                &ls->gl, dx0, dy0, dx1, dy1, ls->buffer_width, ls->buffer_height, ls->loupe.shape != 0
             );
 
             if (ls->status_badge) {

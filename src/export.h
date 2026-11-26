@@ -10,5 +10,6 @@
  */
 
 int miru_export_framebuffer(int width, int height, int format);
+int miru_export_framebuffer_region(int fb_w, int fb_h, int x, int y, int width, int height, int format, int ellipse);
 
 #endif // !MIRU_EXPORT_H
