@@ -288,7 +288,7 @@ void keybinds_load(struct miru_keybinds *kb, const struct toml_table *t)
 
         memset(kb->binds[a], 0, sizeof(kb->binds[a]));
         memcpy(kb->binds[a], parsed, (size_t)n * sizeof(parsed[0]));
-        kb->count[0] = (uint8_t)n;
+        kb->count[a] = (uint8_t)n;
     }
 }
 
