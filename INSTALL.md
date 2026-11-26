@@ -232,6 +232,19 @@ sudo emerge --ask --update gui-apps/miru
 > [As a systemd user service](./RUNNING.md#as-a-systemd-user-service) if you run
 > systemd and want to write your own unit).
 
+### FreeBSD
+
+FreeBSD support is still under testing. To try it out please clone the
+`freebsd_support` branch.
+
+Testers are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) if you are
+willing to contribute
+
+[`freebsd_support` branch](https://codeberg.org/Vaishnav-Sabari-Girish/miru/src/branch/feat/freebsd_support)
+
+For now to install and test in FreeBSD please build from source. See
+[From source](#from-source) below
+
 ### From source
 
 #### Building
