@@ -28,6 +28,8 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
 pkg_check_modules(PNG REQUIRED libpng)
 pkg_check_modules(LIBNOTIFY REQUIRED libnotify)
+pkg_check_modules(JPEG REQUIRED libjpeg)
+pkg_check_modules(WEBP REQUIRED libwebp)
 # Prefer -DWAYLAND_PROTOCOLS_DIR=... (CI / custom trees); else pkg-config
 if(NOT WAYLAND_PROTOCOLS_DIR)
   pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
@@ -201,6 +203,8 @@ target_include_directories(
           ${WAYLAND_EGL_INCLUDE_DIRS}
           ${PNG_INCLUDE_DIRS}
           ${LIBNOTIFY_INCLUDE_DIRS}
+          ${JPEG_INCLUDE_DIRS}
+          ${WEBP_INCLUDE_DIRS}
           ${CMAKE_BINARY_DIR}/protocol # so #include "*-client-protocol.h" in main.c resolves
           ${CMAKE_SOURCE_DIR}/src
           ${CMAKE_BINARY_DIR}/generated
@@ -213,6 +217,8 @@ target_link_libraries(
           ${WAYLAND_EGL_LIBRARIES}
           ${PNG_LIBRARIES}
           ${LIBNOTIFY_LIBRARIES}
+          ${JPEG_LIBRARIES}
+          ${WEBP_LIBRARIES}
           m
 )
 target_compile_options(miru-daemon PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER} ${PNG_CFLAGS_OTHER} ${LIBNOTIFY_CFLAGS_OTHER})

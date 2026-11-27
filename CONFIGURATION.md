@@ -133,7 +133,7 @@ The currently active options are:
 * `loupe.shape` - the shape to use when in `loupe` mode:
   * `"rect"/"rectangle", "ellipse", "circle"`
 * `export.format` - File format for exporting
-  * `"png", "bmp"`
+  * `"png", "bmp", "jpeg"/"jpg", "webp"`
 * `filter.default` - the default filter to add when zooming:
   * `"none", "invert/inverted/negative", "contrast/high-contrast", "gray/grey/grayscale"`
 * `pip.enabled` - whether the PIP minimap is shown when the overlay opens. It

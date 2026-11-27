@@ -16,6 +16,8 @@ steps:
           libwayland-dev
           libpng-dev
           libnotify-dev
+          libjpeg-dev
+          libwebp-dev
           wayland-protocols
           libegl-dev
           libgles-dev

@@ -60,8 +60,11 @@ static int parse_export_format(const char *s)
         return MIRU_EXPORT_PNG;
 
     if (strcmp(s, "jpeg") == 0 || strcmp(s, "jpg") == 0) {
-        MIRU_LOG("config: export.%s format is not supported yet, using png", s);
-        return MIRU_EXPORT_PNG;
+        return MIRU_EXPORT_JPEG;
+    }
+
+    if (strcmp(s, "webp") == 0) {
+        return MIRU_EXPORT_WEBP;
     }
 
     MIRU_LOG("config: unknown export format '%s', using png", s);
@@ -365,7 +368,7 @@ static void sanitize_config(struct miru_config *c)
     if (c->loupe_shape < 0 || c->loupe_shape > 2)
         c->loupe_shape = 0;
 
-    if (c->export_format != MIRU_EXPORT_PNG && c->export_format != MIRU_EXPORT_BMP)
+    if (c->export_format < MIRU_EXPORT_BMP && c->export_format > MIRU_EXPORT_WEBP)
         c->export_format = MIRU_EXPORT_PNG;
 
     if (c->color_filter < 0 || c->color_filter > 3)
@@ -652,6 +655,20 @@ static int prompt_hex_rgb(const char *label, const char *def_hex, float *r, floa
     return 0;
 }
 
+static const char *export_format_name(int v)
+{
+    switch (v) {
+    case MIRU_EXPORT_BMP:
+        return "bmp";
+    case MIRU_EXPORT_JPEG:
+        return "jpeg";
+    case MIRU_EXPORT_WEBP:
+        return "webp";
+    default:
+        return "png";
+    }
+}
+
 static const char *upscale_name(int v)
 {
     if (v == 0)
@@ -788,7 +805,7 @@ static int write_config_file(const char *path, const struct miru_config *c)
         (unsigned)(c->annotate_text_b * 255.0f + 0.5f),
         c->annotate_text_size,
         loupe_name(c->loupe_shape),
-        c->export_format == MIRU_EXPORT_BMP ? "bmp" : "png",
+        export_format_name(c->export_format),
         filter_name(c->color_filter),
         c->pip_enabled ? "true" : "false",
         pip_corner_name(c->pip_corner),
@@ -908,9 +925,15 @@ int config_gen_interactive(void)
 
     printf("\n--- Export ---\n");
     {
-        static const char *const opts[] = { "png", "bmp" };
-        int i = prompt_choice("format", opts, 2, c.export_format == MIRU_EXPORT_BMP ? 1 : 0);
-        c.export_format = (i == 1) ? MIRU_EXPORT_BMP : MIRU_EXPORT_PNG;
+        static const char *const opts[] = { "png", "bmp", "jpeg", "webp" };
+        static const int formats[] = { MIRU_EXPORT_PNG, MIRU_EXPORT_BMP, MIRU_EXPORT_JPEG, MIRU_EXPORT_WEBP };
+        int def = 0;
+        for (int k = 0; k < 4; k++) {
+            if (formats[k] == c.export_format)
+                def = k;
+        }
+
+        c.export_format = formats[prompt_choice("format", opts, 4, def)];
     }
 
     printf("\n--- Filter ---\n");

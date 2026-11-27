@@ -98,10 +98,12 @@ See [Roadmap](./ROADMAP.md) for the full picture.
     default).
   * **Shift+H** or **?** toggles an on-screen **help panel** listing the
     current keybinds (Esc closes help first, then exits the magnifier).
-  * **Shift+E** exports the current view to a `.png` or `.bmp` file which is
-    created at `$HOME/Pictures/miru/` (Check out
-    [`test_export.png`](./test_export.png) and
-    [`test_export.bmp`](./test_export.bmp))
+  * **Shift+E** exports the current view to a `.png`, `.bmp`, `.jpeg` or `.webp`
+    file which is created at `$HOME/Pictures/miru/` (Check out
+    [`test_export.png`](./test_export.png),
+    [`test_export.bmp`](./test_export.bmp),
+    [`test_export.jpeg`](./test_export.jpeg) and
+    [`test_export.webp`](./test_export.webp)
 
   Cursor Highlight, annotations, export, and help only work *inside* an active
   Magnifier session; the desktop underneath stays frozen/grabbed while the

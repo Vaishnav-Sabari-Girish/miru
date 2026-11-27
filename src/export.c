@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <png.h>
+#include <jpeglib.h>
+#include <setjmp.h>
+#include <webp/encode.h>
 #include <libnotify/notify.h>
 #include <string.h>
 #include <stdint.h>
@@ -185,6 +188,123 @@ static int write_png_rbga(const char *path, int width, int height, const uint8_t
     return 0;
 }
 
+#define MIRU_EXPORT_JPEG_QUALITY 90
+#define MIRU_EXPORT_WEBP_QUALITY 90.0f
+
+static const char *export_ext(int format)
+{
+    switch (format) {
+    case MIRU_EXPORT_BMP:
+        return "bmp";
+    case MIRU_EXPORT_JPEG:
+        return "jpeg";
+    case MIRU_EXPORT_WEBP:
+        return "webp";
+    default:
+        return "png";
+    }
+}
+
+struct jpeg_error {
+    struct jpeg_error_mgr pub;
+    jmp_buf jump;
+};
+
+static void jpeg_error_exit(j_common_ptr cinfo)
+{
+    struct jpeg_error *err = (struct jpeg_error *)cinfo->err;
+    longjmp(err->jump, 1);
+}
+
+static int write_jpeg_rgb(const char *path, int width, int height, const uint8_t *rgba_bottom_up)
+{
+    FILE *f = fopen(path, "wb");
+    if (!f)
+        return -1;
+
+    JSAMPLE *row = malloc((size_t)width * 3);
+    if (!row) {
+        fclose(f);
+        unlink(path);
+        return -1;
+    }
+
+    struct jpeg_compress_struct cinfo;
+    struct jpeg_error jerr;
+    cinfo.err = jpeg_std_error(&jerr.pub);
+    jerr.pub.error_exit = jpeg_error_exit;
+    jpeg_create_compress(&cinfo);
+
+    if (setjmp(jerr.jump)) {
+        jpeg_destroy_compress(&cinfo);
+        free(row);
+        fclose(f);
+        unlink(path);
+        return -1;
+    }
+
+    jpeg_stdio_dest(&cinfo, f);
+    cinfo.image_width = (JDIMENSION)width;
+    cinfo.image_height = (JDIMENSION)height;
+    cinfo.input_components = 3;
+    cinfo.in_color_space = JCS_RGB;
+    jpeg_set_defaults(&cinfo);
+    jpeg_set_quality(&cinfo, MIRU_EXPORT_JPEG_QUALITY, TRUE);
+    jpeg_start_compress(&cinfo, TRUE);
+
+    while (cinfo.next_scanline < cinfo.image_height) {
+        int src_y = height - 1 - (int)cinfo.next_scanline;
+        const uint8_t *src = rgba_bottom_up + (size_t)src_y * (size_t)width * 4;
+        for (int x = 0; x < width; x++) {
+            row[x * 3 + 0] = src[x * 4 + 0];
+            row[x * 3 + 1] = src[x * 4 + 1];
+            row[x * 3 + 2] = src[x * 4 + 2];
+        }
+        JSAMPROW row_ptr = row;
+        jpeg_write_scanlines(&cinfo, &row_ptr, 1);
+    }
+
+    jpeg_finish_compress(&cinfo);
+    jpeg_destroy_compress(&cinfo);
+    free(row);
+    if (fclose(f) != 0) {
+        unlink(path);
+        return -1;
+    }
+    return 0;
+}
+
+static int write_webp_rgb(const char *path, int width, int height, const uint8_t *rgba_bottom_up)
+{
+    size_t stride = (size_t)width * 4;
+    uint8_t *flipped = malloc(stride * (size_t)height);
+    if (!flipped)
+        return -1;
+
+    for (int y = 0; y < height; y++)
+        memcpy(flipped + (size_t)y * stride, rgba_bottom_up + (size_t)(height - 1 - y) * stride, stride);
+
+    uint8_t *encoded = NULL;
+    size_t size = WebPEncodeRGBA(flipped, width, height, (int)stride, MIRU_EXPORT_WEBP_QUALITY, &encoded);
+    free(flipped);
+    if (size == 0 || !encoded)
+        return -1;
+
+    FILE *f = fopen(path, "wb");
+    if (!f) {
+        WebPFree(encoded);
+        return -1;
+    }
+
+    int rc = fwrite(encoded, 1, size, f) == size ? 0 : -1;
+    WebPFree(encoded);
+    if (fclose(f) != 0)
+        rc = -1;
+    if (rc != 0)
+        unlink(path);
+    return rc;
+}
+
 static void mask_outside_ellipse(
     uint8_t *rgba,
     int x,
@@ -210,7 +330,7 @@ static void mask_outside_ellipse(
 
             uint8_t *p = rgba + ((size_t)r * (size_t)width + (size_t)c) * 4;
             p[0] = p[1] = p[2] = 0;
-            p[3] = (format == MIRU_EXPORT_PNG) ? 0 : 0xFF;
+            p[3] = (format == MIRU_EXPORT_PNG || format == MIRU_EXPORT_WEBP) ? 0 : 0xFF;
         }
     }
 }
@@ -277,7 +397,7 @@ int miru_export_framebuffer_region(int fb_w, int fb_h, int x, int y, int width, 
     struct tm tm;
     localtime_r(&now, &tm);
 
-    const char *ext = (format == MIRU_EXPORT_PNG) ? "png" : "bmp";
+    const char *ext = export_ext(format);
 
     char path[640];
 
@@ -295,8 +415,21 @@ int miru_export_framebuffer_region(int fb_w, int fb_h, int x, int y, int width, 
         ext
     );
 
-    int rc = (format == MIRU_EXPORT_PNG) ? write_png_rbga(path, width, height, rgba) :
-                                           write_bmp_bgr(path, width, height, rgba);
+    int rc;
+    switch (format) {
+    case MIRU_EXPORT_BMP:
+        rc = write_bmp_bgr(path, width, height, rgba);
+        break;
+    case MIRU_EXPORT_JPEG:
+        rc = write_jpeg_rgb(path, width, height, rgba);
+        break;
+    case MIRU_EXPORT_WEBP:
+        rc = write_webp_rgb(path, width, height, rgba);
+        break;
+    default:
+        rc = write_png_rbga(path, width, height, rgba);
+        break;
+    }
 
     free(rgba);
     if (rc != 0) {

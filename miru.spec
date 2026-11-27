@@ -1,5 +1,5 @@
 Name:           miru
-Version:        0.16.0
+Version:        0.17.0
 Release:        1%{?dist}
 Summary:        Wayland-native screen magnifier and zooming daemon
 
@@ -19,6 +19,8 @@ BuildRequires:  pkgconfig(egl)
 BuildRequires:  pkgconfig(glesv2)
 BuildRequires:  pkgconfig(libpng)
 BuildRequires:  pkgconfig(libnotify)
+BuildRequires:  pkgconfig(libjpeg)
+BuildRequires:  pkgconfig(libwebp)
 
 %description
 Miru is a Wayland-native screen magnifier and cursor spotlight tool for

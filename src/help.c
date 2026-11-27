@@ -67,6 +67,16 @@ static bool keybinds_ready;
 static int export_format = 1;
 static bool built;
 
+static const char *export_format_name(void)
+{
+    static const char *const names[] = { "png", "bmp", "jpeg", "webp" };
+
+    if (export_format < 0 || export_format > 3)
+        return "png";
+
+    return names[export_format];
+}
+
 static void append(char *dst, size_t size, const char *src)
 {
     size_t len = strlen(dst);
@@ -141,7 +151,7 @@ static void rebuild(void)
             if (row->desc)
                 snprintf(desc, sizeof(desc), "%s", row->desc);
             else
-                snprintf(desc, sizeof(desc), "Export View (%s)", export_format == 1 ? "png" : "bmp");
+                snprintf(desc, sizeof(desc), "Export View (%s)", export_format_name());
 
             snprintf(line, HELP_LINE_LEN, "%s", labels[i]);
 
