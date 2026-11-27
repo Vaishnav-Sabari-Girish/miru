@@ -170,7 +170,7 @@ redo = "CTRL+Y, CTRL+SHIFT+Z"
 	*shape* - Default shape when entering loupe mode
 
 *[export]*
-	*format* - File format of exported image
+	*format* - File format of exported image (png, bmp, jpeg, webp)
 
 *[filter]*
 	*default* - The default image filter to apply when the overlay is active.

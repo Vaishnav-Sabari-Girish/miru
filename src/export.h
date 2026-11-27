@@ -3,6 +3,8 @@
 
 #define MIRU_EXPORT_BMP 0
 #define MIRU_EXPORT_PNG 1
+#define MIRU_EXPORT_JPEG 2
+#define MIRU_EXPORT_WEBP 3
 
 /* Read RGBA from the current GL framebuffer (bottom-left origin)
  * and write ~/Pictures/miru/miru-YYYYMMDD-HHMMSS.{bmp,png}

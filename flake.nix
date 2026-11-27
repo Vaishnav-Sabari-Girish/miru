@@ -26,13 +26,15 @@
           libglvnd      # egl.pc, glesv2.pc
           libpng
           libnotify
+          libjpeg
+          libwebp
           glib
           gdk-pixbuf
         ];
 
         miru = pkgs.stdenv.mkDerivation {
           pname = "miru";
-          version = "0.16.0";
+          version = "0.17.0";
           src = ./.;
 
           nativeBuildInputs = nativeDeps;

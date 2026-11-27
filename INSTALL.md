@@ -5,8 +5,9 @@
 * `wayland-client`, `wayland-protocols`, `wayland-scanner` (pacman: `wayland`,
   `wayland-protocols`)
 * EGL + OpenGL ES 2 development packages
+* `libpng`, `libjpeg` and `libwebp` development packages
 * CMake ≥ 3.20, Ninja (optional)
-* A C11 compiler
+* A C11/C23 compiler
 
 ## Compositor compatibility
 
